@@ -1,0 +1,365 @@
+import { ObjectId, GridFSBucket } from "mongodb";
+import type { Readable } from "stream";
+import { getDatabase } from "./mongodb";
+
+export type ProjectStatus = "planned" | "in-progress" | "completed";
+
+export interface Project {
+  _id?: string;
+  slug: string;
+  title: string;
+  shortName: string;
+  tagline: string;
+  description: string;
+  category: "Full Stack" | "Frontend" | "AI & Cloud" | "Web App" | string;
+  technologies: string[];
+  status: ProjectStatus;
+  featured: boolean;
+  displayOrder: number;
+  previewImage?: string;
+  liveUrl?: string;
+  githubUrl?: string;
+  caseStudyAvailable: boolean;
+  engineeringFocus?: string[];
+  problem?: string;
+  solution?: string;
+  role?: string;
+  outcome?: string;
+  year?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateProjectInput = Omit<Project, "_id" | "createdAt" | "updatedAt">;
+export type UpdateProjectInput = Partial<CreateProjectInput>;
+
+const COLLECTION_NAME = "projects";
+
+let projectIndexesEnsured = false;
+
+/**
+ * Ensures unique and query performance indexes exist on the projects collection.
+ * Idempotent, executes only once in-memory per application instance.
+ */
+export async function ensureProjectIndexes(): Promise<void> {
+  if (projectIndexesEnsured) return;
+  try {
+    const db = await getDatabase();
+    if (!db) return;
+    const col = db.collection(COLLECTION_NAME);
+    await col.createIndex({ slug: 1 }, { unique: true });
+    await col.createIndex({ displayOrder: 1, createdAt: -1 });
+    await col.createIndex({ featured: 1, displayOrder: 1 });
+    projectIndexesEnsured = true;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Projects] Error ensuring project indexes:", msg);
+  }
+}
+
+/**
+ * Normalizes MongoDB document into a plain Project object.
+ */
+function mapProjectDoc(doc: any): Project {
+  return {
+    _id: doc._id ? doc._id.toString() : undefined,
+    slug: doc.slug || "",
+    title: doc.title || "",
+    shortName: doc.shortName || doc.title || "",
+    tagline: doc.tagline || "",
+    description: doc.description || "",
+    category: doc.category || "Full Stack",
+    technologies: Array.isArray(doc.technologies) ? doc.technologies : [],
+    status: (doc.status as ProjectStatus) || "completed",
+    featured: Boolean(doc.featured),
+    displayOrder: typeof doc.displayOrder === "number" ? doc.displayOrder : 999,
+    previewImage: doc.previewImage || "",
+    liveUrl: doc.liveUrl || "",
+    githubUrl: doc.githubUrl || "",
+    caseStudyAvailable: Boolean(doc.caseStudyAvailable),
+    engineeringFocus: Array.isArray(doc.engineeringFocus) ? doc.engineeringFocus : [],
+    problem: doc.problem || "",
+    solution: doc.solution || "",
+    role: doc.role || "",
+    outcome: doc.outcome || "",
+    year: doc.year || new Date().getFullYear().toString(),
+    createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt || new Date().toISOString(),
+    updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt || new Date().toISOString(),
+  };
+}
+
+/**
+ * Retrieves all projects sorted by displayOrder ascending, then createdAt descending.
+ */
+export async function getProjects(): Promise<Project[]> {
+  await ensureProjectIndexes();
+  try {
+    const db = await getDatabase();
+    if (!db) return [];
+    const docs = await db
+      .collection(COLLECTION_NAME)
+      .find({})
+      .sort({ displayOrder: 1, createdAt: -1 })
+      .toArray();
+    return docs.map(mapProjectDoc);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Projects] Error fetching projects:", msg);
+    return [];
+  }
+}
+
+/**
+ * Retrieves only featured projects sorted by displayOrder ascending.
+ */
+export async function getFeaturedProjects(): Promise<Project[]> {
+  await ensureProjectIndexes();
+  try {
+    const db = await getDatabase();
+    if (!db) return [];
+    const docs = await db
+      .collection(COLLECTION_NAME)
+      .find({ featured: true })
+      .sort({ displayOrder: 1, createdAt: -1 })
+      .toArray();
+    return docs.map(mapProjectDoc);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Projects] Error fetching featured projects:", msg);
+    return [];
+  }
+}
+
+/**
+ * Retrieves a single project by unique slug.
+ */
+export async function getProjectBySlug(slug: string): Promise<Project | null> {
+  await ensureProjectIndexes();
+  try {
+    const db = await getDatabase();
+    if (!db) return null;
+    const doc = await db.collection(COLLECTION_NAME).findOne({ slug: slug.trim().toLowerCase() });
+    return doc ? mapProjectDoc(doc) : null;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[Projects] Error fetching project by slug (${slug}):`, msg);
+    return null;
+  }
+}
+
+/**
+ * Retrieves a single project by MongoDB ObjectId.
+ */
+export async function getProjectById(id: string): Promise<Project | null> {
+  await ensureProjectIndexes();
+  try {
+    const db = await getDatabase();
+    if (!db) return null;
+    if (!ObjectId.isValid(id)) return null;
+    const doc = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(id) });
+    return doc ? mapProjectDoc(doc) : null;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[Projects] Error fetching project by id (${id}):`, msg);
+    return null;
+  }
+}
+
+/**
+ * Inserts a new project into the database.
+ */
+export async function createProject(data: CreateProjectInput): Promise<Project | null> {
+  await ensureProjectIndexes();
+  try {
+    const db = await getDatabase();
+    if (!db) throw new Error("Database connection unavailable.");
+
+    const now = new Date();
+    const docToInsert = {
+      ...data,
+      slug: data.slug.trim().toLowerCase(),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const result = await db.collection(COLLECTION_NAME).insertOne(docToInsert);
+    return {
+      _id: result.insertedId.toString(),
+      ...docToInsert,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Projects] Error creating project:", msg);
+    throw new Error(msg);
+  }
+}
+
+/**
+ * Updates an existing project by its MongoDB ObjectId.
+ */
+export async function updateProject(id: string, data: UpdateProjectInput): Promise<boolean> {
+  try {
+    const db = await getDatabase();
+    if (!db) throw new Error("Database connection unavailable.");
+    if (!ObjectId.isValid(id)) throw new Error("Invalid project ID format.");
+
+    const updateFields: Record<string, any> = {
+      ...data,
+      updatedAt: new Date(),
+    };
+
+    if (data.slug) {
+      updateFields.slug = data.slug.trim().toLowerCase();
+    }
+
+    const result = await db.collection(COLLECTION_NAME).updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateFields }
+    );
+
+    return result.matchedCount > 0;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[Projects] Error updating project (${id}):`, msg);
+    throw new Error(msg);
+  }
+}
+
+/**
+ * Deletes a project by its MongoDB ObjectId.
+ */
+export async function deleteProject(id: string): Promise<boolean> {
+  try {
+    const db = await getDatabase();
+    if (!db) throw new Error("Database connection unavailable.");
+    if (!ObjectId.isValid(id)) throw new Error("Invalid project ID format.");
+
+    const result = await db.collection(COLLECTION_NAME).deleteOne({ _id: new ObjectId(id) });
+    return result.deletedCount > 0;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[Projects] Error deleting project (${id}):`, msg);
+    throw new Error(msg);
+  }
+}
+
+// ─────────────────────────────────────────────
+// Project Preview Image : GridFS functions
+// ─────────────────────────────────────────────
+
+const PROJECT_ASSET_BUCKET = "site_assets";
+const PROJECT_PREVIEW_ASSET_TYPE = "projectPreview";
+
+/**
+ * Stores a project preview image in GridFS, replacing any prior preview for the same project.
+ * Updates the project document's previewImage field with a cache-busted URL reference.
+ */
+export async function storeProjectPreviewFile(
+  projectId: string,
+  fileBuffer: Buffer,
+  mimeType: string,
+  filename: string
+): Promise<string> {
+  const db = await getDatabase();
+  if (!db) throw new Error("Database connection unavailable.");
+  if (!ObjectId.isValid(projectId)) throw new Error("Invalid project ID.");
+
+  const bucket = new GridFSBucket(db, { bucketName: PROJECT_ASSET_BUCKET });
+
+  // Remove any prior GridFS files for this project's preview
+  try {
+    const existing = await bucket
+      .find({ "metadata.assetType": PROJECT_PREVIEW_ASSET_TYPE, "metadata.projectId": projectId })
+      .toArray();
+    for (const f of existing) {
+      await bucket.delete(f._id).catch(() => {});
+    }
+  } catch (cleanErr) {
+    console.warn("[Projects] Preview cleanup notice:", cleanErr);
+  }
+
+  // Upload new binary
+  const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+  const uploadStream = bucket.openUploadStream(safeFilename, {
+    metadata: {
+      contentType: mimeType,
+      assetType: PROJECT_PREVIEW_ASSET_TYPE,
+      projectId,
+      uploadedAt: new Date(),
+    },
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    uploadStream.on("finish", () => resolve());
+    uploadStream.on("error", (err) => reject(err));
+    uploadStream.write(fileBuffer);
+    uploadStream.end();
+  });
+
+  const url = `/api/projects/preview/${projectId}?v=${Date.now()}`;
+
+  // Update the project document with the new URL reference
+  await db.collection(COLLECTION_NAME).updateOne(
+    { _id: new ObjectId(projectId) },
+    { $set: { previewImage: url, updatedAt: new Date() } }
+  );
+
+  return url;
+}
+
+/**
+ * Retrieves the preview image stream for a project from GridFS.
+ */
+export async function getProjectPreviewStream(
+  projectId: string
+): Promise<{ stream: Readable; contentType: string; filename: string } | null> {
+  const db = await getDatabase();
+  if (!db) return null;
+  if (!ObjectId.isValid(projectId)) return null;
+
+  const bucket = new GridFSBucket(db, { bucketName: PROJECT_ASSET_BUCKET });
+  const files = await bucket
+    .find({ "metadata.assetType": PROJECT_PREVIEW_ASSET_TYPE, "metadata.projectId": projectId })
+    .sort({ uploadDate: -1 })
+    .limit(1)
+    .toArray();
+
+  if (!files || files.length === 0) return null;
+
+  const file = files[0];
+  const stream = bucket.openDownloadStream(file._id);
+  const contentType =
+    (file.metadata as any)?.contentType ||
+    (file as any).contentType ||
+    "application/octet-stream";
+
+  return {
+    stream: stream as unknown as Readable,
+    contentType,
+    filename: file.filename,
+  };
+}
+
+/**
+ * Deletes all GridFS preview images associated with a project.
+ * Call this before deleteProject() to avoid orphaned GridFS files.
+ */
+export async function deleteProjectPreviewForProject(projectId: string): Promise<void> {
+  if (!ObjectId.isValid(projectId)) return;
+  try {
+    const db = await getDatabase();
+    if (!db) return;
+    const bucket = new GridFSBucket(db, { bucketName: PROJECT_ASSET_BUCKET });
+    const files = await bucket
+      .find({ "metadata.assetType": PROJECT_PREVIEW_ASSET_TYPE, "metadata.projectId": projectId })
+      .toArray();
+    for (const f of files) {
+      await bucket.delete(f._id).catch(() => {});
+    }
+  } catch (err) {
+    console.warn(`[Projects] Preview delete notice for project ${projectId}:`, err);
+  }
+}
+

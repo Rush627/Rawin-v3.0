@@ -1,0 +1,204 @@
+import { cookies } from "next/headers";
+import { SignJWT, jwtVerify } from "jose";
+import bcrypt from "bcryptjs";
+import { getDatabase } from "./mongodb";
+
+export const SESSION_COOKIE_NAME = "rawin_admin_session";
+const SESSION_EXPIRATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
+
+// Key secret for HMAC-SHA256 signature (min 32 bytes)
+export function getSecretKey(): Uint8Array {
+  const secret = process.env.SESSION_SECRET;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CRITICAL SECURITY CONFIGURATION ERROR: SESSION_SECRET is not configured. Server failing closed."
+      );
+    }
+    // Only in non-production local development:
+    console.warn(
+      "[Auth Security Warning] SESSION_SECRET is not set in development environment. Using temporary local dev secret."
+    );
+    return new TextEncoder().encode("rawin_3_0_dev_only_temporary_secret_key_2026".padEnd(32, "!"));
+  }
+
+  if (secret.length < 32) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CRITICAL SECURITY CONFIGURATION ERROR: SESSION_SECRET must be at least 32 characters long."
+      );
+    }
+  }
+
+  return new TextEncoder().encode(secret.padEnd(32, "!"));
+}
+
+export interface AdminSessionPayload {
+  email: string;
+  role: "admin";
+  issuedAt: number;
+}
+
+/**
+ * Signs a cryptographic JWT session token.
+ */
+export async function signSessionToken(email: string): Promise<string> {
+  const secretKey = getSecretKey();
+  return new SignJWT({ email: email.toLowerCase(), role: "admin" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${SESSION_EXPIRATION_SECONDS}s`)
+    .sign(secretKey);
+}
+
+/**
+ * Verifies a cryptographic JWT session token.
+ */
+export async function verifySessionToken(token: string): Promise<AdminSessionPayload | null> {
+  try {
+    const secretKey = getSecretKey();
+    const { payload } = await jwtVerify(token, secretKey, {
+      algorithms: ["HS256"],
+    });
+
+    if (payload.role !== "admin" || typeof payload.email !== "string") {
+      return null;
+    }
+
+    return {
+      email: payload.email,
+      role: "admin",
+      issuedAt: typeof payload.iat === "number" ? payload.iat : Date.now(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Verifies admin credentials against MongoDB or environment fallback.
+ */
+export async function verifyAdminCredentials(
+  emailInput: string,
+  passwordInput: string
+): Promise<{ success: boolean; email?: string; error?: string }> {
+  const email = emailInput.trim().toLowerCase();
+  const password = passwordInput;
+
+  if (!email || !password) {
+    return { success: false, error: "Email and password are required." };
+  }
+
+  // 1. Check MongoDB Atlas admins collection
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const adminsCol = db.collection("admins");
+      const adminDoc = await adminsCol.findOne({ email });
+
+      if (adminDoc && adminDoc.passwordHash) {
+        const passwordMatches = await bcrypt.compare(password, adminDoc.passwordHash);
+        if (passwordMatches) {
+          // Update last login timestamp asynchronously
+          adminsCol.updateOne({ _id: adminDoc._id }, { $set: { lastLoginAt: new Date() } }).catch(() => {});
+          return { success: true, email: adminDoc.email };
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[Auth] Database check error:", err);
+  }
+
+  // 2. Check environment credentials fallback
+  const envEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+  const envPassword = process.env.ADMIN_PASSWORD || "";
+  const envPasswordHash = process.env.ADMIN_PASSWORD_HASH || "";
+
+  if (envEmail && email === envEmail) {
+    let matches = false;
+
+    if (envPasswordHash) {
+      matches = await bcrypt.compare(password, envPasswordHash);
+    } else if (envPassword) {
+      // Strictly disallowed in production
+      if (process.env.NODE_ENV === "production") {
+        console.error(
+          "[Auth Critical Error] Plaintext ADMIN_PASSWORD cannot be used in production. Please set ADMIN_PASSWORD_HASH."
+        );
+        return {
+          success: false,
+          error: "Authentication service misconfiguration. Contact administrator.",
+        };
+      }
+      matches = password === envPassword;
+    } else if (process.env.NODE_ENV === "production") {
+      // In production with no hash configured and user not in DB
+      return { success: false, error: "Invalid email or password." };
+    }
+
+    if (matches) {
+      // Sync into MongoDB admins collection if connected and missing
+      try {
+        const db = await getDatabase();
+        if (db) {
+          const adminsCol = db.collection("admins");
+          const existing = await adminsCol.findOne({ email: envEmail });
+          if (!existing) {
+            const hash = envPasswordHash || (await bcrypt.hash(password, 12));
+            await adminsCol.insertOne({
+              email: envEmail,
+              passwordHash: hash,
+              createdAt: new Date(),
+              lastLoginAt: new Date(),
+            });
+          }
+        }
+      } catch {
+        // Non-blocking sync
+      }
+
+      return { success: true, email: envEmail };
+    }
+  }
+
+  return { success: false, error: "Invalid email or password." };
+}
+
+/**
+ * Creates and sets the secure HTTP-only admin session cookie.
+ */
+export async function createAdminSession(email: string): Promise<void> {
+  const token = await signSessionToken(email);
+  const cookieStore = await cookies();
+
+  cookieStore.set(SESSION_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_EXPIRATION_SECONDS,
+  });
+}
+
+/**
+ * Returns the active admin session if valid, or null.
+ */
+export async function getAdminSession(): Promise<AdminSessionPayload | null> {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
+
+  if (!sessionCookie?.value) {
+    return null;
+  }
+
+  return verifySessionToken(sessionCookie.value);
+}
+
+/**
+ * Destroys the admin session cookie.
+ */
+export async function destroyAdminSession(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE_NAME);
+}

@@ -1,0 +1,168 @@
+"use client";
+
+import { useEffect, useState, useRef, useCallback } from "react";
+import { usePathname } from "next/navigation";
+import { Lightbulb, Sparkles } from "lucide-react";
+
+const TORCH_MESSAGES = [
+  "Darkness in your life? Well, I can't change that, but you can light up this page!",
+  "Feeling lost in the dark? Click here to reveal the light!",
+  "Need a little illumination? Tap this button to brighten things up!",
+  "Unveil the hidden details! Activate the torch mode here.",
+  "Experiencing a power outage? Not on this page! Click for light.",
+  "Out of power? Nah, we've got built-in brightness.",
+  "This isn’t a horror movie, turn the light on, brave soul!",
+  "Sometimes, you’ve got to make your own light. Click here.",
+  "This site’s got secrets. Torch mode might reveal a few.",
+  "Dim vibes? Let there be light, literally.",
+  "Behind every dark page is a bright click. Try it.",
+];
+
+export default function TorchSpotlight() {
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+  const [showMessage, setShowMessage] = useState<boolean>(false);
+  const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false);
+
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef<{ x: number; y: number }>({ x: -1000, y: -1000 });
+  const rafRef = useRef<number | null>(null);
+
+  // Initialize state & detect touch
+  useEffect(() => {
+    const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    setIsTouchDevice(hasTouch);
+
+    const saved = localStorage.getItem("rawin_torch_active");
+    if (saved === "true" && !hasTouch) {
+      setIsActive(true);
+    }
+
+    // Show initial welcome tip for 6 seconds on desktop
+    if (!hasTouch) {
+      const randomMsg = TORCH_MESSAGES[Math.floor(Math.random() * TORCH_MESSAGES.length)];
+      setMessage(randomMsg);
+      setShowMessage(true);
+      const timer = setTimeout(() => setShowMessage(false), 7000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Sync state with localStorage
+  const toggleTorch = () => {
+    const next = !isActive;
+    setIsActive(next);
+    localStorage.setItem("rawin_torch_active", String(next));
+  };
+
+  const showRandomMessage = useCallback(() => {
+    const randomMsg = TORCH_MESSAGES[Math.floor(Math.random() * TORCH_MESSAGES.length)];
+    setMessage(randomMsg);
+    setShowMessage(true);
+  }, []);
+
+  const hideMessage = useCallback(() => {
+    setShowMessage(false);
+  }, []);
+
+  // Update pointer coordinates using requestAnimationFrame (60 FPS, no React re-render lag)
+  useEffect(() => {
+    if (!isActive || isTouchDevice) return;
+
+    const onPointerMove = (e: MouseEvent) => {
+      posRef.current.x = e.clientX;
+      posRef.current.y = e.clientY;
+
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(() => {
+          if (overlayRef.current) {
+            overlayRef.current.style.setProperty("--torch-x", `${posRef.current.x}px`);
+            overlayRef.current.style.setProperty("--torch-y", `${posRef.current.y}px`);
+          }
+          rafRef.current = null;
+        });
+      }
+    };
+
+    window.addEventListener("mousemove", onPointerMove, { passive: true });
+
+    return () => {
+      window.removeEventListener("mousemove", onPointerMove);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [isActive, isTouchDevice]);
+
+  const pathname = usePathname();
+
+  // Hide on touch devices, admin routes, and AI experience
+  if (
+    isTouchDevice ||
+    pathname.startsWith("/admin") ||
+    pathname === "/ai" ||
+    pathname.startsWith("/ai/")
+  ) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* 60 FPS Spotlight Overlay with Radial Mask (Non-blocking, native scroll intact) */}
+      <div
+        ref={overlayRef}
+        aria-hidden="true"
+        className={`fixed inset-0 pointer-events-none z-40 transition-opacity duration-500 ${
+          isActive ? "opacity-100" : "opacity-0"
+        }`}
+        style={{
+          background: `radial-gradient(circle 38vmax at var(--torch-x, 50vw) var(--torch-y, 50vh), rgba(24, 155, 173, 0.12) 0%, rgba(255, 255, 255, 0.04) 25%, rgba(16, 16, 25, 0.88) 75%)`,
+        }}
+      />
+
+      {/* Floating Controller Cluster (container non-blocking, only children interactive) */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
+        {/* Message Bubble */}
+        <div
+          className={`glass-panel max-w-xs px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform ${
+            showMessage
+              ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+              : "opacity-0 translate-y-3 scale-95 pointer-events-none"
+          }`}
+        >
+          <div className="flex items-start gap-2">
+            <Sparkles className="w-4 h-4 text-pacific-cyan shrink-0 mt-0.5" />
+            <p className="text-xs text-foreground/90 font-mono leading-relaxed">{message}</p>
+          </div>
+        </div>
+
+        {/* Toggle Button */}
+        <button
+          onClick={toggleTorch}
+          onMouseEnter={showRandomMessage}
+          onMouseLeave={hideMessage}
+          aria-label={isActive ? "Disable Torch Mode" : "Enable Torch Mode"}
+          title={isActive ? "Torch Mode Active" : "Light up the page"}
+          className={`group relative flex items-center justify-center w-12 h-12 rounded-full border transition-all duration-300 shadow-xl cursor-pointer pointer-events-auto ${
+            isActive
+              ? "bg-pacific-cyan/20 border-pacific-cyan text-pacific-cyan shadow-[0_0_20px_rgba(24,155,173,0.4)]"
+              : "bg-surface/80 border-surface-border text-muted hover:text-foreground hover:border-pacific-cyan/50 hover:bg-surface"
+          }`}
+        >
+          <Lightbulb
+            className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${
+              isActive ? "fill-pacific-cyan/40 text-pacific-cyan animate-pulse" : ""
+            }`}
+          />
+          {isActive && (
+            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pacific-cyan opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-pacific-cyan"></span>
+            </span>
+          )}
+        </button>
+      </div>
+    </>
+  );
+}
