@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { getDatabase } from "./mongodb";
@@ -166,15 +166,79 @@ export async function verifyAdminCredentials(
 }
 
 /**
+ * Detects whether a host corresponds to localhost or an RFC 1918 private LAN IP.
+ */
+export function isLocalOrLanHost(host: string): boolean {
+  if (!host) return false;
+  const hostname = host.split(":")[0].toLowerCase().trim();
+
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "0.0.0.0" ||
+    hostname.endsWith(".local")
+  ) {
+    return true;
+  }
+
+  // 10.0.0.0/8
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+    return true;
+  }
+
+  // 192.168.0.0/16
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+    return true;
+  }
+
+  // 172.16.0.0/12 (172.16.0.0 - 172.31.255.255)
+  const match172 = hostname.match(/^172\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/);
+  if (match172) {
+    const octet = parseInt(match172[1], 10);
+    if (octet >= 16 && octet <= 31) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Creates and sets the secure HTTP-only admin session cookie.
  */
 export async function createAdminSession(email: string): Promise<void> {
   const token = await signSessionToken(email);
   const cookieStore = await cookies();
 
+  let isSecure = process.env.NODE_ENV === "production";
+
+  try {
+    const headerList = await headers();
+    const host = headerList.get("host") || "";
+    const forwardedProto = headerList.get("x-forwarded-proto");
+    const referer = headerList.get("referer");
+    const origin = headerList.get("origin");
+
+    const isHttps =
+      forwardedProto === "https" ||
+      referer?.startsWith("https://") ||
+      origin?.startsWith("https://");
+
+    // If accessing over plain HTTP on a local or private LAN host (e.g. physical phone connecting to
+    // http://192.168.29.190:3000), we must not set the Secure cookie flag; otherwise physical mobile
+    // browsers will reject or refuse to transmit the cookie over HTTP per RFC 6265bis.
+    // In real production HTTPS (e.g. https://rushan-siddiqui.com), isHttps or public domain host guarantees isSecure=true.
+    if (!isHttps && isLocalOrLanHost(host)) {
+      isSecure = false;
+    }
+  } catch {
+    // Fallback safely to process.env.NODE_ENV === "production"
+  }
+
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_EXPIRATION_SECONDS,

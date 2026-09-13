@@ -5,6 +5,7 @@ import { BookOpen, Calendar, Clock, ArrowRight, Sparkles, PenLine } from "lucide
 import { getPublishedPosts } from "@/lib/blog";
 import type { BlogPost } from "@/lib/blog";
 import BlogCard3D from "@/components/BlogCard3D";
+import BorderGlow from "@/components/BorderGlow";
 
 export const metadata: Metadata = {
   title: "Blog & Architecture Notes | Rushan Siddiqui",
@@ -70,89 +71,94 @@ function ArticleCoverFallback({ title, index }: { title: string; index: number }
 /** Featured / Latest article : dominant editorial card */
 function FeaturedArticle({ post, isFeatured }: { post: BlogPost; isFeatured: boolean }) {
   return (
-    <BlogCard3D isFeatured={isFeatured} className="w-full">
-      <Link href={`/blog/${post.slug}`} className="group block" aria-label={`Read: ${post.title}`}>
-        <article className="relative rounded-2xl border border-white/[0.08] group-hover:border-pacific-cyan/30 overflow-hidden transition-all duration-300 bg-[rgba(22,22,34,0.5)]">
-        {/* Cover image / fallback */}
-        <div className="relative w-full h-52 sm:h-64 md:h-72 overflow-hidden">
-          {post.coverImage ? (
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              fill
-              priority
-              unoptimized
-              className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-              sizes="(max-width: 768px) 100vw, 900px"
-            />
-          ) : (
-            <ArticleCoverFallback title={post.title} index={0} />
-          )}
-          {/* Gradient overlay at bottom */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.92)] via-[rgba(16,16,25,0.4)] to-transparent" />
+    <BorderGlow borderRadius={16} className="w-full">
+      <BlogCard3D isFeatured={isFeatured} className="w-full">
+        <Link href={`/blog/${post.slug}`} className="group block" aria-label={`Read: ${post.title}`}>
+          <article className="relative rounded-2xl border border-white/[0.08] group-hover:border-pacific-cyan/30 overflow-hidden transition-all duration-300 bg-[rgba(22,22,34,0.5)]">
+          {/* Cover image / fallback */}
+          <div className="relative w-full h-52 sm:h-64 md:h-72 overflow-hidden">
+            {post.coverImage ? (
+              <Image
+                src={post.coverImage}
+                alt={post.title}
+                fill
+                priority
+                unoptimized
+                className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                sizes="(max-width: 768px) 100vw, 900px"
+              />
+            ) : (
+              <ArticleCoverFallback title={post.title} index={0} />
+            )}
+            {/* Gradient overlay at bottom */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.92)] via-[rgba(16,16,25,0.4)] to-transparent" />
 
-          {/* Badge overlaid on image */}
-          <div className="absolute top-5 left-5 flex items-center gap-2.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-ink-black/70 backdrop-blur-sm border border-pacific-cyan/30 text-pacific-cyan">
-              {isFeatured ? "FEATURED" : "LATEST"}
-            </span>
-          </div>
-        </div>
-
-        {/* Content area */}
-        <div className="p-6 sm:p-8 flex flex-col gap-4">
-          {/* Meta */}
-          <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-muted/70">
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-3 h-3 text-pacific-cyan/70" />
-              {formatDateLong(post.publishedAt)}
-            </span>
-            <span className="text-white/20" aria-hidden="true">·</span>
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-3 h-3 text-pacific-cyan/70" />
-              {post.readTime}
-            </span>
-          </div>
-
-          {/* Title */}
-          <h2 className="text-2xl sm:text-3xl md:text-[2rem] font-bold font-space text-foreground leading-tight tracking-tight group-hover:text-pacific-cyan transition-colors duration-300">
-            {post.title}
-          </h2>
-
-          {/* Excerpt */}
-          {post.excerpt && (
-            <p className="text-sm sm:text-base text-muted leading-relaxed line-clamp-3">
-              {post.excerpt}
-            </p>
-          )}
-
-          {/* Bottom row: tags + CTA */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-white/[0.06]">
-            <div className="flex flex-wrap gap-1.5">
-              {post.tags.slice(0, 4).map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded text-[11px] font-mono text-pacific-cyan/80 bg-pacific-cyan/[0.07] border border-pacific-cyan/15"
-                >
-                  #{tag}
-                </span>
-              ))}
+            {/* Badge overlaid on image */}
+            <div className="absolute top-5 left-5 flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-ink-black/70 backdrop-blur-sm border border-pacific-cyan/30 text-pacific-cyan">
+                {isFeatured ? "FEATURED" : "LATEST"}
+              </span>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-pacific-cyan group-hover:gap-2.5 transition-all duration-200">
-              Read Article
-              <ArrowRight className="w-3.5 h-3.5" />
-            </span>
           </div>
-        </div>
-      </article>
-    </Link>
-    </BlogCard3D>
+
+          {/* Content area */}
+          <div className="p-6 sm:p-8 flex flex-col gap-4">
+            {/* Meta */}
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-muted/70">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3 h-3 text-pacific-cyan/70" />
+                {formatDateLong(post.publishedAt)}
+              </span>
+              <span className="text-white/20" aria-hidden="true">·</span>
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3 h-3 text-pacific-cyan/70" />
+                {post.readTime}
+              </span>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-2xl sm:text-3xl md:text-[2rem] font-bold font-space text-foreground leading-tight tracking-tight group-hover:text-pacific-cyan transition-colors duration-300">
+              {post.title}
+            </h2>
+
+            {/* Excerpt */}
+            {post.excerpt && (
+              <p className="text-sm sm:text-base text-muted leading-relaxed line-clamp-3">
+                {post.excerpt}
+              </p>
+            )}
+
+            {/* Bottom row: tags + CTA */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-white/[0.06]">
+              <div className="flex flex-wrap gap-1.5">
+                {post.tags.slice(0, 4).map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2 py-0.5 rounded text-[11px] font-mono text-pacific-cyan/80 bg-pacific-cyan/[0.07] border border-pacific-cyan/15"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-pacific-cyan group-hover:gap-2.5 transition-all duration-200">
+                Read Article
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+        </article>
+      </Link>
+      </BlogCard3D>
+    </BorderGlow>
   );
 }
 
 /** Regular article card : editorial grid item */
 function ArticleCard({ post, index }: { post: BlogPost; index: number }) {
-  return (
+  // EXCLUSION C: The blog article card on the LEFT side (index % 2 === 0) must NOT receive BorderGlow
+  const isLeftCard = index % 2 === 0;
+
+  const cardElement = (
     <BlogCard3D isFeatured={false} className="h-full">
       <Link
         href={`/blog/${post.slug}`}
@@ -225,6 +231,16 @@ function ArticleCard({ post, index }: { post: BlogPost; index: number }) {
       </article>
     </Link>
     </BlogCard3D>
+  );
+
+  if (isLeftCard) {
+    return cardElement;
+  }
+
+  return (
+    <BorderGlow borderRadius={12} className="h-full">
+      {cardElement}
+    </BorderGlow>
   );
 }
 

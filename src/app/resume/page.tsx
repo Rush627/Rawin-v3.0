@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getSiteContent } from "@/lib/site-content";
 import ResumeCard3D from "@/components/ResumeCard3D";
+import BorderGlow from "@/components/BorderGlow";
 
 export const metadata: Metadata = {
   title: "Resume & Curriculum Vitae | Rushan Siddiqui",
@@ -200,11 +201,13 @@ export default async function ResumePage() {
           <h2 className="text-xs uppercase font-mono tracking-widest text-pacific-cyan font-bold">
             Summary
           </h2>
-          <div className="p-6 sm:p-7 rounded-2xl bg-ink-black/40 border border-white/[0.06] backdrop-blur-sm">
-            <p className="text-base sm:text-lg text-muted/90 leading-relaxed font-sans max-w-3xl">
-              {cleanSummary}
-            </p>
-          </div>
+          <BorderGlow borderRadius={16} className="w-full">
+            <div className="p-6 sm:p-7 rounded-2xl bg-ink-black/40 border border-white/[0.06] backdrop-blur-sm">
+              <p className="text-base sm:text-lg text-muted/90 leading-relaxed font-sans max-w-3xl">
+                {cleanSummary}
+              </p>
+            </div>
+          </BorderGlow>
         </section>
 
         {/* TECHNICAL SKILLS */}
@@ -218,26 +221,28 @@ export default async function ResumePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
             {skillsList.map((group, idx) => (
-              <ResumeCard3D key={group.id || idx} elevateY={-4} className="h-full">
-                <div className="p-5 sm:p-6 rounded-2xl bg-ink-black/40 border border-white/[0.07] hover:border-white/[0.14] transition-colors flex flex-col gap-4 h-full">
-                  <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-3">
-                    <span className="text-xs font-mono text-pacific-cyan uppercase font-semibold tracking-wider">
-                      {group.title}
-                    </span>
-                    {getSkillIcon(group.title)}
-                  </div>
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {group.skills.map((skill, sIdx) => (
-                      <span
-                        key={sIdx}
-                        className="px-3 py-1 rounded-lg bg-white/[0.03] border border-white/[0.07] text-xs sm:text-sm font-space text-foreground/90 hover:border-pacific-cyan/30 hover:text-foreground transition-colors"
-                      >
-                        {skill}
+              <BorderGlow key={group.id || idx} borderRadius={16} className="h-full">
+                <ResumeCard3D elevateY={-4} className="h-full">
+                  <div className="p-5 sm:p-6 rounded-2xl bg-ink-black/40 border border-white/[0.07] hover:border-white/[0.14] transition-colors flex flex-col gap-4 h-full">
+                    <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-3">
+                      <span className="text-xs font-mono text-pacific-cyan uppercase font-semibold tracking-wider">
+                        {group.title}
                       </span>
-                    ))}
+                      {getSkillIcon(group.title)}
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {group.skills.map((skill, sIdx) => (
+                        <span
+                          key={sIdx}
+                          className="px-3 py-1 rounded-lg bg-white/[0.03] border border-white/[0.07] text-xs sm:text-sm font-space text-foreground/90 hover:border-pacific-cyan/30 hover:text-foreground transition-colors"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </ResumeCard3D>
+                </ResumeCard3D>
+              </BorderGlow>
             ))}
           </div>
         </section>

@@ -1,0 +1,462 @@
+/* React Bits ProfileCard - Scoped for RAWIN 3.0 */
+
+.pc-card-wrapper {
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  --pointer-from-center: 0;
+  --pointer-from-top: 0.5;
+  --pointer-from-left: 0.5;
+  --card-opacity: 0.25;
+  --rotate-x: 0deg;
+  --rotate-y: 0deg;
+  --background-x: 50%;
+  --background-y: 50%;
+  --grain: none;
+  --icon: none;
+  --behind-gradient: none;
+  --behind-glow-color: rgba(24, 155, 173, 0.4);
+  --behind-glow-size: 45%;
+  --inner-gradient: none;
+  --sunpillar-1: hsl(2, 100%, 73%);
+  --sunpillar-2: hsl(53, 100%, 69%);
+  --sunpillar-3: hsl(93, 100%, 69%);
+  --sunpillar-4: hsl(176, 100%, 76%);
+  --sunpillar-5: hsl(228, 100%, 74%);
+  --sunpillar-6: hsl(283, 100%, 73%);
+  --sunpillar-clr-1: var(--sunpillar-1);
+  --sunpillar-clr-2: var(--sunpillar-2);
+  --sunpillar-clr-3: var(--sunpillar-3);
+  --sunpillar-clr-4: var(--sunpillar-4);
+  --sunpillar-clr-5: var(--sunpillar-5);
+  --sunpillar-clr-6: var(--sunpillar-6);
+  --card-radius: 24px;
+
+  perspective: 600px;
+  transform: translate3d(0, 0, 0.1px);
+  position: relative;
+  touch-action: pan-y;
+  width: fit-content;
+  max-width: 100%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pc-card-wrapper {
+    touch-action: none;
+  }
+
+  .pc-card-wrapper:hover,
+  .pc-card-wrapper.active {
+    --card-opacity: 0.85;
+  }
+}
+
+.pc-behind {
+  position: absolute;
+  inset: -14px;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--pointer-x) var(--pointer-y),
+    var(--behind-glow-color) 0%,
+    transparent var(--behind-glow-size)
+  );
+  filter: blur(36px) saturate(1.1);
+  opacity: calc(0.7 * var(--card-opacity));
+  transition: opacity 250ms ease;
+  border-radius: var(--card-radius);
+}
+
+.pc-card {
+  width: 310px;
+  height: 432px;
+  max-width: 100%;
+  aspect-ratio: 0.718;
+  display: grid;
+  border-radius: var(--card-radius);
+  position: relative;
+  background-blend-mode: normal;
+  box-shadow: rgba(0, 0, 0, 0.8) calc((var(--pointer-from-left) * 10px) - 3px)
+    calc((var(--pointer-from-top) * 20px) - 6px) 24px -6px,
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  transform: translateZ(0) rotateX(0deg) rotateY(0deg);
+  background: #101019;
+  backface-visibility: hidden;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pc-card:hover,
+  .pc-card.active {
+    transition: none;
+    transform: translateZ(0) rotateX(var(--rotate-y)) rotateY(var(--rotate-x));
+  }
+}
+
+.pc-card-shell.entering .pc-card {
+  transition: transform 180ms ease-out;
+}
+
+.pc-card-shell {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.pc-card * {
+  display: grid;
+  grid-area: 1/-1;
+  border-radius: var(--card-radius);
+  pointer-events: none;
+}
+
+.pc-inside {
+  inset: 0;
+  position: absolute;
+  background-image: var(--inner-gradient);
+  background-color: #101019;
+  transform: none;
+}
+
+/* Holographic Shine Layer */
+.pc-shine {
+  mask-image: var(--icon);
+  mask-mode: luminance;
+  mask-repeat: repeat;
+  mask-size: 150%;
+  mask-position: top calc(200% - (var(--background-y) * 5)) left calc(100% - var(--background-x));
+  transition: opacity 0.5s ease;
+  opacity: 0;
+  animation: holo-bg 18s linear infinite;
+  animation-play-state: running;
+  mix-blend-mode: color-dodge;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.pc-shine,
+.pc-shine::after {
+  --space: 5%;
+  --angle: -45deg;
+  transform: translate3d(0, 0, 1px);
+  overflow: hidden;
+  background: transparent;
+  background-size: cover;
+  background-position: center;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      var(--sunpillar-clr-1) calc(var(--space) * 1),
+      var(--sunpillar-clr-2) calc(var(--space) * 2),
+      var(--sunpillar-clr-3) calc(var(--space) * 3),
+      var(--sunpillar-clr-4) calc(var(--space) * 4),
+      var(--sunpillar-clr-5) calc(var(--space) * 5),
+      var(--sunpillar-clr-6) calc(var(--space) * 6),
+      var(--sunpillar-clr-1) calc(var(--space) * 7)
+    ),
+    repeating-linear-gradient(
+      var(--angle),
+      #0e152e 0%,
+      hsl(180, 10%, 60%) 3.8%,
+      hsl(180, 29%, 66%) 4.5%,
+      hsl(180, 10%, 60%) 5.2%,
+      #0e152e 10%,
+      #0e152e 12%
+    ),
+    radial-gradient(
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsla(0, 0%, 0%, 0.1) 12%,
+      hsla(0, 0%, 0%, 0.15) 20%,
+      hsla(0, 0%, 0%, 0.25) 120%
+    );
+  background-position:
+    0 var(--background-y),
+    var(--background-x) var(--background-y),
+    center;
+  background-blend-mode: color, hard-light;
+  background-size:
+    500% 500%,
+    300% 300%,
+    200% 200%;
+  background-repeat: repeat;
+}
+
+.pc-shine::before,
+.pc-shine::after {
+  content: '';
+  background-position: center;
+  background-size: cover;
+  grid-area: 1/1;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.pc-shine::before {
+  background-image:
+    linear-gradient(
+      45deg,
+      var(--sunpillar-4),
+      var(--sunpillar-5),
+      var(--sunpillar-6),
+      var(--sunpillar-1),
+      var(--sunpillar-2),
+      var(--sunpillar-3)
+    ),
+    radial-gradient(circle at var(--pointer-x) var(--pointer-y), hsl(0, 0%, 70%) 0%, hsla(0, 0%, 30%, 0.2) 90%),
+    var(--grain);
+  background-size:
+    250% 250%,
+    100% 100%,
+    220px 220px;
+  background-position:
+    var(--pointer-x) var(--pointer-y),
+    center,
+    calc(var(--pointer-x) * 0.01) calc(var(--pointer-y) * 0.01);
+  background-blend-mode: color-dodge;
+  filter: brightness(1.1) contrast(1.2) saturate(0.8);
+  mix-blend-mode: color-dodge;
+}
+
+.pc-shine::after {
+  background-position:
+    0 var(--background-y),
+    calc(var(--background-x) * 0.4) calc(var(--background-y) * 0.5),
+    center;
+  background-size:
+    200% 300%,
+    700% 700%,
+    100% 100%;
+  mix-blend-mode: difference;
+  filter: brightness(0.7) contrast(1.2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pc-card:hover .pc-shine,
+  .pc-card.active .pc-shine {
+    opacity: 0.35;
+    animation-play-state: paused;
+  }
+
+  .pc-card:hover .pc-shine::before,
+  .pc-card.active .pc-shine::before {
+    opacity: 0.4;
+  }
+
+  .pc-card:hover .pc-shine::after,
+  .pc-card.active .pc-shine::after {
+    opacity: 0.3;
+  }
+}
+
+/* Controlled Glare Spotlight */
+.pc-glare {
+  transform: translate3d(0, 0, 1.1px);
+  overflow: hidden;
+  background-image: radial-gradient(
+    farthest-corner circle at var(--pointer-x) var(--pointer-y),
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(24, 155, 173, 0.12) 35%,
+    transparent 70%
+  );
+  mix-blend-mode: overlay;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 3;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pc-card:hover .pc-glare,
+  .pc-card.active .pc-glare {
+    opacity: 0.65;
+  }
+}
+
+/* Portrait / Avatar Layer */
+.pc-avatar-content {
+  overflow: hidden;
+  transform: translateZ(1px);
+  backface-visibility: hidden;
+  z-index: 1;
+}
+
+.pc-avatar-content .avatar {
+  width: 100%;
+  position: absolute;
+  left: 50%;
+  transform-origin: 50% 100%;
+  transform: translateX(calc(-50% + (var(--pointer-from-left) - 0.5) * 6px)) translateZ(0)
+    scaleY(calc(1 + (var(--pointer-from-top) - 0.5) * 0.02)) scaleX(calc(1 + (var(--pointer-from-left) - 0.5) * 0.01));
+  bottom: -1px;
+  backface-visibility: hidden;
+  will-change: transform;
+  transition: transform 120ms ease-out;
+  object-fit: cover;
+  display: block;
+}
+
+.pc-avatar-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+
+.pc-user-info {
+  display: none;
+}
+
+/* Text Details inside Card */
+.pc-content:not(.pc-avatar-content) {
+  max-height: 100%;
+  overflow: hidden;
+  text-align: center;
+  position: relative;
+  transform: translate3d(
+    calc(var(--pointer-from-left) * -6px + 3px),
+    calc(var(--pointer-from-top) * -6px + 3px),
+    0.1px
+  );
+  z-index: 5;
+}
+
+.pc-details {
+  width: 100%;
+  position: absolute;
+  top: 2.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.pc-details h3 {
+  font-weight: 700;
+  margin: 0;
+  font-size: 1.5rem;
+  background-image: linear-gradient(to bottom, #FFFFFF, #71C4FF);
+  background-size: 100% 100%;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.pc-details p {
+  font-weight: 600;
+  position: relative;
+  top: 4px;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  margin: 0 auto;
+  width: max-content;
+  background-image: linear-gradient(to bottom, #F5F7FA, #189BAD);
+  background-size: 100% 100%;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+@keyframes holo-bg {
+  0% {
+    background-position:
+      0 var(--background-y),
+      0 0,
+      center;
+  }
+  100% {
+    background-position:
+      0 var(--background-y),
+      90% 90%,
+      center;
+  }
+}
+
+/* Responsive Breakpoints preserving ~0.718 aspect ratio */
+@media (max-width: 768px) {
+  .pc-card {
+    width: 270px;
+    height: 376px;
+  }
+
+  .pc-details {
+    top: 1.8em;
+  }
+
+  .pc-details h3 {
+    font-size: 1.35rem;
+  }
+
+  .pc-details p {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 412px) {
+  .pc-card {
+    width: 255px;
+    height: 355px;
+  }
+
+  .pc-details {
+    top: 1.6em;
+  }
+
+  .pc-details h3 {
+    font-size: 1.25rem;
+  }
+
+  .pc-details p {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .pc-card {
+    width: 248px;
+    height: 345px;
+  }
+}
+
+@media (max-width: 375px) {
+  .pc-card {
+    width: 238px;
+    height: 331px;
+  }
+
+  .pc-details {
+    top: 1.4em;
+  }
+
+  .pc-details h3 {
+    font-size: 1.15rem;
+  }
+
+  .pc-details p {
+    font-size: 0.68rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-card {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  .pc-shine {
+    animation: none !important;
+    transition: none !important;
+  }
+  .pc-avatar-content .avatar {
+    transition: none !important;
+    transform: translateX(-50%) translateZ(0) !important;
+  }
+}

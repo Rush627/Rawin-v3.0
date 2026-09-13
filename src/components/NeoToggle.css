@@ -1,0 +1,396 @@
+/* ==========================================================================
+   Neo Toggle — CSS Implementation
+   Compact, technical, futuristic toggle with spectrum analyzer & telemetry
+   ========================================================================== */
+
+.neo-toggle-container {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* Screen-reader-friendly native checkbox */
+.neo-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+/* Interactive label wrapping track and status */
+.neo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  position: relative;
+}
+
+/* ==========================================================================
+   Track & Layers
+   ========================================================================== */
+
+.neo-track {
+  position: relative;
+  width: 80px;
+  height: 38px;
+  background-color: #181c20;
+  border-radius: 19px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  transition: border-color 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+              box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+              background-color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  box-sizing: border-box;
+}
+
+/* Keyboard Focus Treatment */
+.neo-toggle-input:focus-visible + .neo-toggle .neo-track {
+  outline: 2px solid #36f9c7;
+  outline-offset: 3px;
+}
+
+/* Background gradient layer */
+.neo-background-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 75% 50%, rgba(54, 249, 199, 0.12), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
+}
+
+/* Subtle tech grid layer */
+.neo-grid-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: linear-gradient(to right, rgba(54, 249, 199, 0.08) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(54, 249, 199, 0.08) 1px, transparent 1px);
+  background-size: 6px 6px;
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
+}
+
+/* Spectrum Analyzer */
+.neo-spectrum-analyzer {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.neo-spectrum-bar {
+  width: 2px;
+  border-radius: 1px;
+  background-color: #36f9c7;
+  height: 4px;
+  transform-origin: bottom;
+  box-shadow: 0 0 4px rgba(54, 249, 199, 0.4);
+}
+
+/* Track highlight overlay */
+.neo-track-highlight {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  transition: box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ==========================================================================
+   Thumb & Internals
+   ========================================================================== */
+
+.neo-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 30px;
+  height: 30px;
+  transform: translateX(0);
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+/* Thumb Pulse Ring */
+.neo-thumb-pulse {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: rgba(54, 249, 199, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.9);
+}
+
+/* Thumb Outer Ring */
+.neo-thumb-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  box-sizing: border-box;
+  transition: border-color 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+              box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Thumb Core */
+.neo-thumb-core {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #2b3036, #1c2024);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+              box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  box-sizing: border-box;
+}
+
+/* Waveform Icon */
+.neo-thumb-icon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neo-thumb-wave {
+  width: 100%;
+  height: 100%;
+  stroke: #73808c;
+  transition: stroke 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ==========================================================================
+   Status Indicator (ACTIVE / STANDBY)
+   ========================================================================== */
+
+.neo-status {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.neo-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.neo-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #555e67;
+  transition: background-color 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+              box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.neo-status-text {
+  color: #727e8a;
+  transition: color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ==========================================================================
+   ACTIVE (Checked) State
+   ========================================================================== */
+
+.neo-toggle-container.is-checked .neo-track {
+  border-color: rgba(54, 249, 199, 0.28);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5),
+              0 0 10px rgba(54, 249, 199, 0.12);
+}
+
+.neo-toggle-container.is-checked .neo-background-layer {
+  opacity: 1;
+}
+
+.neo-toggle-container.is-checked .neo-grid-layer {
+  opacity: 0.75;
+}
+
+.neo-toggle-container.is-checked .neo-spectrum-analyzer {
+  opacity: 0.9;
+}
+
+/* Spectrum Animation */
+.neo-toggle-container.is-checked .neo-spectrum-bar:nth-child(1) {
+  animation: neo-spectrum 0.75s ease-in-out infinite alternate;
+  animation-delay: 0.05s;
+}
+.neo-toggle-container.is-checked .neo-spectrum-bar:nth-child(2) {
+  animation: neo-spectrum 0.6s ease-in-out infinite alternate;
+  animation-delay: 0.2s;
+}
+.neo-toggle-container.is-checked .neo-spectrum-bar:nth-child(3) {
+  animation: neo-spectrum 0.85s ease-in-out infinite alternate;
+  animation-delay: 0.1s;
+}
+.neo-toggle-container.is-checked .neo-spectrum-bar:nth-child(4) {
+  animation: neo-spectrum 0.55s ease-in-out infinite alternate;
+  animation-delay: 0.25s;
+}
+.neo-toggle-container.is-checked .neo-spectrum-bar:nth-child(5) {
+  animation: neo-spectrum 0.7s ease-in-out infinite alternate;
+  animation-delay: 0.15s;
+}
+
+.neo-toggle-container.is-checked .neo-track-highlight {
+  box-shadow: inset 0 0 8px rgba(54, 249, 199, 0.15),
+              inset 0 1px 1px rgba(54, 249, 199, 0.25);
+}
+
+/* Checked Thumb Movement (80px - 30px - 3px - 3px = 44px) */
+.neo-toggle-container.is-checked .neo-thumb {
+  transform: translateX(44px);
+}
+
+/* Active Pulse Animation */
+.neo-toggle-container.is-checked .neo-thumb-pulse {
+  animation: neo-pulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.neo-toggle-container.is-checked .neo-thumb-ring {
+  border-color: #36f9c7;
+  box-shadow: 0 0 8px rgba(54, 249, 199, 0.5);
+}
+
+.neo-toggle-container.is-checked .neo-thumb-core {
+  background: radial-gradient(circle at 35% 35%, #5affd6, #36f9c7 65%, #18cca2);
+  box-shadow: 0 0 14px rgba(54, 249, 199, 0.65),
+              inset 0 1px 2px rgba(255, 255, 255, 0.45);
+}
+
+.neo-toggle-container.is-checked .neo-thumb-wave {
+  stroke: #0a251d;
+}
+
+.neo-toggle-container.is-checked .neo-status-dot {
+  background-color: #36f9c7;
+  box-shadow: 0 0 8px #36f9c7;
+}
+
+.neo-toggle-container.is-checked .neo-status-text {
+  color: #36f9c7;
+}
+
+/* ==========================================================================
+   Hover State
+   ========================================================================== */
+
+.neo-toggle:hover .neo-track {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.neo-toggle-container.is-checked .neo-toggle:hover .neo-track {
+  border-color: rgba(54, 249, 199, 0.45);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5),
+              0 0 14px rgba(54, 249, 199, 0.2);
+}
+
+.neo-toggle:hover .neo-thumb-ring {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.neo-toggle-container.is-checked .neo-toggle:hover .neo-thumb-ring {
+  border-color: #5affd6;
+  box-shadow: 0 0 12px rgba(54, 249, 199, 0.7);
+}
+
+/* ==========================================================================
+   Disabled State
+   ========================================================================== */
+
+.neo-toggle-container.is-disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.neo-toggle-container.is-disabled .neo-toggle {
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Keyframes
+   ========================================================================== */
+
+@keyframes neo-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+
+@keyframes neo-spectrum {
+  0% {
+    height: 3px;
+  }
+  50% {
+    height: 12px;
+  }
+  100% {
+    height: 5px;
+  }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .neo-track,
+  .neo-thumb,
+  .neo-background-layer,
+  .neo-grid-layer,
+  .neo-spectrum-analyzer,
+  .neo-thumb-ring,
+  .neo-thumb-core,
+  .neo-thumb-wave,
+  .neo-status-dot,
+  .neo-status-text {
+    transition: none !important;
+  }
+
+  .neo-thumb-pulse,
+  .neo-spectrum-bar {
+    animation: none !important;
+  }
+
+  .neo-toggle-container.is-checked .neo-spectrum-bar {
+    height: 8px !important;
+  }
+}

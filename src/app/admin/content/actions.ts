@@ -101,6 +101,12 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "logo",
     "favicon",
   ],
+  maintenance: [
+    "enabled",
+    "showMessage",
+    "message",
+    "endsAt",
+  ],
 };
 
 const LONG_FIELDS = new Set([

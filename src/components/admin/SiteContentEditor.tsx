@@ -38,6 +38,7 @@ import {
   Check,
 } from "lucide-react";
 import RawinSelect, { type RawinSelectOption } from "./RawinSelect";
+import NeoToggle from "@/components/NeoToggle";
 import type {
   SiteContent,
   ContentSectionKey,
@@ -1857,39 +1858,12 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
                       <span className="text-[11px] text-muted/70">Display your phone number publicly.</span>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold transition-colors ${
-                          content.contact.showPhoneNumber
-                            ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30"
-                            : "bg-white/[0.04] text-muted/50 border border-white/[0.08]"
-                        }`}
-                      >
-                        {content.contact.showPhoneNumber ? "ON" : "OFF"}
-                      </span>
-
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={Boolean(content.contact.showPhoneNumber)}
-                        onClick={() =>
-                          handleFieldChange("contact", "showPhoneNumber", !content.contact.showPhoneNumber)
-                        }
-                        className={`w-12 h-6.5 rounded-full p-0.5 transition-colors cursor-pointer border flex items-center ${
-                          content.contact.showPhoneNumber
-                            ? "bg-pacific-cyan/20 border-pacific-cyan/60"
-                            : "bg-white/[0.04] border-white/[0.12]"
-                        }`}
-                        aria-label="Toggle public phone number visibility"
-                      >
-                        <span
-                          className={`w-5 h-5 rounded-full transition-transform duration-200 ease-out transform ${
-                            content.contact.showPhoneNumber
-                              ? "translate-x-5.5 bg-pacific-cyan shadow-[0_0_10px_rgba(24,155,173,0.8)]"
-                              : "translate-x-0 bg-white/40"
-                          }`}
-                        />
-                      </button>
+                    <div className="flex items-center">
+                      <NeoToggle
+                        checked={Boolean(content.contact.showPhoneNumber)}
+                        onChange={(checked) => handleFieldChange("contact", "showPhoneNumber", checked)}
+                        ariaLabel="Toggle public phone number visibility"
+                      />
                     </div>
                   </div>
                   <input

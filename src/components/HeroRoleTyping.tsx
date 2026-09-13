@@ -8,31 +8,17 @@ const ROLES = [
   "Creative Technologist",
 ];
 
-const TYPING_SPEED = 45;      // Snappy, fast character typing
-const DELETING_SPEED = 25;    // Rapid, smooth deletion
-const PAUSE_DURATION = 1400;  // Brief readable pause when complete
-const DELETE_DELAY = 150;     // Brief pause before next role begins
+const TYPING_SPEED = 50;      // Snappy character typing
+const DELETING_SPEED = 28;    // Smooth deletion
+const PAUSE_DURATION = 1500;  // Pause when role is fully typed
+const DELETE_DELAY = 200;     // Pause before typing next role
 
 export default function HeroRoleTyping() {
   const [roleIndex, setRoleIndex] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mediaQuery.matches);
-    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
-  }, []);
-
-  useEffect(() => {
-    if (reducedMotion) {
-      setCurrentText(ROLES[0]);
-      return;
-    }
-
     const currentFullRole = ROLES[roleIndex];
     let timer: ReturnType<typeof setTimeout>;
 
@@ -52,14 +38,15 @@ export default function HeroRoleTyping() {
           setCurrentText(currentFullRole.slice(0, currentText.length - 1));
         }, DELETING_SPEED);
       } else {
-        setIsDeleting(false);
-        setRoleIndex((prev) => (prev + 1) % ROLES.length);
-        timer = setTimeout(() => {}, DELETE_DELAY);
+        timer = setTimeout(() => {
+          setIsDeleting(false);
+          setRoleIndex((prev) => (prev + 1) % ROLES.length);
+        }, DELETE_DELAY);
       }
     }
 
     return () => clearTimeout(timer);
-  }, [currentText, isDeleting, roleIndex, reducedMotion]);
+  }, [currentText, isDeleting, roleIndex]);
 
   return (
     <div
@@ -68,14 +55,12 @@ export default function HeroRoleTyping() {
       aria-label={`Role: ${ROLES[roleIndex]}`}
     >
       <span className="text-lg sm:text-2xl md:text-3xl font-medium text-muted/90 font-space tracking-tight">
-        {reducedMotion ? ROLES[0] : currentText}
+        {currentText || "\u00A0"}
       </span>
-      {!reducedMotion && (
-        <span
-          className="inline-block w-[2px] sm:w-[2.5px] h-5 sm:h-7 ml-1 bg-pacific-cyan animate-pulse rounded-full"
-          aria-hidden="true"
-        />
-      )}
+      <span
+        className="inline-block w-[2px] sm:w-[2.5px] h-5 sm:h-7 ml-1 bg-pacific-cyan animate-pulse rounded-full"
+        aria-hidden="true"
+      />
     </div>
   );
 }

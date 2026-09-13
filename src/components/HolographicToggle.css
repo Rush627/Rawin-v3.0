@@ -1,0 +1,347 @@
+/* ==========================================================================
+   Holographic Cybernetic Toggle — RAWIN 3.0 Universe.io Implementation
+   ========================================================================== */
+
+.holo-toggle-container {
+  --holo-w: 150px;
+  --holo-h: 56px;
+  --thumb-d: 44px;
+  --thumb-travel: 94px;
+  --pad: 6px;
+
+  /* Default OFF State Colors (Futuristic Blue/Cyan) */
+  --glow-color: #00d4ff;
+  --glow-dim: rgba(0, 212, 255, 0.18);
+  --glow-bright: rgba(0, 212, 255, 0.7);
+  --border-color: rgba(0, 212, 255, 0.35);
+  --track-bg: #060a12;
+  --indicator-color: #38bdf8;
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+  cursor: pointer;
+  width: var(--holo-w);
+  height: var(--holo-h);
+}
+
+/* Compact Variant for tighter spaces */
+.holo-toggle-container.size-compact {
+  --holo-w: 110px;
+  --holo-h: 42px;
+  --thumb-d: 32px;
+  --thumb-travel: 68px;
+  --pad: 5px;
+}
+
+/* ON State Colors (Futuristic Laser Green) */
+.holo-toggle-container.is-checked {
+  --glow-color: #00ff66;
+  --glow-dim: rgba(0, 255, 102, 0.18);
+  --glow-bright: rgba(0, 255, 102, 0.75);
+  --border-color: rgba(0, 255, 102, 0.45);
+  --track-bg: #041009;
+  --indicator-color: #00ff66;
+}
+
+/* Native Accessible Checkbox Input */
+.holo-toggle-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.holo-toggle-input:disabled {
+  cursor: not-allowed;
+}
+
+.holo-toggle-container.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Keyboard Focus Accessibility */
+.holo-toggle-input:focus-visible + .holo-toggle-track {
+  outline: 2px solid var(--glow-color);
+  outline-offset: 4px;
+}
+
+/* Track Chassis */
+.holo-toggle-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--track-bg);
+  border: 1px solid var(--border-color);
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.85),
+    inset 0 0 16px var(--glow-dim),
+    0 0 18px var(--glow-dim);
+  overflow: hidden;
+  transition:
+    background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Moving Cyber Track Lines */
+.holo-track-lines {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 0px,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    radial-gradient(ellipse at 50% 50%, var(--glow-dim) 0%, transparent 80%);
+  background-size: 24px 100%, 100% 100%;
+  animation: holoLinesScroll 15s linear infinite;
+  opacity: 0.7;
+}
+
+@keyframes holoLinesScroll {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 240px 0, 0 0;
+  }
+}
+
+/* Scanning Laser Sweep */
+.holo-scanline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--glow-color) 35%,
+    #ffffff 50%,
+    var(--glow-color) 65%,
+    transparent 100%
+  );
+  box-shadow: 0 0 12px var(--glow-bright);
+  animation: holoScanSweep 4s ease-in-out infinite alternate;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+@keyframes holoScanSweep {
+  0% {
+    left: 8%;
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    left: 88%;
+    opacity: 0.25;
+  }
+}
+
+/* Holographic Glass Reflection Sheen */
+.holo-glass-sheen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.03) 70%,
+    transparent 100%
+  );
+  border-top-left-radius: 9999px;
+  border-top-right-radius: 9999px;
+  pointer-events: none;
+}
+
+/* State Indicator Label */
+.holo-state-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-space-grotesk), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--indicator-color);
+  text-shadow: 0 0 8px var(--glow-color);
+  pointer-events: none;
+  transition: all 0.35s ease;
+}
+
+.holo-toggle-container.size-compact .holo-state-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+/* When OFF: label on right side */
+.holo-toggle-container:not(.is-checked) .holo-state-label {
+  right: 18px;
+}
+.holo-toggle-container.size-compact:not(.is-checked) .holo-state-label {
+  right: 12px;
+}
+
+/* When ON: label on left side */
+.holo-toggle-container.is-checked .holo-state-label {
+  left: 18px;
+}
+.holo-toggle-container.size-compact.is-checked .holo-state-label {
+  left: 12px;
+}
+
+/* Holographic Thumb */
+.holo-toggle-thumb {
+  position: absolute;
+  top: var(--pad);
+  left: var(--pad);
+  width: var(--thumb-d);
+  height: var(--thumb-d);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #182234 0%, #080d16 85%);
+  border: 1px solid var(--border-color);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.9),
+    0 0 18px var(--glow-dim),
+    inset 0 0 10px var(--glow-dim);
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1),
+    border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Slide Thumb on Checked */
+.holo-toggle-container.is-checked .holo-toggle-thumb {
+  transform: translateX(var(--thumb-travel));
+  background: radial-gradient(circle at 35% 35%, #102e1c 0%, #04140b 85%);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.9),
+    0 0 24px var(--glow-bright),
+    inset 0 0 12px var(--glow-color);
+}
+
+/* Rotating Energy Ring */
+.holo-energy-ring {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--glow-color);
+  opacity: 0.6;
+  animation: holoRotateRing 10s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes holoRotateRing {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Inner Pulsing Core */
+.holo-thumb-core {
+  width: 44%;
+  height: 44%;
+  border-radius: 50%;
+  background: var(--glow-color);
+  box-shadow:
+    0 0 10px var(--glow-color),
+    0 0 20px var(--glow-bright);
+  animation: holoCorePulse 2.4s ease-in-out infinite;
+  transition:
+    background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes holoCorePulse {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+/* Top Glass Dome Sheen on Thumb */
+.holo-thumb-sheen {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  right: 6px;
+  height: 40%;
+  border-radius: 50% 50% 40% 40%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.05) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Hover Interaction on Desktop fine pointers */
+@media (hover: hover) and (pointer: fine) {
+  .holo-toggle-container:hover .holo-toggle-track {
+    box-shadow:
+      inset 0 2px 10px rgba(0, 0, 0, 0.85),
+      inset 0 0 24px var(--glow-dim),
+      0 0 28px var(--glow-bright);
+    border-color: var(--glow-color);
+  }
+
+  .holo-toggle-container:hover .holo-toggle-thumb {
+    box-shadow:
+      0 2px 12px rgba(0, 0, 0, 0.9),
+      0 0 30px var(--glow-bright),
+      inset 0 0 14px var(--glow-color);
+  }
+
+  .holo-toggle-container:hover .holo-energy-ring {
+    animation-duration: 4s;
+    opacity: 0.85;
+  }
+}
+
+/* Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+  .holo-track-lines,
+  .holo-scanline,
+  .holo-energy-ring,
+  .holo-thumb-core {
+    animation: none !important;
+  }
+
+  .holo-toggle-track,
+  .holo-toggle-thumb,
+  .holo-state-label {
+    transition: none !important;
+  }
+}

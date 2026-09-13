@@ -349,7 +349,7 @@ export default function ContactView({ content, global }: ContactViewProps) {
                 </button>
               </form>
             )}
-          </div>
+            </div>
         </div>
 
         {/* RIGHT COLUMN: Supporting Contact Cards */}
@@ -380,7 +380,7 @@ export default function ContactView({ content, global }: ContactViewProps) {
             </div>
           </a>
 
-          {/* Location Card */}
+          {/* Location Card - EXCLUSION A: Preserved with deliberate green glow, NO BorderGlow */}
           <div className="glass-card rounded-2xl p-5 sm:p-6 border border-white/[0.08] flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/30">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
               <MapPin className="w-5 h-5" />

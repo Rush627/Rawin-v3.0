@@ -8,9 +8,16 @@ const SESSION_COOKIE_NAME = "rawin_admin_session";
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+
   // Only protect admin routes
   if (!pathname.startsWith("/admin")) {
-    return NextResponse.next();
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -36,7 +43,11 @@ export async function proxy(request: NextRequest) {
       // Already logged in: redirect to admin dashboard
       return NextResponse.redirect(new URL("/admin", request.url));
     }
-    return NextResponse.next();
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   // 2. If user is at any other /admin route and not authenticated:
@@ -46,11 +57,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export { proxy as middleware };
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except static files
+     */
+    "/((?!_next/static|_next/image|favicon.ico|icon.png|images/).*)",
+  ],
 };

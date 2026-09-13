@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef } from "react";
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import {
   Sparkles,
@@ -10,7 +10,6 @@ import {
 export default function LaptopShowcase() {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
 
   // Mouse-driven 3D interactive tilt
   const mouseX = useMotionValue(0);
@@ -20,19 +19,7 @@ export default function LaptopShowcase() {
   const mouseTiltX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]), springConfig);
   const mouseTiltY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-9, 9]), springConfig);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mediaQuery.matches);
-    const motionHandler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mediaQuery.addEventListener("change", motionHandler);
-
-    return () => {
-      mediaQuery.removeEventListener("change", motionHandler);
-    };
-  }, []);
-
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (reducedMotion) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -63,14 +50,10 @@ export default function LaptopShowcase() {
   return (
     <section
       ref={containerRef}
-      className={`relative w-full ${
-        reducedMotion ? "py-12 sm:py-16" : "h-[125vh] sm:h-[155vh] md:h-[180vh]"
-      } flex flex-col items-center`}
+      className="relative w-full h-[140vh] sm:h-[160vh] md:h-[185vh] flex flex-col items-center"
     >
       <div
-        className={`${
-          reducedMotion ? "relative" : "sticky top-16 sm:top-20 md:top-24"
-        } w-full max-w-5xl flex flex-col items-center px-4 sm:px-6`}
+        className="sticky top-20 sm:top-24 md:top-28 w-full max-w-5xl flex flex-col items-center px-4 sm:px-6"
       >
         {/* Section Header with guaranteed stacking priority and generous bottom clearance */}
         <div
@@ -100,29 +83,22 @@ export default function LaptopShowcase() {
         >
           {/* 3D Wrapper that responds to tilt and holds layered depth */}
           <motion.div
-            style={
-              reducedMotion
-                ? {}
-                : {
-                    rotateX: mouseTiltX,
-                    rotateY: mouseTiltY,
-                    transformStyle: "preserve-3d",
-                  }
-            }
+            style={{
+              rotateX: mouseTiltX,
+              rotateY: mouseTiltY,
+              transformStyle: "preserve-3d",
+            }}
             className="relative w-full flex flex-col items-center"
           >
-            {/* Laptop Lid (Smooth physical open with scroll) */}
+            {/* Laptop Lid (Smooth physical open with scroll on both desktop & mobile) */}
             <motion.div
-              style={
-                reducedMotion
-                  ? { transform: "rotateX(0deg)" }
-                  : {
-                      rotateX: lidRotateX,
-                      scale: lidScale,
-                      transformOrigin: "bottom center",
-                      transformStyle: "preserve-3d",
-                    }
-              }
+              style={{
+                rotateX: lidRotateX,
+                scale: lidScale,
+                transformOrigin: "bottom center",
+                transformStyle: "preserve-3d",
+                willChange: "transform",
+              }}
               className="relative w-full aspect-[16/10] max-h-[260px] sm:max-h-[380px] md:max-h-[460px] rounded-t-xl sm:rounded-t-3xl border border-white/10 bg-[#0c0c14] shadow-[0_20px_50px_rgba(0,0,0,0.8)] p-2 sm:p-3 flex flex-col z-20"
             >
               {/* Screen Bezel & WebCam Notch */}
@@ -170,14 +146,10 @@ export default function LaptopShowcase() {
                   >
                     {/* Top telemetry banner: Engineering System Architecture */}
                     <motion.div
-                      style={
-                        reducedMotion
-                          ? {}
-                          : {
-                              z: telemetryPopZ,
-                              transformStyle: "preserve-3d",
-                            }
-                      }
+                      style={{
+                        z: telemetryPopZ,
+                        transformStyle: "preserve-3d",
+                      }}
                       className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-center"
                     >
                       <div className="p-1.5 sm:p-2 rounded-lg bg-surface/70 border border-white/5 shadow-md">
@@ -205,15 +177,11 @@ export default function LaptopShowcase() {
                     >
                       {/* Left: Component Code Snippet (3D Pop-out layer, visible sm+) */}
                       <motion.div
-                        style={
-                          reducedMotion
-                            ? {}
-                            : {
-                                z: codePopZ,
-                                transformStyle: "preserve-3d",
-                              }
-                        }
-                        whileHover={reducedMotion ? {} : { scale: 1.01, z: 28 }}
+                        style={{
+                          z: codePopZ,
+                          transformStyle: "preserve-3d",
+                        }}
+                        whileHover={{ scale: 1.01, z: 28 }}
                         transition={{ duration: 0.2 }}
                         className="hidden sm:flex p-3 rounded-lg bg-ink-black/85 border border-white/10 flex-col font-mono text-[10px] sm:text-[11px] text-muted leading-relaxed overflow-hidden shadow-xl"
                       >
@@ -231,15 +199,11 @@ export default function LaptopShowcase() {
 
                       {/* Right: Active Live Card (High 3D Pop-out with Neon Edge Glow) */}
                       <motion.div
-                        style={
-                          reducedMotion
-                            ? {}
-                            : {
-                                z: cardPopZ,
-                                transformStyle: "preserve-3d",
-                              }
-                        }
-                        whileHover={reducedMotion ? {} : { scale: 1.02, z: 46 }}
+                        style={{
+                          z: cardPopZ,
+                          transformStyle: "preserve-3d",
+                        }}
+                        whileHover={{ scale: 1.02, z: 46 }}
                         transition={{ duration: 0.2 }}
                         className="p-2 sm:p-3 rounded-lg bg-surface/90 border border-pacific-cyan/30 flex flex-col justify-between gap-1 sm:gap-2 shadow-[0_16px_36px_rgba(0,0,0,0.6),0_0_24px_rgba(24,155,173,0.18)]"
                       >
@@ -282,13 +246,9 @@ export default function LaptopShowcase() {
 
             {/* Contact Shadow on Desk */}
             <motion.div
-              style={
-                reducedMotion
-                  ? { opacity: 0.4 }
-                  : {
-                      opacity: screenGlowOpacity,
-                    }
-              }
+              style={{
+                opacity: screenGlowOpacity,
+              }}
               aria-hidden="true"
               className="w-[90%] h-12 rounded-full bg-pacific-cyan/15 blur-2xl -mt-4 pointer-events-none"
             />

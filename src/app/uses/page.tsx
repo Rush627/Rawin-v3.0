@@ -20,6 +20,7 @@ import {
   Radio,
 } from "lucide-react";
 import { getSiteContent } from "@/lib/site-content";
+import BorderGlow from "@/components/BorderGlow";
 
 export const metadata: Metadata = {
   title: "What I Use | Rushan Siddiqui",
@@ -327,28 +328,29 @@ export default async function UsesPage() {
             {DAILY_STACK.map((tool) => {
               const Icon = tool.icon;
               return (
-                <div
-                  key={tool.name}
-                  className="group relative rounded-xl p-5 bg-[rgba(22,22,34,0.45)] border border-white/[0.06] hover:border-pacific-cyan/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.5),0_0_20px_rgba(24,155,173,0.06)] flex flex-col gap-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="w-9 h-9 rounded-lg bg-white/[0.04] group-hover:bg-pacific-cyan/10 border border-white/[0.08] group-hover:border-pacific-cyan/30 flex items-center justify-center text-pacific-cyan transition-colors">
-                      <Icon className="w-4 h-4" />
+                <BorderGlow key={tool.name} borderRadius={12} className="h-full">
+                  <div
+                    className="group relative rounded-xl p-5 bg-[rgba(22,22,34,0.45)] border border-white/[0.06] hover:border-pacific-cyan/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.5),0_0_20px_rgba(24,155,173,0.06)] flex flex-col gap-3 h-full"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-lg bg-white/[0.04] group-hover:bg-pacific-cyan/10 border border-white/[0.08] group-hover:border-pacific-cyan/30 flex items-center justify-center text-pacific-cyan transition-colors">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-mono text-muted/60 px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06]">
+                        {tool.category}
+                      </span>
                     </div>
-                    <span className="text-[10px] font-mono text-muted/60 px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06]">
-                      {tool.category}
-                    </span>
-                  </div>
 
-                  <div className="flex flex-col gap-1 mt-1">
-                    <h3 className="text-base font-bold font-space text-foreground group-hover:text-pacific-cyan transition-colors">
-                      {tool.name}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-muted/80 leading-relaxed font-sans">
-                      {tool.description}
-                    </p>
+                    <div className="flex flex-col gap-1 mt-1">
+                      <h3 className="text-base font-bold font-space text-foreground group-hover:text-pacific-cyan transition-colors">
+                        {tool.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted/80 leading-relaxed font-sans">
+                        {tool.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </BorderGlow>
               );
             })}
           </div>
@@ -367,27 +369,28 @@ export default async function UsesPage() {
             {devStackItems.map((tech) => {
               const Icon = resolveIcon(tech.icon, Layers);
               return (
-                <div
-                  key={tech.name}
-                  className="rounded-xl p-4 bg-ink-black/40 border border-white/[0.06] hover:border-pacific-cyan/25 transition-all duration-200 flex flex-col gap-2.5"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Icon className="w-3.5 h-3.5 text-pacific-cyan/80 shrink-0" />
-                      <span className="text-sm font-bold font-space text-foreground truncate">
-                        {tech.name}
-                      </span>
+                <BorderGlow key={tech.name} borderRadius={12} className="h-full">
+                  <div
+                    className="rounded-xl p-4 bg-ink-black/40 border border-white/[0.06] hover:border-pacific-cyan/25 transition-all duration-200 flex flex-col gap-2.5 h-full"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Icon className="w-3.5 h-3.5 text-pacific-cyan/80 shrink-0" />
+                        <span className="text-sm font-bold font-space text-foreground truncate">
+                          {tech.name}
+                        </span>
+                      </div>
+                      {tech.category && (
+                        <span className="text-[10px] font-mono text-pacific-cyan/70 bg-pacific-cyan/[0.06] border border-pacific-cyan/15 px-1.5 py-0.5 rounded shrink-0">
+                          {tech.category}
+                        </span>
+                      )}
                     </div>
-                    {tech.category && (
-                      <span className="text-[10px] font-mono text-pacific-cyan/70 bg-pacific-cyan/[0.06] border border-pacific-cyan/15 px-1.5 py-0.5 rounded shrink-0">
-                        {tech.category}
-                      </span>
-                    )}
+                    <p className="text-xs text-muted/80 leading-relaxed">
+                      {tech.description}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted/80 leading-relaxed">
-                    {tech.description}
-                  </p>
-                </div>
+                </BorderGlow>
               );
             })}
           </div>

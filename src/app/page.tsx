@@ -15,6 +15,7 @@ import {
 import { GithubIcon } from "@/components/SocialIcons";
 import HeroRoleTyping from "@/components/HeroRoleTyping";
 import LaptopShowcase from "@/components/LaptopShowcase";
+import BorderGlow from "@/components/BorderGlow";
 import { getFeaturedProjects } from "@/lib/projects";
 import { getSiteContent } from "@/lib/site-content";
 import { TECH_ARSENAL } from "@/data/techArsenal";
@@ -303,7 +304,7 @@ export default async function HomePage() {
             <div
               key={category.title}
               data-particle-protected
-              className="glass-card rounded-2xl p-6 sm:p-7 border border-white/[0.06] hover:border-pacific-cyan/30 flex flex-col gap-5"
+              className="glass-card rounded-2xl p-6 sm:p-7 border border-white/[0.06] hover:border-pacific-cyan/30 flex flex-col gap-5 h-full"
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-foreground font-space">{category.title}</h3>
@@ -356,18 +357,19 @@ export default async function HomePage() {
         {/* 4 Value Proposition Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {VALUE_PROPOSITIONS.map((prop) => (
-            <div
-              key={prop.title}
-              data-particle-protected
-              className="glass-card rounded-2xl p-6 border border-white/[0.06] flex flex-col justify-between gap-4"
-            >
-              <div>
-                <span className="text-xs font-mono font-bold text-pacific-cyan block mb-2">{prop.metric}</span>
-                <h4 className="text-lg font-bold text-foreground font-space">{prop.title}</h4>
-                <p className="text-xs text-apricot-cream/90 font-mono mt-0.5">{prop.tagline}</p>
-                <p className="text-xs text-muted mt-3 leading-relaxed">{prop.description}</p>
+            <BorderGlow key={prop.title} borderRadius={16} className="h-full">
+              <div
+                data-particle-protected
+                className="glass-card rounded-2xl p-6 border border-white/[0.06] flex flex-col justify-between gap-4 h-full"
+              >
+                <div>
+                  <span className="text-xs font-mono font-bold text-pacific-cyan block mb-2">{prop.metric}</span>
+                  <h4 className="text-lg font-bold text-foreground font-space">{prop.title}</h4>
+                  <p className="text-xs text-apricot-cream/90 font-mono mt-0.5">{prop.tagline}</p>
+                  <p className="text-xs text-muted mt-3 leading-relaxed">{prop.description}</p>
+                </div>
               </div>
-            </div>
+            </BorderGlow>
           ))}
         </div>
 
@@ -413,42 +415,44 @@ export default async function HomePage() {
       {/* ------------------------------------------------------------- */}
       {/* SECTION 5: CALL TO ACTION (CTA)                              */}
       {/* ------------------------------------------------------------- */}
-      <section
-        data-particle-protected
-        className="relative rounded-3xl glass-panel p-8 sm:p-12 md:p-16 border border-white/[0.08] overflow-hidden text-center flex flex-col items-center"
-      >
-        {/* Subtle radial accent */}
-        <div
-          aria-hidden="true"
-          className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full bg-pacific-cyan/15 blur-[100px] pointer-events-none"
-        />
+      <BorderGlow borderRadius={24} className="w-full">
+        <section
+          data-particle-protected
+          className="relative rounded-3xl glass-panel p-8 sm:p-12 md:p-16 border border-white/[0.08] overflow-hidden text-center flex flex-col items-center"
+        >
+          {/* Subtle radial accent */}
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full bg-pacific-cyan/15 blur-[100px] pointer-events-none"
+          />
 
-        <span className="text-xs font-mono font-medium text-pacific-cyan uppercase tracking-wider mb-3">
-          Let&apos;s Build Together
-        </span>
-        <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground font-space max-w-2xl leading-tight">
-          Ready to build your next <span className="text-apricot-cream">project</span>?
-        </h2>
-        <p className="text-sm sm:text-base text-muted max-w-xl mt-4 leading-relaxed">
-          Whether you need a full-stack web application, a responsive interface, or a modern frontend, I&apos;m ready to collaborate.
-        </p>
+          <span className="text-xs font-mono font-medium text-pacific-cyan uppercase tracking-wider mb-3">
+            Let&apos;s Build Together
+          </span>
+          <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground font-space max-w-2xl leading-tight">
+            Ready to build your next <span className="text-apricot-cream">project</span>?
+          </h2>
+          <p className="text-sm sm:text-base text-muted max-w-xl mt-4 leading-relaxed">
+            Whether you need a full-stack web application, a responsive interface, or a modern frontend, I&apos;m ready to collaborate.
+          </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
-          <Link
-            href="/contact"
-            className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-sm hover:bg-pacific-cyan/90 transition-all duration-200 shadow-[0_0_30px_rgba(24,155,173,0.35)] transform hover:-translate-y-0.5"
-          >
-            <span>Start a Conversation</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <a
-            href={`mailto:${contactEmail}`}
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl glass-card text-foreground font-medium text-sm hover:border-pacific-cyan/40 transition-colors"
-          >
-            <span>{contactEmail}</span>
-          </a>
-        </div>
-      </section>
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
+            <Link
+              href="/contact"
+              className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-sm hover:bg-pacific-cyan/90 transition-all duration-200 shadow-[0_0_30px_rgba(24,155,173,0.35)] transform hover:-translate-y-0.5"
+            >
+              <span>Start a Conversation</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a
+              href={`mailto:${contactEmail}`}
+              className="flex items-center gap-2 px-6 py-3.5 rounded-xl glass-card text-foreground font-medium text-sm hover:border-pacific-cyan/40 transition-colors"
+            >
+              <span>{contactEmail}</span>
+            </a>
+          </div>
+        </section>
+      </BorderGlow>
     </div>
   );
 }

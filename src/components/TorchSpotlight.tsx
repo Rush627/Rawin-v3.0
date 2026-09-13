@@ -28,18 +28,15 @@ export default function TorchSpotlight() {
   const posRef = useRef<{ x: number; y: number }>({ x: -1000, y: -1000 });
   const rafRef = useRef<number | null>(null);
 
-  // Initialize state & detect touch
+  // Initialize state & sync with localStorage
   useEffect(() => {
-    const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    setIsTouchDevice(hasTouch);
-
     const saved = localStorage.getItem("rawin_torch_active");
-    if (saved === "true" && !hasTouch) {
+    if (saved === "true") {
       setIsActive(true);
     }
 
-    // Show initial welcome tip for 6 seconds on desktop
-    if (!hasTouch) {
+    const hasHover = window.matchMedia("(hover: hover)").matches;
+    if (hasHover) {
       const randomMsg = TORCH_MESSAGES[Math.floor(Math.random() * TORCH_MESSAGES.length)];
       setMessage(randomMsg);
       setShowMessage(true);
@@ -52,7 +49,11 @@ export default function TorchSpotlight() {
   const toggleTorch = () => {
     const next = !isActive;
     setIsActive(next);
-    localStorage.setItem("rawin_torch_active", String(next));
+    try {
+      localStorage.setItem("rawin_torch_active", String(next));
+    } catch {
+      // Storage unavailable
+    }
   };
 
   const showRandomMessage = useCallback(() => {
@@ -65,11 +66,11 @@ export default function TorchSpotlight() {
     setShowMessage(false);
   }, []);
 
-  // Update pointer coordinates using requestAnimationFrame (60 FPS, no React re-render lag)
+  // Update pointer coordinates using requestAnimationFrame (60 FPS, supports both mouse and touch pointers)
   useEffect(() => {
-    if (!isActive || isTouchDevice) return;
+    if (!isActive) return;
 
-    const onPointerMove = (e: MouseEvent) => {
+    const onPointerMove = (e: PointerEvent) => {
       posRef.current.x = e.clientX;
       posRef.current.y = e.clientY;
 
@@ -84,22 +85,21 @@ export default function TorchSpotlight() {
       }
     };
 
-    window.addEventListener("mousemove", onPointerMove, { passive: true });
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
 
     return () => {
-      window.removeEventListener("mousemove", onPointerMove);
+      window.removeEventListener("pointermove", onPointerMove);
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
     };
-  }, [isActive, isTouchDevice]);
+  }, [isActive]);
 
   const pathname = usePathname();
 
-  // Hide on touch devices, admin routes, and AI experience
+  // Intentionally hide on admin routes and AI experience only
   if (
-    isTouchDevice ||
     pathname.startsWith("/admin") ||
     pathname === "/ai" ||
     pathname.startsWith("/ai/")

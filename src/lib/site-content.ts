@@ -193,6 +193,13 @@ export interface SiteAssets {
   favicon: AssetMeta;
 }
 
+export interface MaintenanceContent {
+  enabled: boolean;
+  showMessage: boolean;
+  message: string;
+  endsAt?: string | null;
+}
+
 export type AssetKey = "profilePhoto" | "logo" | "favicon";
 
 export interface SiteContent {
@@ -206,6 +213,7 @@ export interface SiteContent {
   uses: UsesContent;
   ai: AIContent;
   assets: SiteAssets;
+  maintenance: MaintenanceContent;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -218,7 +226,8 @@ export type ContentSectionKey =
   | "resume"
   | "uses"
   | "ai"
-  | "assets";
+  | "assets"
+  | "maintenance";
 
 export const DEFAULT_SITE_CONTENT: SiteContent = {
   key: "main",
@@ -537,6 +546,12 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       "I'm Rawin Orbit, the AI assistant built by Rushan Siddiqui for RAWIN.",
     inputPlaceholder: "Ask Orbit about Rushan's work, projects, architecture, or skills...",
   },
+  maintenance: {
+    enabled: false,
+    showMessage: false,
+    message: "We'll be back shortly.",
+    endsAt: null,
+  },
 };
 
 const COLLECTION_NAME = "site_content";
@@ -785,6 +800,36 @@ export function mergeWithDefaults(doc: any): SiteContent {
         updatedAt: doc.assets?.favicon?.updatedAt || DEFAULT_SITE_CONTENT.assets.favicon.updatedAt,
       },
     },
+    maintenance: {
+      enabled: (() => {
+        if (doc.maintenance?.endsAt) {
+          const t = new Date(doc.maintenance.endsAt).getTime();
+          if (!isNaN(t) && t <= Date.now()) return false;
+        }
+        return typeof doc.maintenance?.enabled === "boolean"
+          ? doc.maintenance.enabled
+          : DEFAULT_SITE_CONTENT.maintenance.enabled;
+      })(),
+      showMessage:
+        typeof doc.maintenance?.showMessage === "boolean"
+          ? doc.maintenance.showMessage
+          : DEFAULT_SITE_CONTENT.maintenance.showMessage,
+      message:
+        typeof doc.maintenance?.message === "string"
+          ? doc.maintenance.message
+          : DEFAULT_SITE_CONTENT.maintenance.message,
+      endsAt: (() => {
+        if (doc.maintenance?.endsAt) {
+          const t = new Date(doc.maintenance.endsAt).getTime();
+          if (!isNaN(t) && t <= Date.now()) return null;
+        }
+        return doc.maintenance?.endsAt instanceof Date
+          ? doc.maintenance.endsAt.toISOString()
+          : typeof doc.maintenance?.endsAt === "string"
+          ? doc.maintenance.endsAt
+          : null;
+      })(),
+    },
     createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt,
     updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt,
   };
@@ -814,6 +859,31 @@ export async function getSiteContent(): Promise<SiteContent> {
         updatedAt: now,
       });
       return DEFAULT_SITE_CONTENT;
+    }
+
+    // Automatic Maintenance Expiry Check & Database Normalization:
+    // If maintenance was enabled with a duration timer that has now expired,
+    // persist the reset to MongoDB immediately so the next read and UI see STANDBY/LIVE.
+    if (doc.maintenance?.enabled && doc.maintenance?.endsAt) {
+      const endsTime = new Date(doc.maintenance.endsAt).getTime();
+      if (!isNaN(endsTime) && endsTime <= Date.now()) {
+        try {
+          await col.updateOne(
+            { key: "main" },
+            {
+              $set: {
+                "maintenance.enabled": false,
+                "maintenance.endsAt": null,
+                updatedAt: new Date(),
+              },
+            }
+          );
+          doc.maintenance.enabled = false;
+          doc.maintenance.endsAt = null;
+        } catch (updateErr) {
+          console.error("[SiteContent] Failed to persist expired maintenance reset:", updateErr);
+        }
+      }
     }
 
     return mergeWithDefaults(doc);

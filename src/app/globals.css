@@ -25,12 +25,13 @@ html {
   background-color: #101019;
   color: #F5F7FA;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overflow-x: clip;
 }
 
 body {
   background-color: #101019;
   color: #F5F7FA;
-  overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100vh;
 }
 

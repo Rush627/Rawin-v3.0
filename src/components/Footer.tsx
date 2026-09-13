@@ -29,31 +29,40 @@ export default function Footer({
   const pathname = usePathname();
 
   const scrollToTop = () => {
-    const prefersReducedMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (typeof window === "undefined") return;
 
-    const lenis =
-      typeof window !== "undefined"
-        ? (window as unknown as {
-            __lenis?: {
-              scrollTo: (
-                target: number | HTMLElement,
-                options?: { immediate?: boolean; force?: boolean }
-              ) => void;
-            };
-          }).__lenis
-        : null;
+    const lenis = (window as unknown as {
+      __lenis?: {
+        scrollTo: (
+          target: number | HTMLElement,
+          options?: { immediate?: boolean; lock?: boolean; force?: boolean }
+        ) => void;
+      };
+    }).__lenis;
 
-    if (lenis) {
-      lenis.scrollTo(0, { immediate: prefersReducedMotion, force: true });
+    if (lenis && typeof lenis.scrollTo === "function") {
+      // Use existing Lenis instance appropriately without competing with native scroll
+      lenis.scrollTo(0, { immediate: false });
+      return;
     }
 
-    if (typeof window !== "undefined") {
+    // Native fallback when Lenis is inactive or unavailable
+    try {
       window.scrollTo({
         top: 0,
-        behavior: prefersReducedMotion ? "auto" : "smooth",
+        left: 0,
+        behavior: "smooth",
       });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+
+    // Direct fallback for iOS Safari & Android mobile document root
+    if (document.documentElement && document.documentElement.scrollTop > 0) {
+      document.documentElement.scrollTop = 0;
+    }
+    if (document.body && document.body.scrollTop > 0) {
+      document.body.scrollTop = 0;
     }
   };
 
@@ -200,7 +209,8 @@ export default function Footer({
             type="button"
             onClick={scrollToTop}
             aria-label="Back to top"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg glass-card hover:text-foreground hover:border-pacific-cyan/40 transition-colors cursor-pointer relative z-30 shadow-md active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-lg glass-card hover:text-foreground hover:border-pacific-cyan/40 transition-colors cursor-pointer relative z-30 shadow-md active:scale-95 touch-manipulation"
+            style={{ touchAction: "manipulation" }}
           >
             <span>Back to top</span>
             <ArrowUp className="w-3.5 h-3.5 text-pacific-cyan" />

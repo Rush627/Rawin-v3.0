@@ -4,6 +4,7 @@ import { Settings, ArrowLeft } from "lucide-react";
 import { GridFSBucket } from "mongodb";
 import { getAdminSession, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { getDatabase } from "@/lib/mongodb";
+import { getSiteContent } from "@/lib/site-content";
 import SettingsView from "@/components/admin/SettingsView";
 
 export const metadata = {
@@ -18,6 +19,8 @@ export default async function AdminSettingsPage() {
   if (!session) {
     redirect("/admin/login?redirect=/admin/settings");
   }
+
+  const siteContent = await getSiteContent();
 
   let isDbConnected = false;
   let dbName = "unknown";
@@ -86,6 +89,7 @@ export default async function AdminSettingsPage() {
         isGridFsReady={isGridFsReady}
         sessionSecurity={sessionSecurity}
         securityConfig={securityConfig}
+        initialMaintenance={siteContent.maintenance}
       />
     </div>
   );

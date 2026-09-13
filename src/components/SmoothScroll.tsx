@@ -5,7 +5,14 @@ import Lenis from "lenis";
 
 export default function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
-    // Respect user's motion preference
+    // Disable Lenis on touch-only mobile devices where native momentum scrolling is superior
+    // and where Lenis touch listeners intercept physical touch clicks
+    const isTouchOnly = window.matchMedia("(pointer: coarse) and (hover: none)").matches;
+    if (isTouchOnly) {
+      return;
+    }
+
+    // Respect user's motion preference on desktop
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
     }
@@ -17,7 +24,6 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
       gestureOrientation: "vertical",
       smoothWheel: true,
       wheelMultiplier: 0.9,
-      touchMultiplier: 1.5,
     });
 
     // Expose lenis on window for global controls (e.g. Back to Top)

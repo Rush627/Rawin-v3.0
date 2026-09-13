@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
@@ -6,6 +7,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TorchSpotlight from "@/components/TorchSpotlight";
 import ParticleField from "@/components/ParticleField";
+import RawinErrorView from "@/components/RawinErrorView";
+import OfflineDetector from "@/components/OfflineDetector";
 import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 
 const geistSans = Geist({
@@ -66,7 +69,54 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const content = await getSiteContent();
+  const [content, headerList] = await Promise.all([
+    getSiteContent(),
+    headers(),
+  ]);
+
+  const pathname = headerList.get("x-pathname") || "";
+
+  const now = Date.now();
+  const endsAtTime = content.maintenance?.endsAt ? new Date(content.maintenance.endsAt).getTime() : null;
+  const isMaintenanceExpired = Boolean(endsAtTime && endsAtTime <= now);
+  const isMaintenanceActive = Boolean(content.maintenance?.enabled && !isMaintenanceExpired);
+
+  // Server-Side Maintenance Gate:
+  // If maintenance is active (enabled and not expired) AND route is public, serve dedicated 503 screen
+  if (
+    isMaintenanceActive &&
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/api/admin") &&
+    !pathname.startsWith("/api/auth")
+  ) {
+    const isMaintenanceMessage = content.maintenance.showMessage;
+    return (
+      <html
+        lang="en"
+        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} dark`}
+      >
+        <body className="min-h-screen bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans">
+          <RawinErrorView
+            code="503"
+            title={isMaintenanceMessage ? "We'll be back soon." : "Site temporarily unavailable"}
+            message={
+              isMaintenanceMessage
+                ? "The site is undergoing scheduled maintenance."
+                : "The site is currently offline for updates."
+            }
+            maintenanceMessage={
+              isMaintenanceMessage ? content.maintenance.message : undefined
+            }
+            endsAt={
+              isMaintenanceMessage ? content.maintenance?.endsAt || undefined : undefined
+            }
+            actionLabel="Refresh"
+          />
+        </body>
+      </html>
+    );
+  }
+
   const footerCopyright =
     content.global?.footerCopyright ||
     DEFAULT_SITE_CONTENT.global.footerCopyright;
@@ -78,6 +128,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} dark`}
     >
       <body className="min-h-screen bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative">
+        <OfflineDetector />
         <SmoothScroll>
           <ParticleField />
           <Navbar logo={content.assets?.logo} />
