@@ -1288,3 +1288,72 @@ export async function removeResumePdfFile(): Promise<boolean> {
   return true;
 }
 
+export interface PublicAvailability {
+  status: "live" | "offline" | "maintenance";
+  message?: string;
+  endsAt?: string | null;
+}
+
+/**
+ * Lightweight query for public website availability status with zero sensitive data.
+ * Automatically normalizes expired maintenance timers in MongoDB.
+ */
+export async function getPublicAvailability(): Promise<PublicAvailability> {
+  try {
+    const db = await getDatabase();
+    if (!db) {
+      return { status: "live" };
+    }
+
+    const col = db.collection(COLLECTION_NAME);
+    const doc = await col.findOne({ key: "main" }, { projection: { maintenance: 1 } });
+    if (!doc?.maintenance?.enabled) {
+      return { status: "live" };
+    }
+
+    const maintenance = doc.maintenance;
+    const endsAt = maintenance.endsAt;
+
+    // Check if maintenance mode with timer has expired
+    if (endsAt) {
+      const endsTime = new Date(endsAt).getTime();
+      if (!isNaN(endsTime) && endsTime <= Date.now()) {
+        try {
+          await col.updateOne(
+            { key: "main" },
+            {
+              $set: {
+                "maintenance.enabled": false,
+                "maintenance.endsAt": null,
+                updatedAt: new Date(),
+              },
+            }
+          );
+        } catch (updateErr) {
+          console.error("[SiteContent] Failed to persist expired maintenance reset:", updateErr);
+        }
+        return { status: "live" };
+      }
+    }
+
+    if (maintenance.showMessage) {
+      const msg = typeof maintenance.message === "string" && maintenance.message.trim()
+        ? maintenance.message.trim()
+        : "We'll be back shortly.";
+      return {
+        status: "maintenance",
+        message: msg,
+        endsAt: endsAt ? (endsAt instanceof Date ? endsAt.toISOString() : String(endsAt)) : null,
+      };
+    }
+
+    return {
+      status: "offline",
+    };
+  } catch (err) {
+    console.error("[getPublicAvailability] error:", err);
+    return { status: "live" };
+  }
+}
+
+

@@ -10,6 +10,7 @@ export interface RawinErrorViewProps {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  onExpire?: () => void;
   maintenanceMessage?: string;
   endsAt?: string | null;
 }
@@ -33,6 +34,7 @@ export default function RawinErrorView({
   message,
   actionLabel,
   onAction,
+  onExpire,
   maintenanceMessage,
   endsAt,
 }: RawinErrorViewProps) {
@@ -52,7 +54,9 @@ export default function RawinErrorView({
       const diff = targetTime - Date.now();
       if (diff <= 0) {
         setRemainingText(null);
-        if (!hasReloadedRef.current) {
+        if (onExpire) {
+          onExpire();
+        } else if (!hasReloadedRef.current) {
           hasReloadedRef.current = true;
           window.location.reload();
         }
@@ -94,7 +98,7 @@ export default function RawinErrorView({
       />
 
       {/* Main Content: Generous Whitespace, Dominant Error Code */}
-      <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col items-center text-center">
+      <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center text-center">
         {/* Dominant Focal Point: Giant FuzzyText Code */}
         <div className="w-full flex justify-center items-center py-2 sm:py-4">
           <FuzzyText
@@ -108,7 +112,7 @@ export default function RawinErrorView({
             clickEffect={false}
             glitchMode={false}
             color="#F5F7FA"
-            fontSize="clamp(6rem, 22vw, 18rem)"
+            fontSize="clamp(6rem, 22vw, 15rem)"
             fontWeight={900}
             className="select-none drop-shadow-[0_0_36px_rgba(24,155,173,0.22)]"
           >

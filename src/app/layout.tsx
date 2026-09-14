@@ -9,6 +9,7 @@ import TorchSpotlight from "@/components/TorchSpotlight";
 import ParticleField from "@/components/ParticleField";
 import RawinErrorView from "@/components/RawinErrorView";
 import OfflineDetector from "@/components/OfflineDetector";
+import AvailabilityWatcher from "@/components/AvailabilityWatcher";
 import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 
 const geistSans = Geist({
@@ -96,6 +97,10 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} dark`}
       >
         <body className="min-h-screen bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans">
+          <AvailabilityWatcher
+            initialStatus={isMaintenanceMessage ? "maintenance" : "offline"}
+            isServerFallback={true}
+          />
           <RawinErrorView
             code="503"
             title={isMaintenanceMessage ? "We'll be back soon." : "Site temporarily unavailable"}
@@ -129,6 +134,7 @@ export default async function RootLayout({
     >
       <body className="min-h-screen bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative">
         <OfflineDetector />
+        <AvailabilityWatcher />
         <SmoothScroll>
           <ParticleField />
           <Navbar logo={content.assets?.logo} />

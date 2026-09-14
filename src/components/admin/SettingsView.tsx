@@ -173,6 +173,16 @@ export default function SettingsView({
         }
         lastSavedMessageRef.current = newMessage;
         setTimeout(() => setFeedback(null), 3500);
+
+        // Notify other open public tabs in the same browser session instantly
+        if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+          try {
+            const channel = new BroadcastChannel("rawin_availability_sync");
+            channel.postMessage({ type: "AVAILABILITY_CHANGED" });
+            channel.close();
+          } catch {}
+        }
+
         router.refresh();
       }
     } catch {

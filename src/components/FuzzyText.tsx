@@ -79,34 +79,30 @@ export default function FuzzyText({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      const computedFontFamily =
+      const temp = document.createElement("span");
+      temp.style.fontFamily =
         fontFamily === "inherit"
           ? window.getComputedStyle(canvas).fontFamily || "sans-serif"
           : fontFamily;
+      temp.style.fontSize = typeof fontSize === "number" ? `${fontSize}px` : fontSize;
+      temp.style.fontWeight = String(fontWeight);
+      temp.style.position = "absolute";
+      temp.style.visibility = "hidden";
+      document.body.appendChild(temp);
 
-      const fontSizeStr = typeof fontSize === "number" ? `${fontSize}px` : fontSize;
-      const fontString = `${fontWeight} ${fontSizeStr} ${computedFontFamily}`;
+      const computedStyle = window.getComputedStyle(temp);
+      const resolvedFamily = computedStyle.fontFamily || "sans-serif";
+      const numericFontSize = parseFloat(computedStyle.fontSize) || 72;
+      document.body.removeChild(temp);
+
+      const resolvedFontString = `${fontWeight} ${numericFontSize}px ${resolvedFamily}`;
 
       try {
-        await document.fonts.load(fontString);
+        await document.fonts.load(resolvedFontString);
       } catch {
         await document.fonts.ready;
       }
       if (isCancelled) return;
-
-      let numericFontSize: number;
-      if (typeof fontSize === "number") {
-        numericFontSize = fontSize;
-      } else {
-        const temp = document.createElement("span");
-        temp.style.fontSize = fontSize;
-        temp.style.position = "absolute";
-        temp.style.visibility = "hidden";
-        document.body.appendChild(temp);
-        const computedSize = window.getComputedStyle(temp).fontSize;
-        numericFontSize = parseFloat(computedSize) || 72;
-        document.body.removeChild(temp);
-      }
 
       const text = textContent;
 
@@ -114,7 +110,7 @@ export default function FuzzyText({
       const offCtx = offscreen.getContext("2d");
       if (!offCtx) return;
 
-      offCtx.font = `${fontWeight} ${fontSizeStr} ${computedFontFamily}`;
+      offCtx.font = resolvedFontString;
       offCtx.textBaseline = "alphabetic";
 
       let totalWidth = 0;
@@ -146,7 +142,7 @@ export default function FuzzyText({
       offscreen.height = tightHeight;
 
       const xOffset = extraWidthBuffer / 2;
-      offCtx.font = `${fontWeight} ${fontSizeStr} ${computedFontFamily}`;
+      offCtx.font = resolvedFontString;
       offCtx.textBaseline = "alphabetic";
 
       if (gradient && Array.isArray(gradient) && gradient.length >= 2) {
@@ -296,8 +292,10 @@ export default function FuzzyText({
       const handleMouseMove = (e: MouseEvent) => {
         if (!effectiveHover) return;
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+        const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
         isHovering = isInsideTextArea(x, y);
       };
 
@@ -340,10 +338,27 @@ export default function FuzzyText({
       (canvas as any).cleanupFuzzyText = cleanup;
     };
 
+    let resizeTimeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (!isCancelled && canvas) {
+          if ((canvas as any).cleanupFuzzyText) {
+            (canvas as any).cleanupFuzzyText();
+          }
+          init();
+        }
+      }, 150);
+    };
+
+    window.addEventListener("resize", handleResize);
+
     init();
 
     return () => {
       isCancelled = true;
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(resizeTimeout);
       window.cancelAnimationFrame(animationFrameId);
       clearTimeout(glitchTimeoutId);
       clearTimeout(glitchEndTimeoutId);
