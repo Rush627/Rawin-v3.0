@@ -10,6 +10,7 @@ import ParticleField from "@/components/ParticleField";
 import RawinErrorView from "@/components/RawinErrorView";
 import OfflineDetector from "@/components/OfflineDetector";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
+import CustomCursor from "@/components/CustomCursor";
 import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 
 const geistSans = Geist({
@@ -135,6 +136,7 @@ export default async function RootLayout({
       <body className="min-h-screen bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative">
         <OfflineDetector />
         <AvailabilityWatcher />
+        <CustomCursor />
         <SmoothScroll>
           <ParticleField />
           <Navbar logo={content.assets?.logo} />

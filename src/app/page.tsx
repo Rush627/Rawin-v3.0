@@ -29,7 +29,6 @@ export default async function HomePage() {
     getSiteContent(),
   ]);
   const homeContent = siteContent.home;
-  const contactEmail = siteContent.contact?.email || siteContent.global.contactEmail || "rushansiddiqui5262@gmail.com";
 
   return (
     <div className="w-full flex flex-col gap-28 md:gap-36 pt-28 pb-12 px-4 sm:px-6 max-w-6xl mx-auto">
@@ -411,48 +410,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ------------------------------------------------------------- */}
-      {/* SECTION 5: CALL TO ACTION (CTA)                              */}
-      {/* ------------------------------------------------------------- */}
-      <BorderGlow borderRadius={24} className="w-full">
-        <section
-          data-particle-protected
-          className="relative rounded-3xl glass-panel p-8 sm:p-12 md:p-16 border border-white/[0.08] overflow-hidden text-center flex flex-col items-center"
-        >
-          {/* Subtle radial accent */}
-          <div
-            aria-hidden="true"
-            className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full bg-pacific-cyan/15 blur-[100px] pointer-events-none"
-          />
-
-          <span className="text-xs font-mono font-medium text-pacific-cyan uppercase tracking-wider mb-3">
-            Let&apos;s Build Together
-          </span>
-          <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground font-space max-w-2xl leading-tight">
-            Ready to build your next <span className="text-apricot-cream">project</span>?
-          </h2>
-          <p className="text-sm sm:text-base text-muted max-w-xl mt-4 leading-relaxed">
-            Whether you need a full-stack web application, a responsive interface, or a modern frontend, I&apos;m ready to collaborate.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
-            <Link
-              href="/contact"
-              className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-sm hover:bg-pacific-cyan/90 transition-all duration-200 shadow-[0_0_30px_rgba(24,155,173,0.35)] transform hover:-translate-y-0.5"
-            >
-              <span>Start a Conversation</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <a
-              href={`mailto:${contactEmail}`}
-              className="flex items-center gap-2 px-6 py-3.5 rounded-xl glass-card text-foreground font-medium text-sm hover:border-pacific-cyan/40 transition-colors"
-            >
-              <span>{contactEmail}</span>
-            </a>
-          </div>
-        </section>
-      </BorderGlow>
     </div>
   );
 }
+
