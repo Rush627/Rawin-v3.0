@@ -36,7 +36,9 @@ export default function Footer({
   const shouldReduceMotion = useReducedMotion();
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const state1Ref = useRef<HTMLDivElement | null>(null);
+  const badgeRef = useRef<HTMLDivElement | null>(null);
+  const timeToRef = useRef<HTMLDivElement | null>(null);
+  const levelUpRef = useRef<HTMLDivElement | null>(null);
   const state2Ref = useRef<HTMLDivElement | null>(null);
   const ctaRef = useRef<HTMLDivElement | null>(null);
   const glowRef = useRef<HTMLDivElement | null>(null);
@@ -97,46 +99,68 @@ export default function Footer({
       const p = Math.max(0, Math.min(1, currentScroll / totalScroll));
 
       // -------------------------------------------------------------
-      // STATE 1: ONE LAST THING / TELL ME WHAT'S NEXT.
-      // Dominant 0% - 28%, then translates up and fades out by 50%
+      // STATE 1: ONE LAST THING / TIME TO (left) + LEVEL UP (right)
+      // 0% - 18%: Centered and dominant
+      // 18% - 52%: TIME TO translates left, LEVEL UP translates right
+      // 52%+: Out of viewport and hidden
       // -------------------------------------------------------------
-      if (state1Ref.current) {
-        let opacity = 1;
-        let y = 0;
-        let scale = 1;
+      if (badgeRef.current && timeToRef.current && levelUpRef.current) {
+        if (p <= 0.18) {
+          badgeRef.current.style.opacity = "1";
+          badgeRef.current.style.transform = "translate3d(0, 0, 0)";
+          timeToRef.current.style.opacity = "1";
+          timeToRef.current.style.transform = "translate3d(0, 0, 0)";
+          levelUpRef.current.style.opacity = "1";
+          levelUpRef.current.style.transform = "translate3d(0, 0, 0)";
+        } else if (p > 0.18 && p <= 0.52) {
+          const t = (p - 0.18) / 0.34;
 
-        if (p > 0.28) {
-          const t = Math.min(1, (p - 0.28) / 0.22);
-          opacity = 1 - t;
-          y = -50 * t;
-          scale = 1 - 0.05 * t;
+          // Badge fades and lifts slightly
+          const tBadge = Math.min(1, t / 0.5);
+          const badgeOp = 1 - tBadge;
+          const badgeY = -30 * tBadge;
+          badgeRef.current.style.opacity = badgeOp.toFixed(4);
+          badgeRef.current.style.transform = `translate3d(0, ${badgeY.toFixed(2)}px, 0)`;
+
+          // Group A (TIME TO) moves toward LEFT
+          const xA = -110 * t;
+          const opA = t > 0.65 ? Math.max(0, 1 - (t - 0.65) / 0.35) : 1;
+          timeToRef.current.style.opacity = opA.toFixed(4);
+          timeToRef.current.style.transform = `translate3d(${xA.toFixed(2)}vw, 0, 0)`;
+
+          // Group B (LEVEL UP) moves toward RIGHT
+          const xB = 110 * t;
+          const opB = t > 0.65 ? Math.max(0, 1 - (t - 0.65) / 0.35) : 1;
+          levelUpRef.current.style.opacity = opB.toFixed(4);
+          levelUpRef.current.style.transform = `translate3d(${xB.toFixed(2)}vw, 0, 0)`;
+        } else {
+          badgeRef.current.style.opacity = "0";
+          timeToRef.current.style.opacity = "0";
+          levelUpRef.current.style.opacity = "0";
         }
-
-        state1Ref.current.style.opacity = opacity.toFixed(4);
-        state1Ref.current.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
       }
 
       // -------------------------------------------------------------
       // STATE 2: LET'S MAKE SOMETHING IMPOSSIBLE TO IGNORE.
-      // Enters 32% - 54%, dominant 54% - 78%, subtle lift as CTA reveals
+      // Enters 42% - 64% as previous words clear, dominant 64% - 80%
       // -------------------------------------------------------------
       if (state2Ref.current) {
         let opacity = 0;
         let y = 60;
-        let scale = 0.95;
+        let scale = 0.96;
 
-        if (p >= 0.32 && p <= 0.54) {
-          const t = (p - 0.32) / 0.22;
+        if (p >= 0.42 && p <= 0.64) {
+          const t = (p - 0.42) / 0.22;
           opacity = t;
           y = 60 * (1 - t);
-          scale = 0.95 + 0.05 * t;
-        } else if (p > 0.54 && p <= 0.78) {
+          scale = 0.96 + 0.04 * t;
+        } else if (p > 0.64 && p <= 0.8) {
           opacity = 1;
           y = 0;
           scale = 1;
-        } else if (p > 0.78) {
-          const t = Math.min(1, (p - 0.78) / 0.16);
-          opacity = 1 - 0.12 * t;
+        } else if (p > 0.8) {
+          const t = Math.min(1, (p - 0.8) / 0.16);
+          opacity = 1 - 0.15 * t;
           y = -25 * t;
           scale = 1;
         }
@@ -147,14 +171,14 @@ export default function Footer({
 
       // -------------------------------------------------------------
       // STATE 3: LARGE CTA STRIP (Bridging directly to /contact)
-      // Enters smoothly 62% - 82%, becomes fully interactive
+      // Enters smoothly 68% - 88%, becomes fully interactive
       // -------------------------------------------------------------
       if (ctaRef.current) {
         let opacity = 0;
         let y = 40;
 
-        if (p >= 0.62) {
-          const t = Math.min(1, (p - 0.62) / 0.2);
+        if (p >= 0.68) {
+          const t = Math.min(1, (p - 0.68) / 0.2);
           opacity = t;
           y = 40 * (1 - t);
         }
@@ -247,6 +271,21 @@ export default function Footer({
   const twitterUrl =
     contact?.socials?.twitter ?? "https://x.com/sidd_rushan__";
 
+  // CMS Availability indicator color mapping
+  const statusColor = content?.availabilityStatusColor || "green";
+  const badgeColorClasses =
+    statusColor === "orange"
+      ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+      : statusColor === "red"
+      ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+      : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+  const dotColorClasses =
+    statusColor === "orange"
+      ? "bg-amber-400"
+      : statusColor === "red"
+      ? "bg-rose-400"
+      : "bg-emerald-400";
+
   return (
     <footer className="relative z-20 w-full border-t border-white/[0.06] bg-ink-black mt-28 md:mt-36 overflow-x-clip">
       {/* ------------------------------------------------------------- */}
@@ -264,12 +303,17 @@ export default function Footer({
             </div>
             <div className="flex flex-col">
               <span className="text-5xl sm:text-7xl md:text-8xl font-black font-space tracking-tight text-foreground uppercase leading-[0.9]">
-                LET&apos;S MAKE
-              </span>
-              <span className="text-5xl sm:text-7xl md:text-8xl font-black font-space tracking-tight text-foreground uppercase leading-[0.9]">
-                SOMETHING IMPOSSIBLE
+                TIME TO
               </span>
               <span className="footer-outline-text text-5xl sm:text-7xl md:text-8xl font-black font-space tracking-tight uppercase leading-[0.9] -mt-2 sm:-mt-4">
+                LEVEL UP
+              </span>
+            </div>
+            <div className="flex flex-col mt-4">
+              <span className="text-4xl sm:text-6xl md:text-7xl font-black font-space tracking-tight text-foreground uppercase leading-[0.9]">
+                LET&apos;S MAKE SOMETHING IMPOSSIBLE
+              </span>
+              <span className="footer-outline-text text-4xl sm:text-6xl md:text-7xl font-black font-space tracking-tight uppercase leading-[0.9] -mt-2 sm:-mt-4">
                 TO IGNORE.
               </span>
             </div>
@@ -277,7 +321,7 @@ export default function Footer({
 
           <Link
             href="/contact"
-            aria-label="Start a conversation - Navigate to Contact page"
+            aria-label="Start a conversation: Navigate to Contact page"
             className="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl bg-surface/60 border border-white/10 hover:border-pacific-cyan/40 hover:bg-surface/90 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.36)] block overflow-hidden cursor-pointer"
           >
             <div className="flex flex-col gap-1.5 sm:gap-2">
@@ -295,7 +339,7 @@ export default function Footer({
         </div>
       ) : (
         // Standard Scroll-Driven Closing Scene (Pinned / Sticky viewport)
-        <div ref={scrollContainerRef} className="relative h-[210vh] w-full">
+        <div ref={scrollContainerRef} className="relative h-[220vh] w-full">
           <div className="sticky top-0 h-screen w-full flex flex-col justify-center px-4 sm:px-6 md:px-8 overflow-hidden">
             {/* Ambient Background Shift */}
             <div
@@ -308,40 +352,34 @@ export default function Footer({
               {/* Center Stage: Overlapping Grid for Smooth Cross-Dissolve & Translation */}
               <div className="grid grid-cols-1 grid-rows-1 [&>*]:col-start-1 [&>*]:row-start-1 items-center">
                 {/* ------------------------------------------------------- */}
-                {/* STATE 1: ONE LAST THING / TELL ME WHAT'S NEXT.          */}
+                {/* STATE 1: ONE LAST THING / TIME TO LEVEL UP              */}
                 {/* ------------------------------------------------------- */}
-                <div
-                  ref={state1Ref}
-                  className="flex flex-col select-none pointer-events-none will-change-transform opacity-100"
-                >
-                  <div className="flex items-center gap-2 mb-4 md:mb-6">
+                <div className="flex flex-col select-none pointer-events-none w-full">
+                  <div
+                    ref={badgeRef}
+                    className="flex items-center gap-2 mb-4 md:mb-6 will-change-transform opacity-100"
+                  >
                     <span className="w-2 h-2 rounded-full bg-pacific-cyan animate-pulse" />
                     <span className="text-xs sm:text-sm font-mono tracking-widest text-pacific-cyan uppercase font-semibold">
                       ONE LAST THING
                     </span>
                   </div>
 
-                  {/* Desktop Layout */}
-                  <div className="hidden sm:flex flex-col">
-                    <span className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black font-space tracking-tight text-foreground uppercase leading-[0.88] drop-shadow-sm">
-                      TELL ME
-                    </span>
-                    <span className="footer-outline-text text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black font-space tracking-tight uppercase leading-[0.88] -mt-3 sm:-mt-5 md:-mt-8">
-                      WHAT&apos;S NEXT.
-                    </span>
-                  </div>
-
-                  {/* Mobile Layout */}
-                  <div className="flex sm:hidden flex-col">
-                    <span className="text-4xl xs:text-5xl font-black font-space tracking-tight text-foreground uppercase leading-[0.9]">
-                      TELL ME
-                    </span>
-                    <span className="footer-outline-text text-4xl xs:text-5xl font-black font-space tracking-tight uppercase leading-[0.9] -mt-1">
-                      WHAT&apos;S
-                    </span>
-                    <span className="footer-outline-text text-4xl xs:text-5xl font-black font-space tracking-tight uppercase leading-[0.9] -mt-1">
-                      NEXT.
-                    </span>
+                  {/* Words split into independently animated horizontal groups */}
+                  <div className="flex flex-col overflow-visible">
+                    <div ref={timeToRef} className="will-change-transform">
+                      <span className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black font-space tracking-tight text-foreground uppercase leading-[0.9] sm:leading-[0.88] drop-shadow-sm whitespace-nowrap">
+                        TIME TO
+                      </span>
+                    </div>
+                    <div
+                      ref={levelUpRef}
+                      className="will-change-transform -mt-2 sm:-mt-5 md:-mt-8"
+                    >
+                      <span className="footer-outline-text text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black font-space tracking-tight uppercase leading-[0.9] sm:leading-[0.88] whitespace-nowrap">
+                        LEVEL UP
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -352,34 +390,15 @@ export default function Footer({
                   ref={state2Ref}
                   className="flex flex-col select-none pointer-events-none will-change-transform opacity-0"
                 >
-                  {/* Desktop Layout */}
-                  <div className="hidden sm:flex flex-col">
-                    <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-space tracking-tight text-foreground uppercase leading-[0.88] drop-shadow-sm">
-                      LET&apos;S MAKE
-                    </span>
-                    <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-space tracking-tight text-foreground uppercase leading-[0.88] drop-shadow-sm">
-                      SOMETHING IMPOSSIBLE
-                    </span>
-                    <span className="footer-outline-text text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-space tracking-tight uppercase leading-[0.88] -mt-2 sm:-mt-4 md:-mt-6">
-                      TO IGNORE.
-                    </span>
-                  </div>
-
-                  {/* Mobile Layout */}
-                  <div className="flex sm:hidden flex-col">
-                    <span className="text-3xl xs:text-4xl font-black font-space tracking-tight text-foreground uppercase leading-[0.95]">
-                      LET&apos;S MAKE
-                    </span>
-                    <span className="text-3xl xs:text-4xl font-black font-space tracking-tight text-foreground uppercase leading-[0.95]">
-                      SOMETHING
-                    </span>
-                    <span className="text-3xl xs:text-4xl font-black font-space tracking-tight text-foreground uppercase leading-[0.95]">
-                      IMPOSSIBLE
-                    </span>
-                    <span className="footer-outline-text text-3xl xs:text-4xl font-black font-space tracking-tight uppercase leading-[0.95] -mt-1">
-                      TO IGNORE.
-                    </span>
-                  </div>
+                  <span className="text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-space tracking-tight text-foreground uppercase leading-[0.95] sm:leading-[0.88] drop-shadow-sm">
+                    LET&apos;S MAKE
+                  </span>
+                  <span className="text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-space tracking-tight text-foreground uppercase leading-[0.95] sm:leading-[0.88] drop-shadow-sm">
+                    SOMETHING IMPOSSIBLE
+                  </span>
+                  <span className="footer-outline-text text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-space tracking-tight uppercase leading-[0.95] sm:leading-[0.88] -mt-1 sm:-mt-4 md:-mt-6">
+                    TO IGNORE.
+                  </span>
                 </div>
               </div>
 
@@ -392,16 +411,16 @@ export default function Footer({
               >
                 <Link
                   href="/contact"
-                  aria-label="Start a conversation - Navigate to Contact page"
+                  aria-label="Start a conversation: Navigate to Contact page"
                   className="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl bg-surface/60 border border-white/10 hover:border-pacific-cyan/40 hover:bg-surface/90 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.36)] hover:shadow-[0_12px_40px_rgba(24,155,173,0.14)] block overflow-hidden cursor-pointer"
                 >
                   {/* Subtle accent hover aura */}
                   <div
                     aria-hidden="true"
-                    className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-pacific-cyan/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                    className="absolute inset-0 bg-gradient-to-r from-pacific-cyan/0 via-pacific-cyan/5 to-pacific-cyan/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                   />
 
-                  <div className="flex flex-col gap-1.5 sm:gap-2">
+                  <div className="flex flex-col gap-1.5 sm:gap-2 relative z-10">
                     <span className="text-xs font-mono uppercase tracking-widest text-muted/70 group-hover:text-pacific-cyan transition-colors">
                       START A CONVERSATION
                     </span>
@@ -410,9 +429,8 @@ export default function Footer({
                     </span>
                   </div>
 
-                  {/* Circular Action Button */}
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/[0.04] border border-white/15 flex items-center justify-center shrink-0 text-pacific-cyan group-hover:bg-pacific-cyan group-hover:text-ink-black group-hover:border-pacific-cyan group-hover:scale-105 transition-all duration-300 shadow-md self-end sm:self-auto">
-                    <ArrowUpRight className="w-5 h-5 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/[0.04] border border-white/15 flex items-center justify-center shrink-0 text-pacific-cyan group-hover:bg-pacific-cyan group-hover:text-ink-black group-hover:border-pacific-cyan group-hover:scale-105 transition-all duration-300 shadow-md self-end sm:self-auto relative z-10">
+                    <ArrowUpRight className="w-5 h-5 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
                   </div>
                 </Link>
               </div>
@@ -424,124 +442,114 @@ export default function Footer({
       {/* ------------------------------------------------------------- */}
       {/* SIMPLIFIED EDITORIAL BOTTOM NAVIGATION                        */}
       {/* ------------------------------------------------------------- */}
-      <div className="w-full border-t border-white/[0.06] bg-ink-black pt-12 pb-8 px-4 sm:px-6 md:px-8 relative z-20">
-        <div className="max-w-6xl mx-auto flex flex-col gap-10">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
-            {/* Brand Col */}
-            <div className="md:col-span-2 flex flex-col gap-3">
-              <Link
-                href="/"
-                className="inline-flex items-center group py-1 px-1.5 rounded-xl transition-opacity hover:opacity-85 w-fit"
-                aria-label="RAWIN Home"
-              >
-                <Image
-                  src={logo?.url || "/images/logo.png"}
-                  alt={logo?.alt || "RAWIN Logo"}
-                  width={120}
-                  height={42}
-                  unoptimized
-                  priority={false}
-                  className="h-8 sm:h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
-                />
-              </Link>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  {content?.availabilityStatus || "Open to opportunities"}
-                </span>
-              </div>
-            </div>
-
-            {/* Navigation Group */}
-            <div className="flex flex-col gap-3">
-              <h4 className="text-xs uppercase tracking-widest text-muted/60 font-mono">
-                NAVIGATION
-              </h4>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted">
-                <Link href="/" className="hover:text-pacific-cyan transition-colors">
-                  Home
-                </Link>
-                <Link href="/about" className="hover:text-pacific-cyan transition-colors">
-                  About
-                </Link>
-                <Link href="/projects" className="hover:text-pacific-cyan transition-colors">
-                  Projects
-                </Link>
-                <Link href="/blog" className="hover:text-pacific-cyan transition-colors">
-                  Blog
-                </Link>
-                <Link href="/uses" className="hover:text-pacific-cyan transition-colors">
-                  Uses
-                </Link>
-                <Link href="/resume" className="hover:text-pacific-cyan transition-colors">
-                  Resume
-                </Link>
-                <Link href="/contact" className="hover:text-pacific-cyan transition-colors col-span-2">
-                  Contact
-                </Link>
-              </div>
-            </div>
-
-            {/* Connect Group */}
-            <div className="flex flex-col gap-3">
-              <h4 className="text-xs uppercase tracking-widest text-muted/60 font-mono">
-                CONNECT
-              </h4>
-              <div className="flex flex-col gap-2.5 text-sm text-muted">
-                {githubUrl.trim().length > 0 && (
-                  <a
-                    href={githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Visit Rushan Siddiqui on GitHub"
-                    className="flex items-center gap-2 hover:text-pacific-cyan transition-colors w-fit"
-                  >
-                    <GithubIcon className="w-4 h-4" />
-                    <span>GitHub</span>
-                  </a>
-                )}
-                {linkedinUrl.trim().length > 0 && (
-                  <a
-                    href={linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Visit Rushan Siddiqui on LinkedIn"
-                    className="flex items-center gap-2 hover:text-pacific-cyan transition-colors w-fit"
-                  >
-                    <LinkedinIcon className="w-4 h-4" />
-                    <span>LinkedIn</span>
-                  </a>
-                )}
-                {twitterUrl.trim().length > 0 && (
-                  <a
-                    href={twitterUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Visit Rushan Siddiqui on X"
-                    className="flex items-center gap-2 hover:text-pacific-cyan transition-colors w-fit"
-                  >
-                    <TwitterIcon className="w-4 h-4" />
-                    <span>X / Twitter</span>
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Copyright & Back to Top */}
-          <div className="pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted sm:pr-16">
-            <p>{copyrightText}</p>
-            <button
-              type="button"
-              onClick={scrollToTop}
-              aria-label="Back to top"
-              className="flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-lg glass-card hover:text-foreground hover:border-pacific-cyan/40 transition-colors cursor-pointer relative z-30 shadow-md active:scale-95 touch-manipulation"
-              style={{ touchAction: "manipulation" }}
+      <div className="border-t border-white/[0.06] bg-ink-black/90 py-12 md:py-16 px-4 sm:px-6 md:px-8 relative z-20">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8 items-start">
+          {/* Brand Column: slightly larger logo, availability badge */}
+          <div className="md:col-span-2 flex flex-col gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center group py-1 px-1.5 rounded-xl transition-opacity hover:opacity-85 w-fit"
+              aria-label="RAWIN Home"
             >
-              <span>Back to top</span>
-              <ArrowUp className="w-3.5 h-3.5 text-pacific-cyan" />
-            </button>
+              <Image
+                src={logo?.url || "/images/logo.png"}
+                alt={logo?.alt || "RAWIN Logo"}
+                width={140}
+                height={48}
+                unoptimized
+                priority={false}
+                className="h-9.5 sm:h-11 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
+              />
+            </Link>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${badgeColorClasses}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${dotColorClasses}`} />
+                {content?.availabilityStatus || "Open to opportunities"}
+              </span>
+            </div>
           </div>
+
+          {/* Navigation Group (Without Contact) */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-xs uppercase tracking-widest text-muted/60 font-mono">
+              NAVIGATION
+            </h4>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted">
+              <Link href="/" className="hover:text-pacific-cyan transition-colors">
+                Home
+              </Link>
+              <Link href="/about" className="hover:text-pacific-cyan transition-colors">
+                About
+              </Link>
+              <Link href="/projects" className="hover:text-pacific-cyan transition-colors">
+                Projects
+              </Link>
+              <Link href="/blog" className="hover:text-pacific-cyan transition-colors">
+                Blog
+              </Link>
+              <Link href="/uses" className="hover:text-pacific-cyan transition-colors">
+                Uses
+              </Link>
+              <Link href="/resume" className="hover:text-pacific-cyan transition-colors">
+                Resume
+              </Link>
+            </div>
+          </div>
+
+          {/* Connect Group */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-xs uppercase tracking-widest text-muted/60 font-mono">
+              CONNECT
+            </h4>
+            <div className="flex flex-col gap-2.5 text-sm text-muted">
+              <a
+                href={githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 hover:text-foreground transition-colors group"
+                aria-label="GitHub Profile"
+              >
+                <GithubIcon className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+                <span>GitHub</span>
+              </a>
+              <a
+                href={linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 hover:text-foreground transition-colors group"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedinIcon className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+                <span>LinkedIn</span>
+              </a>
+              <a
+                href={twitterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 hover:text-foreground transition-colors group"
+                aria-label="X (Twitter) Profile"
+              >
+                <TwitterIcon className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+                <span>X / Twitter</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Sub-Bar: Copyright & Back to Top */}
+        <div className="max-w-6xl mx-auto pt-8 mt-10 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted">
+          <p>{copyrightText}</p>
+          <button
+            type="button"
+            onClick={scrollToTop}
+            aria-label="Back to top"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-card hover:text-foreground hover:border-pacific-cyan/40 transition-colors cursor-pointer text-xs group"
+          >
+            <span>Back to top</span>
+            <ArrowUp className="w-3 h-3 text-pacific-cyan transition-transform group-hover:-translate-y-0.5" />
+          </button>
         </div>
       </div>
     </footer>

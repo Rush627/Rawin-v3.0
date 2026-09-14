@@ -2,9 +2,58 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAuraRateLimit } from "@/lib/aura/rate-limit";
 import { queryAura } from "@/lib/aura/provider";
 import type { AuraMessage } from "@/lib/aura/types";
+import {
+  verifyOrbitIdentityToken,
+  signOrbitIdentityToken,
+  verifyOwnerCandidate,
+  isClaimingRushanIdentity,
+  extractCandidateCode,
+} from "@/lib/orbit-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function createDirectResponse(
+  text: string,
+  token: string,
+  stream: boolean
+): Response {
+  if (stream) {
+    const encoder = new TextEncoder();
+    const readableStream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ text, done: false })}\n\n`)
+        );
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ text: "", done: true })}\n\n`)
+        );
+        controller.close();
+      },
+    });
+
+    return new Response(readableStream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "x-orbit-identity-token": token,
+      },
+    });
+  }
+
+  return NextResponse.json(
+    {
+      role: "assistant",
+      content: text,
+    },
+    {
+      headers: {
+        "x-orbit-identity-token": token,
+      },
+    }
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,7 +74,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Body Parsing & Validation
-    let body: { messages?: unknown; stream?: unknown };
+    let body: { messages?: unknown; stream?: unknown; identityToken?: unknown };
     try {
       body = await req.json();
     } catch {
@@ -35,7 +84,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { messages, stream = true } = body;
+    const { messages, stream = true, identityToken } = body;
+
+    // Verify session identity state from cryptographic token
+    const rawToken =
+      typeof identityToken === "string"
+        ? identityToken
+        : req.headers.get("x-orbit-identity-token");
+    const currentIdentity = await verifyOrbitIdentityToken(rawToken);
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -94,16 +150,62 @@ export async function POST(req: NextRequest) {
     }
 
     // Last message must be from user
-    if (sanitizedMessages[sanitizedMessages.length - 1].role !== "user") {
+    const lastUserMessage = sanitizedMessages[sanitizedMessages.length - 1];
+    if (lastUserMessage.role !== "user") {
       return NextResponse.json(
         { error: "The most recent message in the conversation must come from the user." },
         { status: 400 }
       );
     }
 
-    // 3. Query Aura Provider
+    const userText = lastUserMessage.content;
     const isStreamRequested = stream !== false;
-    const result = await queryAura(sanitizedMessages, isStreamRequested);
+
+    // 3. Identity Verification State Machine
+    if (currentIdentity === "CLAIMED_RUSHAN_PENDING_VERIFICATION") {
+      // Visitor was prompted for verification code and submitted candidate
+      const candidate = extractCandidateCode(userText);
+      const isMatch = await verifyOwnerCandidate(candidate, ip);
+
+      if (isMatch) {
+        const nextToken = await signOrbitIdentityToken("VERIFIED_RUSHAN");
+        const reply = "Identity confirmed. Welcome back, Rushan. Orbit is at your command.";
+        return createDirectResponse(reply, nextToken, isStreamRequested);
+      } else {
+        const nextToken = await signOrbitIdentityToken("RUSHAN_VERIFICATION_FAILED");
+        const reply = "That verification didn't match. No problem, we can continue normally.";
+        return createDirectResponse(reply, nextToken, isStreamRequested);
+      }
+    }
+
+    if (currentIdentity === "RUSHAN_VERIFICATION_FAILED") {
+      // Once verification fails in this conversation, no retry is allowed
+      if (isClaimingRushanIdentity(userText)) {
+        const nextToken = await signOrbitIdentityToken("RUSHAN_VERIFICATION_FAILED");
+        const reply = "Verification was already attempted for this session and cannot be retried. We can continue with any general questions about RAWIN, projects, or architecture.";
+        return createDirectResponse(reply, nextToken, isStreamRequested);
+      }
+      // Continue normally with unverified visitor status
+    }
+
+    if (currentIdentity === "UNKNOWN") {
+      if (isClaimingRushanIdentity(userText)) {
+        const nextToken = await signOrbitIdentityToken("CLAIMED_RUSHAN_PENDING_VERIFICATION");
+        const reply = "If you're Rushan, please confirm your identity with the verification code.";
+        return createDirectResponse(reply, nextToken, isStreamRequested);
+      }
+    }
+
+    if (currentIdentity === "VERIFIED_RUSHAN") {
+      if (isClaimingRushanIdentity(userText)) {
+        const reply = "You are already verified as Rushan for this conversation.";
+        return createDirectResponse(reply, rawToken || "", isStreamRequested);
+      }
+    }
+
+    // 4. Query Aura Provider
+    const result = await queryAura(sanitizedMessages, isStreamRequested, currentIdentity);
+    const activeToken = rawToken || (await signOrbitIdentityToken(currentIdentity));
 
     if ("stream" in result) {
       return new Response(result.stream, {
@@ -111,15 +213,23 @@ export async function POST(req: NextRequest) {
           "Content-Type": "text/event-stream; charset=utf-8",
           "Cache-Control": "no-cache, no-transform",
           Connection: "keep-alive",
+          "x-orbit-identity-token": activeToken,
         },
       });
     }
 
-    return NextResponse.json({
-      role: "assistant",
-      content: result.content,
-      model: result.model,
-    });
+    return NextResponse.json(
+      {
+        role: "assistant",
+        content: result.content,
+        model: result.model,
+      },
+      {
+        headers: {
+          "x-orbit-identity-token": activeToken,
+        },
+      }
+    );
   } catch (error: unknown) {
     const errMessage = error instanceof Error ? error.message : String(error);
     console.error("[Aura API] Error executing chat request:", errMessage);

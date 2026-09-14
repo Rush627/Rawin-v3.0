@@ -8,6 +8,7 @@ export interface GlobalContent {
   shortBio: string;
   availabilityStatus: string;
   availabilityBadge: string;
+  availabilityStatusColor?: "green" | "orange" | "red";
   footerCopyright: string;
   contactEmail: string;
   location: string;
@@ -25,14 +26,70 @@ export interface HomeContent {
   featuredDescription: string;
 }
 
+export interface EvolutionMilestoneItem {
+  id: string;
+  year: string;
+  label: string;
+  eyebrow?: string;
+  progression: string;
+  quote?: string;
+  title: string;
+  domain: string;
+  description: string;
+  technologies: string[];
+  url?: string;
+  status: "archived" | "current";
+  isCurrent: boolean;
+  preview: string;
+  previewAlt?: string;
+  ctaText: string;
+  displayOrder: number;
+  order?: number;
+}
+
+export interface AboutPrincipleItem {
+  id: string;
+  number: string;
+  title: string;
+  statement: string;
+  icon: string;
+  displayOrder: number;
+}
+
+export interface AboutFocusItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  displayOrder: number;
+}
+
 export interface AboutContent {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   subtitle: string;
   leadText: string;
   narrativeText: string;
+  evolutionEyebrow?: string;
+  evolutionHeading?: string;
+  evolutionDescription?: string;
+  evolution: EvolutionMilestoneItem[];
+  principlesEyebrow?: string;
+  principlesHeading?: string;
+  principlesDescription?: string;
+  principles: AboutPrincipleItem[];
+  journeyEyebrow?: string;
   journeyHeading: string;
   journeyDescription: string;
+  focusEyebrow?: string;
+  focusHeading?: string;
+  focusDescription?: string;
+  focusAreas: AboutFocusItem[];
+  ctaEyebrow?: string;
+  ctaHeading?: string;
+  ctaDescription?: string;
+  ctaResumeText?: string;
+  ctaContactText?: string;
 }
 
 export interface ContactSocials {
@@ -179,6 +236,8 @@ export interface AIContent {
   description: string;
   greetingMessage: string;
   inputPlaceholder: string;
+  suggestedPrompts: string[];
+  suggestedPromptsLabel?: string;
 }
 
 export interface AssetMeta {
@@ -252,6 +311,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       "Full Stack Developer building clean interfaces, thoughtful user experiences, and modern web applications.",
     availabilityStatus: "Open to opportunities",
     availabilityBadge: "Available for hire",
+    availabilityStatusColor: "green",
     footerCopyright: "RAWIN. All rights reserved. Designed & built by Rushan Siddiqui.",
     contactEmail: "rushansiddiqui5262@gmail.com",
     location: "Jaunpur, Uttar Pradesh, India",
@@ -269,16 +329,154 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     featuredDescription: "Selected Work",
   },
   about: {
-    eyebrow: "Biography & Philosophy",
+    eyebrow: "ABOUT",
     title: "About Rushan Siddiqui",
     subtitle: "Full Stack Developer & Digital Craftsman",
     leadText:
       "I build for the web, starting with interfaces and gradually moving deeper into the systems behind them.",
     narrativeText:
       "What began as an early curiosity with layouts and styling has grown into a disciplined focus on the entire web stack: from accessible, fluid interface design and frontend performance to type-safe APIs and modern application architecture.",
+    evolutionEyebrow: "A RECORD OF THE BUILD",
+    evolutionHeading: "From a first HTML page to a full engineering platform.",
+    evolutionDescription: "RAWIN has evolved alongside the way I build for the web.",
+    evolution: [
+      {
+        id: "milestone-2022",
+        year: "2022",
+        label: "FIRST BUILD",
+        progression: "I learned to build.",
+        title: "The First Build",
+        domain: "Rushansidd.in",
+        description:
+          "My first personal website, built from the ground up with HTML and CSS. It was where I began experimenting with layouts, typography and creating a personal identity on the web.",
+        technologies: ["HTML", "CSS"],
+        url: "https://rush627.github.io/Rushansidd.in",
+        status: "archived",
+        isCurrent: false,
+        preview: "/images/evolution-2022.png",
+        previewAlt: "The First Build (2022) preview",
+        ctaText: "VIEW WEBSITE",
+        displayOrder: 1,
+      },
+      {
+        id: "milestone-2023",
+        year: "2023",
+        label: "RAWIN V2.0",
+        progression: "I learned to refine.",
+        title: "RAWIN V2.0",
+        domain: "Rushan.in",
+        description:
+          "A significant step forward in both design and implementation. RAWIN V2.0 introduced a more refined visual system, improved responsiveness and richer interaction while remaining a handcrafted static website.",
+        technologies: ["HTML", "CSS", "JavaScript"],
+        url: "https://rush627.github.io/Rushan.in",
+        status: "archived",
+        isCurrent: false,
+        preview: "/images/evolution-2023.png",
+        previewAlt: "RAWIN V2.0 (2023) preview",
+        ctaText: "VIEW WEBSITE",
+        displayOrder: 2,
+      },
+      {
+        id: "milestone-2026",
+        year: "2026",
+        label: "RAWIN 3.0",
+        progression: "I am building systems.",
+        title: "RAWIN 3.0",
+        domain: "rawin.dev",
+        description:
+          "The transition from a static portfolio into a modern engineering platform. RAWIN 3.0 is built with reusable components, modern application architecture, intentional interaction and a stronger focus on building complete digital experiences.",
+        technologies: ["Next.js", "React", "TypeScript", "Tailwind CSS"],
+        status: "current",
+        isCurrent: true,
+        preview: "/images/evolution-2026.png",
+        previewAlt: "RAWIN 3.0 (2026) preview",
+        ctaText: "YOU ARE HERE",
+        displayOrder: 3,
+      },
+    ],
+    principlesEyebrow: "HOW I BUILD",
+    principlesHeading: "A few principles I keep close.",
+    principles: [
+      {
+        id: "principle-1",
+        number: "01",
+        title: "ARCHITECTURE",
+        statement: "Build systems that stay understandable.",
+        icon: "layers",
+        displayOrder: 1,
+      },
+      {
+        id: "principle-2",
+        number: "02",
+        title: "EXPERIENCE",
+        statement: "Make interfaces feel intentional.",
+        icon: "eye",
+        displayOrder: 2,
+      },
+      {
+        id: "principle-3",
+        number: "03",
+        title: "PERFORMANCE",
+        statement: "Keep complexity from reaching the user.",
+        icon: "zap",
+        displayOrder: 3,
+      },
+      {
+        id: "principle-4",
+        number: "04",
+        title: "CRAFT",
+        statement: "Details matter.",
+        icon: "palette",
+        displayOrder: 4,
+      },
+    ],
+    journeyEyebrow: "ENGINEERING JOURNEY",
     journeyHeading: "Experience and practice.",
     journeyDescription:
       "The ongoing evolution of my development craft, engineering roles, and technical practice.",
+    focusEyebrow: "CURRENT FOCUS",
+    focusHeading: "What I'm building toward.",
+    focusDescription:
+      "Exploring where thoughtful interface design and modern engineering can meet.",
+    focusAreas: [
+      {
+        id: "focus-1",
+        title: "WEB APPLICATIONS",
+        description:
+          "Full-stack apps with Next.js, TypeScript, and MongoDB. Focused on clean state and reliable API routes.",
+        icon: "terminal",
+        displayOrder: 1,
+      },
+      {
+        id: "focus-2",
+        title: "INTERACTIVE INTERFACES",
+        description:
+          "Responsive layouts, micro-interactions, and fluid transitions that make software enjoyable to use.",
+        icon: "compass",
+        displayOrder: 2,
+      },
+      {
+        id: "focus-3",
+        title: "AI INTEGRATION",
+        description:
+          "Streaming responses, edge function workflows, and practical assistant tools inside web apps.",
+        icon: "cpu",
+        displayOrder: 3,
+      },
+      {
+        id: "focus-4",
+        title: "MODERN WEB ARCHITECTURE",
+        description:
+          "Modular component systems, Tailwind styling, and maintainable project structures.",
+        icon: "boxes",
+        displayOrder: 4,
+      },
+    ],
+    ctaEyebrow: "LET'S BUILD TOGETHER",
+    ctaHeading: "Have something worth building?",
+    ctaDescription: "Open to full-time roles, freelance projects, and collaborations.",
+    ctaResumeText: "View Resume",
+    ctaContactText: "Get in Touch",
   },
   contact: {
     eyebrow: "Get in Touch",
@@ -541,10 +739,20 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   ai: {
     eyebrow: "ORBIT",
     title: "RAWIN ORBIT",
-    description: "AI intelligence interface for projects, engineering, and architecture",
+    description: "Ask about Rushan, RAWIN, projects, experience, or writing.",
     greetingMessage:
       "I'm Rawin Orbit, the AI assistant built by Rushan Siddiqui for RAWIN.",
-    inputPlaceholder: "Ask Orbit about Rushan's work, projects, architecture, or skills...",
+    inputPlaceholder: "Ask anything about Rushan's work, experience, or skills...",
+    suggestedPromptsLabel: "Suggested Prompts",
+    suggestedPrompts: [
+      "What is RAWIN?",
+      "Who founded RAWIN?",
+      "Tell me about Rushan's projects",
+      "What technologies does Rushan use?",
+      "Tell me about Rawin Horizon",
+      "What is Rawin Orbit?",
+      "Tell me about Strata Commerce",
+    ],
   },
   maintenance: {
     enabled: false,
@@ -648,6 +856,7 @@ export function mergeWithDefaults(doc: any): SiteContent {
       shortBio: doc.global?.shortBio || DEFAULT_SITE_CONTENT.global.shortBio,
       availabilityStatus: doc.global?.availabilityStatus || DEFAULT_SITE_CONTENT.global.availabilityStatus,
       availabilityBadge: doc.global?.availabilityBadge || DEFAULT_SITE_CONTENT.global.availabilityBadge,
+      availabilityStatusColor: (doc.global?.availabilityStatusColor as "green" | "orange" | "red") || "green",
       footerCopyright: doc.global?.footerCopyright || DEFAULT_SITE_CONTENT.global.footerCopyright,
       contactEmail: canonicalEmail,
       location: canonicalLocation,
@@ -664,13 +873,68 @@ export function mergeWithDefaults(doc: any): SiteContent {
       featuredDescription: doc.home?.featuredDescription || DEFAULT_SITE_CONTENT.home.featuredDescription,
     },
     about: {
-      eyebrow: doc.about?.eyebrow || DEFAULT_SITE_CONTENT.about.eyebrow,
+      eyebrow:
+        doc.about?.eyebrow && doc.about.eyebrow !== "Biography & Philosophy"
+          ? doc.about.eyebrow
+          : DEFAULT_SITE_CONTENT.about.eyebrow,
       title: doc.about?.title || DEFAULT_SITE_CONTENT.about.title,
       subtitle: doc.about?.subtitle || DEFAULT_SITE_CONTENT.about.subtitle,
       leadText: doc.about?.leadText || DEFAULT_SITE_CONTENT.about.leadText,
       narrativeText: doc.about?.narrativeText || DEFAULT_SITE_CONTENT.about.narrativeText,
+      evolutionEyebrow: doc.about?.evolutionEyebrow || DEFAULT_SITE_CONTENT.about.evolutionEyebrow,
+      evolutionHeading: doc.about?.evolutionHeading || DEFAULT_SITE_CONTENT.about.evolutionHeading,
+      evolutionDescription: doc.about?.evolutionDescription || DEFAULT_SITE_CONTENT.about.evolutionDescription,
+      evolution: Array.isArray(doc.about?.evolution) && doc.about.evolution.length > 0
+        ? doc.about.evolution.map((m: any, idx: number) => ({
+            id: String(m.id || `milestone-${idx + 1}`),
+            year: String(m.year || "2026"),
+            label: String(m.label || "MILESTONE"),
+            progression: String(m.progression || ""),
+            title: String(m.title || "Milestone Title"),
+            domain: String(m.domain || "rawin.dev"),
+            description: String(m.description || ""),
+            technologies: Array.isArray(m.technologies) ? m.technologies.map((t: any) => String(t).trim()).filter(Boolean) : [],
+            url: typeof m.url === "string" && m.url.trim() ? m.url.trim() : undefined,
+            status: m.isCurrent || m.status === "current" ? ("current" as const) : ("archived" as const),
+            isCurrent: Boolean(m.isCurrent || m.status === "current"),
+            preview: String(m.preview || `/images/evolution-${m.year || "2026"}.png`),
+            previewAlt: typeof m.previewAlt === "string" ? m.previewAlt : `${m.title || ""} (${m.year || ""}) preview`,
+            ctaText: String(m.ctaText || (m.isCurrent ? "YOU ARE HERE" : "VIEW WEBSITE")),
+            displayOrder: typeof m.displayOrder === "number" ? m.displayOrder : idx + 1,
+          }))
+        : DEFAULT_SITE_CONTENT.about.evolution,
+      principlesEyebrow: doc.about?.principlesEyebrow || DEFAULT_SITE_CONTENT.about.principlesEyebrow,
+      principlesHeading: doc.about?.principlesHeading || DEFAULT_SITE_CONTENT.about.principlesHeading,
+      principles: Array.isArray(doc.about?.principles) && doc.about.principles.length > 0
+        ? doc.about.principles.map((p: any, idx: number) => ({
+            id: String(p.id || `principle-${idx + 1}`),
+            number: String(p.number || `0${idx + 1}`),
+            title: String(p.title || ""),
+            statement: String(p.statement || ""),
+            icon: String(p.icon || "layers"),
+            displayOrder: typeof p.displayOrder === "number" ? p.displayOrder : idx + 1,
+          }))
+        : DEFAULT_SITE_CONTENT.about.principles,
+      journeyEyebrow: doc.about?.journeyEyebrow || DEFAULT_SITE_CONTENT.about.journeyEyebrow,
       journeyHeading: doc.about?.journeyHeading || DEFAULT_SITE_CONTENT.about.journeyHeading,
       journeyDescription: doc.about?.journeyDescription || DEFAULT_SITE_CONTENT.about.journeyDescription,
+      focusEyebrow: doc.about?.focusEyebrow || DEFAULT_SITE_CONTENT.about.focusEyebrow,
+      focusHeading: doc.about?.focusHeading || DEFAULT_SITE_CONTENT.about.focusHeading,
+      focusDescription: doc.about?.focusDescription || DEFAULT_SITE_CONTENT.about.focusDescription,
+      focusAreas: Array.isArray(doc.about?.focusAreas) && doc.about.focusAreas.length > 0
+        ? doc.about.focusAreas.map((f: any, idx: number) => ({
+            id: String(f.id || `focus-${idx + 1}`),
+            title: String(f.title || ""),
+            description: String(f.description || ""),
+            icon: String(f.icon || "terminal"),
+            displayOrder: typeof f.displayOrder === "number" ? f.displayOrder : idx + 1,
+          }))
+        : DEFAULT_SITE_CONTENT.about.focusAreas,
+      ctaEyebrow: doc.about?.ctaEyebrow || DEFAULT_SITE_CONTENT.about.ctaEyebrow,
+      ctaHeading: doc.about?.ctaHeading || DEFAULT_SITE_CONTENT.about.ctaHeading,
+      ctaDescription: doc.about?.ctaDescription || DEFAULT_SITE_CONTENT.about.ctaDescription,
+      ctaResumeText: doc.about?.ctaResumeText || DEFAULT_SITE_CONTENT.about.ctaResumeText,
+      ctaContactText: doc.about?.ctaContactText || DEFAULT_SITE_CONTENT.about.ctaContactText,
     },
     contact: {
       eyebrow: doc.contact?.eyebrow || DEFAULT_SITE_CONTENT.contact.eyebrow,
@@ -777,11 +1041,24 @@ export function mergeWithDefaults(doc: any): SiteContent {
       },
     },
     ai: {
-      eyebrow: doc.ai?.eyebrow || DEFAULT_SITE_CONTENT.ai.eyebrow,
-      title: doc.ai?.title || DEFAULT_SITE_CONTENT.ai.title,
+      eyebrow:
+        doc.ai?.eyebrow && !["AI ASSISTANT", "RAWIN AI ASSISTANT", "AURA", "COGNITIVE ASSISTANT"].includes(doc.ai.eyebrow.toUpperCase())
+          ? doc.ai.eyebrow
+          : DEFAULT_SITE_CONTENT.ai.eyebrow,
+      title:
+        doc.ai?.title && !["AI Assistant", "RAWIN AI Assistant", "Aura", "Cognitive Assistant"].includes(doc.ai.title)
+          ? doc.ai.title
+          : DEFAULT_SITE_CONTENT.ai.title,
       description: doc.ai?.description || DEFAULT_SITE_CONTENT.ai.description,
-      greetingMessage: doc.ai?.greetingMessage || DEFAULT_SITE_CONTENT.ai.greetingMessage,
+      greetingMessage:
+        doc.ai?.greetingMessage && !doc.ai.greetingMessage.includes("RAWIN AI.")
+          ? doc.ai.greetingMessage
+          : DEFAULT_SITE_CONTENT.ai.greetingMessage,
       inputPlaceholder: doc.ai?.inputPlaceholder || DEFAULT_SITE_CONTENT.ai.inputPlaceholder,
+      suggestedPromptsLabel: doc.ai?.suggestedPromptsLabel || DEFAULT_SITE_CONTENT.ai.suggestedPromptsLabel,
+      suggestedPrompts: Array.isArray(doc.ai?.suggestedPrompts) && doc.ai.suggestedPrompts.length > 0
+        ? doc.ai.suggestedPrompts.map((p: any) => String(p).trim()).filter(Boolean)
+        : DEFAULT_SITE_CONTENT.ai.suggestedPrompts,
     },
     assets: {
       profilePhoto: {
@@ -1015,7 +1292,7 @@ export async function storeAssetFile(
  * Retrieves an asset file stream and metadata from MongoDB GridFS.
  */
 export async function getAssetFile(
-  assetType: AssetKey
+  assetType: AssetKey | string
 ): Promise<{ stream: Readable; contentType: string; filename: string } | null> {
   const db = await getDatabase();
   if (!db) return null;
@@ -1114,8 +1391,55 @@ export async function resetAssetToDefault(assetType: AssetKey): Promise<boolean>
       },
     }
   );
-
   return true;
+}
+
+/**
+ * Stores an uploaded milestone image file buffer into MongoDB GridFS.
+ */
+export async function storeMilestoneImage(
+  milestoneId: string,
+  fileBuffer: Buffer,
+  mimeType: string,
+  filename: string
+): Promise<string> {
+  const db = await getDatabase();
+  if (!db) {
+    throw new Error("Database connection unavailable.");
+  }
+
+  const assetType = `evolution-${milestoneId}`;
+  const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
+
+  // Delete prior GridFS file for this milestone
+  try {
+    const existingFiles = await bucket
+      .find({ "metadata.assetType": assetType })
+      .toArray();
+    for (const file of existingFiles) {
+      await bucket.delete(file._id).catch(() => {});
+    }
+  } catch (cleanErr) {
+    console.warn("[SiteContent] Clean prior milestone image notice:", cleanErr);
+  }
+
+  const sanitizedName = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
+  const uploadStream = bucket.openUploadStream(sanitizedName, {
+    metadata: {
+      contentType: mimeType,
+      assetType,
+      uploadedAt: new Date(),
+    },
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    uploadStream.on("finish", () => resolve());
+    uploadStream.on("error", (err) => reject(err));
+    uploadStream.write(fileBuffer);
+    uploadStream.end();
+  });
+
+  return `/api/assets/${assetType}?v=${Date.now()}`;
 }
 
 const RESUME_PDF_ASSET_TYPE = "resumePdf";

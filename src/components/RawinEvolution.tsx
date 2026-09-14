@@ -3,17 +3,80 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { History, ArrowUpRight } from "lucide-react";
-import { EVOLUTION_MILESTONES } from "@/data/evolution";
+import { EVOLUTION_MILESTONES, type EvolutionMilestone } from "@/data/evolution";
+import type { EvolutionMilestoneItem } from "@/lib/site-content";
 import RawinEvolutionConstellation from "@/components/RawinEvolutionConstellation";
 
 // Symmetrical 8-point geometric star icon path for milestone header anchors
 const STAR_ICON_PATH =
   "M 0,-6 L 0.8,-2 L 4.2,-4.2 L 2,-0.8 L 6,0 L 2,0.8 L 4.2,4.2 L 0.8,2 L 0,6 L -0.8,2 L -4.2,4.2 L -2,0.8 L -6,0 L -2,-0.8 L -4.2,-4.2 L -0.8,-2 Z";
 
-export default function RawinEvolution() {
+export interface RawinEvolutionProps {
+  milestones?: EvolutionMilestoneItem[];
+  eyebrow?: string;
+  heading?: string;
+  description?: string;
+}
+
+interface NormalizedMilestone {
+  id?: string;
+  year: string;
+  label: string;
+  progression: string;
+  title: string;
+  domain: string;
+  description: string;
+  technologies: string[];
+  url?: string;
+  isCurrent: boolean;
+  preview: string;
+  previewAlt?: string;
+  ctaText: string;
+}
+
+export default function RawinEvolution({
+  milestones,
+  eyebrow = "A RECORD OF THE BUILD",
+  heading = "From a first HTML page to a full engineering platform.",
+  description = "RAWIN has evolved alongside the way I build for the web.",
+}: RawinEvolutionProps = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const milestoneRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeMilestone, setActiveMilestone] = useState(0);
+
+  // Use CMS milestones if present, sorted by order; otherwise fallback to default records
+  const items: NormalizedMilestone[] = milestones && milestones.length > 0
+    ? [...milestones]
+        .sort((a, b) => (a.order ?? a.displayOrder ?? 0) - (b.order ?? b.displayOrder ?? 0))
+        .map((m) => ({
+          id: m.id,
+          year: m.year,
+          label: m.eyebrow || m.label || "MILESTONE",
+          progression: m.quote || m.progression || "",
+          title: m.title,
+          domain: m.domain,
+          description: m.description,
+          technologies: m.technologies || [],
+          url: m.url,
+          isCurrent: Boolean(m.isCurrent || m.status === "current"),
+          preview: m.preview,
+          previewAlt: m.previewAlt || `${m.title} (${m.year}) preview`,
+          ctaText: m.ctaText,
+        }))
+    : EVOLUTION_MILESTONES.map((m) => ({
+        year: m.year,
+        label: m.label,
+        progression: m.progression,
+        title: m.title,
+        domain: m.domain,
+        description: m.description,
+        technologies: m.technologies,
+        url: m.url,
+        isCurrent: m.status === "current",
+        preview: m.preview,
+        previewAlt: `${m.title} (${m.year}) preview`,
+        ctaText: m.ctaText,
+      }));
 
   return (
     <section className="flex flex-col gap-10 w-full" data-particle-protected>
@@ -21,13 +84,13 @@ export default function RawinEvolution() {
       <div className="flex flex-col gap-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
           <History className="w-3.5 h-3.5" />
-          <span>A RECORD OF THE BUILD</span>
+          <span>{eyebrow}</span>
         </div>
         <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
-          From a first HTML page to a full engineering platform.
+          {heading}
         </h2>
         <p className="text-sm sm:text-base text-muted max-w-2xl leading-relaxed">
-          RAWIN has evolved alongside the way I build for the web.
+          {description}
         </p>
       </div>
 
@@ -43,22 +106,25 @@ export default function RawinEvolution() {
           onActiveMilestoneChange={setActiveMilestone}
         />
 
-        {EVOLUTION_MILESTONES.map((milestone, idx) => {
-          const isCurrent = milestone.status === "current";
+        {items.map((milestone, idx) => {
+          const isCurrent = milestone.isCurrent;
           const isActive = activeMilestone === idx;
+          const milestoneLabel = milestone.label;
+          const milestoneProgression = milestone.progression;
+          const milestoneAlt = milestone.previewAlt || `${milestone.title} (${milestone.year}) preview`;
 
           // Responsive Card Sizing:
           // Mobile: Centered, approximately 70% of viewport width (min(345px, 70vw)) with generous breathing room
           // Tablet: Centered, 78% width up to 540px
           // Desktop (Locked): 82% width, alternating left/right
           const alignmentClass =
-            idx === 1
+            idx % 2 === 1
               ? "w-[min(345px,70vw)] mx-auto sm:w-[78%] sm:max-w-[540px] lg:w-[82%] lg:max-w-none lg:self-end lg:mx-0"
               : "w-[min(345px,70vw)] mx-auto sm:w-[78%] sm:max-w-[540px] lg:w-[82%] lg:max-w-none lg:self-start lg:mx-0";
 
           return (
             <div
-              key={milestone.year}
+              key={milestone.id || milestone.year || idx}
               ref={(el) => {
                 milestoneRefs.current[idx] = el;
               }}
@@ -140,7 +206,7 @@ export default function RawinEvolution() {
                     <div className="relative aspect-[16/10] w-full bg-ink-black overflow-hidden group/img">
                       <Image
                         src={milestone.preview}
-                        alt={`${milestone.title} (${milestone.year}) preview`}
+                        alt={milestoneAlt}
                         fill
                         unoptimized
                         sizes="(max-width: 640px) 320px, (max-width: 1024px) 500px, 600px"
@@ -157,11 +223,13 @@ export default function RawinEvolution() {
                     {/* Top Status & Progression Badges */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <span className="text-[10px] sm:text-xs font-mono font-semibold tracking-wider text-pacific-cyan uppercase">
-                        {milestone.label}
+                        {milestoneLabel}
                       </span>
-                      <span className="text-[10px] sm:text-xs font-mono text-apricot-cream/90 italic">
-                        &quot;{milestone.progression}&quot;
-                      </span>
+                      {milestoneProgression && (
+                        <span className="text-[10px] sm:text-xs font-mono text-apricot-cream/90 italic">
+                          &quot;{milestoneProgression}&quot;
+                        </span>
+                      )}
                     </div>
 
                     {/* Milestone Title */}

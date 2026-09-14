@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/auth";
 import {
   updateSiteSection,
+  storeMilestoneImage,
   type ContentSectionKey,
 } from "@/lib/site-content";
 
@@ -30,6 +31,7 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "shortBio",
     "availabilityStatus",
     "availabilityBadge",
+    "availabilityStatusColor",
     "footerCopyright",
     "contactEmail",
     "location",
@@ -51,8 +53,25 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "subtitle",
     "leadText",
     "narrativeText",
+    "evolutionEyebrow",
+    "evolutionHeading",
+    "evolutionDescription",
+    "evolution",
+    "principlesEyebrow",
+    "principlesHeading",
+    "principles",
+    "journeyEyebrow",
     "journeyHeading",
     "journeyDescription",
+    "focusEyebrow",
+    "focusHeading",
+    "focusDescription",
+    "focusAreas",
+    "ctaEyebrow",
+    "ctaHeading",
+    "ctaDescription",
+    "ctaResumeText",
+    "ctaContactText",
   ],
   contact: [
     "eyebrow",
@@ -95,6 +114,8 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "description",
     "greetingMessage",
     "inputPlaceholder",
+    "suggestedPromptsLabel",
+    "suggestedPrompts",
   ],
   assets: [
     "profilePhoto",
@@ -115,6 +136,9 @@ const LONG_FIELDS = new Set([
   "leadText",
   "narrativeText",
   "description",
+  "evolutionDescription",
+  "focusDescription",
+  "ctaDescription",
   "summary",
   "successMessage",
   "greetingMessage",
@@ -129,6 +153,10 @@ const LONG_FIELDS = new Set([
   "experience",
   "education",
   "cta",
+  "evolution",
+  "principles",
+  "focusAreas",
+  "suggestedPrompts",
 ]);
 
 const ALLOWED_ICON_IDS = new Set([
@@ -150,6 +178,12 @@ const ALLOWED_ICON_IDS = new Set([
   "flame",
   "laptop",
   "workflow",
+  "eye",
+  "boxes",
+  "target",
+  "send",
+  "download",
+  "history",
 ]);
 
 /**
@@ -417,6 +451,15 @@ export async function updateSectionAction(
         continue;
       }
 
+      if (key === "availabilityStatusColor") {
+        const lower = trimmed.toLowerCase();
+        if (lower !== "green" && lower !== "orange" && lower !== "red") {
+          return { error: "Availability status color must be green, orange, or red." };
+        }
+        payload[key] = lower;
+        continue;
+      }
+
       if (key === "location" && section === "contact") {
         if (trimmed.length > 120) {
           return { error: "Location cannot exceed 120 characters." };
@@ -619,6 +662,179 @@ export async function updateSectionAction(
           };
         } catch {
           return { error: "Invalid JSON for CTA." };
+        }
+        continue;
+      }
+
+      if (key === "suggestedPrompts") {
+        try {
+          const parsed = JSON.parse(trimmed || "[]");
+          if (!Array.isArray(parsed)) {
+            return { error: "Suggested prompts must be an array." };
+          }
+          if (parsed.length > 25) {
+            return { error: "Suggested prompts cannot exceed 25 items." };
+          }
+          const cleanedPrompts: string[] = [];
+          for (const item of parsed) {
+            const promptStr = String(item || "").trim();
+            if (promptStr) {
+              if (/[\u2014\u2013]/.test(promptStr)) {
+                return { error: `Prompt "${promptStr.slice(0, 20)}..." contains an em dash.` };
+              }
+              if (promptStr.length > 200) {
+                return { error: `Prompt "${promptStr.slice(0, 20)}..." exceeds 200 characters.` };
+              }
+              cleanedPrompts.push(promptStr);
+            }
+          }
+          payload[key] = cleanedPrompts;
+        } catch {
+          return { error: "Invalid JSON for suggested prompts." };
+        }
+        continue;
+      }
+
+      if (key === "evolution") {
+        try {
+          const parsed = JSON.parse(trimmed || "[]");
+          if (!Array.isArray(parsed)) {
+            return { error: "Evolution milestones must be an array." };
+          }
+          if (parsed.length > 20) {
+            return { error: "Evolution milestones cannot exceed 20 entries." };
+          }
+          const cleanedMilestones = [];
+          for (let i = 0; i < parsed.length; i++) {
+            const m = parsed[i];
+            if (!m || typeof m !== "object") continue;
+            const year = String(m.year || "").trim();
+            const title = String(m.title || "").trim();
+            if (!year) {
+              return { error: `Milestone #${i + 1} must have a year.` };
+            }
+            if (!title) {
+              return { error: `Milestone #${i + 1} must have a title.` };
+            }
+            const label = String(m.label || "").trim().slice(0, 60);
+            const progression = String(m.progression || "").trim().slice(0, 100);
+            const domain = String(m.domain || "").trim().slice(0, 100);
+            const description = String(m.description || "").trim().slice(0, 1000);
+            const preview = String(m.preview || `/images/evolution-${year}.png`).trim().slice(0, 300);
+            const previewAlt = String(m.previewAlt || `${title} (${year}) preview`).trim().slice(0, 150);
+            const ctaText = String(m.ctaText || "VIEW WEBSITE").trim().slice(0, 50);
+            const isCurrent = Boolean(m.isCurrent || m.status === "current");
+            const status = isCurrent ? ("current" as const) : ("archived" as const);
+            const url = typeof m.url === "string" && m.url.trim() ? m.url.trim().slice(0, 300) : undefined;
+            const displayOrder = typeof m.displayOrder === "number" ? m.displayOrder : i + 1;
+
+            const rawTechs = Array.isArray(m.technologies)
+              ? m.technologies
+              : typeof m.technologies === "string"
+              ? m.technologies.split(",").map((t: string) => t.trim())
+              : [];
+            const technologies = rawTechs
+              .map((t: any) => String(t || "").trim().slice(0, 40))
+              .filter(Boolean)
+              .slice(0, 15);
+
+            cleanedMilestones.push({
+              id: String(m.id || `milestone-${i + 1}`).trim().slice(0, 40),
+              year,
+              label,
+              progression,
+              title,
+              domain,
+              description,
+              technologies,
+              url,
+              status,
+              isCurrent,
+              preview,
+              previewAlt,
+              ctaText,
+              displayOrder,
+            });
+          }
+          payload[key] = cleanedMilestones;
+        } catch {
+          return { error: "Invalid JSON for evolution milestones." };
+        }
+        continue;
+      }
+
+      if (key === "principles") {
+        try {
+          const parsed = JSON.parse(trimmed || "[]");
+          if (!Array.isArray(parsed)) {
+            return { error: "Principles must be an array." };
+          }
+          if (parsed.length > 20) {
+            return { error: "Principles cannot exceed 20 entries." };
+          }
+          const cleanedPrinciples = [];
+          for (let i = 0; i < parsed.length; i++) {
+            const p = parsed[i];
+            if (!p || typeof p !== "object") continue;
+            const title = String(p.title || "").trim();
+            const statement = String(p.statement || "").trim();
+            if (!title) {
+              return { error: `Principle #${i + 1} must have a title.` };
+            }
+            const number = String(p.number || `0${i + 1}`).trim().slice(0, 10);
+            const rawIcon = String(p.icon || "layers").trim().toLowerCase();
+            const icon = ALLOWED_ICON_IDS.has(rawIcon) ? rawIcon : "layers";
+            const displayOrder = typeof p.displayOrder === "number" ? p.displayOrder : i + 1;
+
+            cleanedPrinciples.push({
+              id: String(p.id || `principle-${i + 1}`).trim().slice(0, 40),
+              number,
+              title: title.slice(0, 60),
+              statement: statement.slice(0, 200),
+              icon,
+              displayOrder,
+            });
+          }
+          payload[key] = cleanedPrinciples;
+        } catch {
+          return { error: "Invalid JSON for principles." };
+        }
+        continue;
+      }
+
+      if (key === "focusAreas") {
+        try {
+          const parsed = JSON.parse(trimmed || "[]");
+          if (!Array.isArray(parsed)) {
+            return { error: "Focus areas must be an array." };
+          }
+          if (parsed.length > 20) {
+            return { error: "Focus areas cannot exceed 20 entries." };
+          }
+          const cleanedFocus = [];
+          for (let i = 0; i < parsed.length; i++) {
+            const f = parsed[i];
+            if (!f || typeof f !== "object") continue;
+            const title = String(f.title || "").trim();
+            const description = String(f.description || "").trim();
+            if (!title) {
+              return { error: `Focus area #${i + 1} must have a title.` };
+            }
+            const rawIcon = String(f.icon || "terminal").trim().toLowerCase();
+            const icon = ALLOWED_ICON_IDS.has(rawIcon) ? rawIcon : "terminal";
+            const displayOrder = typeof f.displayOrder === "number" ? f.displayOrder : i + 1;
+
+            cleanedFocus.push({
+              id: String(f.id || `focus-${i + 1}`).trim().slice(0, 40),
+              title: title.slice(0, 60),
+              description: description.slice(0, 300),
+              icon,
+              displayOrder,
+            });
+          }
+          payload[key] = cleanedFocus;
+        } catch {
+          return { error: "Invalid JSON for focus areas." };
         }
         continue;
       }
@@ -898,5 +1114,95 @@ export async function removeResumePdfAction(): Promise<ContentActionState> {
     console.error("[Resume PDF Remove Action Error]:", err);
     return { error: "Failed to remove resume PDF. Please try again." };
   }
+}
+
+/**
+ * Server action to upload a milestone preview image to GridFS.
+ */
+export async function uploadMilestoneImageAction(
+  formData: FormData
+): Promise<{ success?: boolean; url?: string; error?: string }> {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Administrator session required." };
+  }
+
+  const milestoneId = (formData.get("milestoneId") as string) || "";
+  const file = formData.get("file") as File;
+
+  if (!milestoneId) {
+    return { error: "Milestone ID is required." };
+  }
+
+  if (!file || !(file instanceof File) || file.size === 0) {
+    return { error: "Please select an image file to upload." };
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    return { error: "Milestone image cannot exceed 5MB." };
+  }
+
+  const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowedMimeTypes.includes(file.type)) {
+    return { error: "Invalid file format. Only JPEG, PNG, and WebP images are allowed." };
+  }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const safeName = file.name || `milestone-${milestoneId}.png`;
+    const url = await storeMilestoneImage(milestoneId, buffer, file.type, safeName);
+
+    revalidatePath("/about");
+    revalidatePath("/admin/content");
+
+    return { success: true, url };
+  } catch (err: unknown) {
+    console.error("[UploadMilestoneImage Action Error]:", err);
+    return { error: "Failed to upload milestone image. Please try again." };
+  }
+}
+
+/**
+ * Updates the private Rushan identity verification code.
+ * Validates admin session, verifies matching inputs, validates length (4-32 chars),
+ * hashes via bcrypt, and updates MongoDB orbit_security collection.
+ */
+export async function updateOrbitVerificationCodeAction(
+  _prevState: ContentActionState,
+  formData: FormData
+): Promise<ContentActionState> {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in as an administrator." };
+  }
+
+  const newCode = (formData.get("newCode") as string) || "";
+  const confirmCode = (formData.get("confirmCode") as string) || "";
+
+  const trimmedNew = newCode.trim();
+  const trimmedConfirm = confirmCode.trim();
+
+  if (!trimmedNew) {
+    return { error: "Verification code cannot be empty." };
+  }
+
+  if (trimmedNew !== trimmedConfirm) {
+    return { error: "New verification codes do not match." };
+  }
+
+  if (trimmedNew.length < 4 || trimmedNew.length > 32) {
+    return { error: "Verification code must be between 4 and 32 characters." };
+  }
+
+  const { updateOwnerVerificationCode } = await import("@/lib/orbit-security");
+  const result = await updateOwnerVerificationCode(trimmedNew);
+
+  if (!result.success) {
+    return { error: result.error || "Failed to update verification code." };
+  }
+
+  revalidatePath("/admin/content");
+  return { success: true, message: "Verification code updated." };
 }
 

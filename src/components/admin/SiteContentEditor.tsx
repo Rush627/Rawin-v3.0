@@ -36,6 +36,16 @@ import {
   X,
   Eye,
   Check,
+  History,
+  Target,
+  Boxes,
+  Send,
+  Download,
+  Cpu,
+  MessageSquare,
+  ShieldCheck,
+  Lock,
+  EyeOff,
 } from "lucide-react";
 import RawinSelect, { type RawinSelectOption } from "./RawinSelect";
 import NeoToggle from "@/components/NeoToggle";
@@ -49,12 +59,17 @@ import type {
   ResumeExperienceItem,
   ResumeEducationItem,
   ResumeStatusIndicator,
+  EvolutionMilestoneItem,
+  AboutPrincipleItem,
+  AboutFocusItem,
 } from "@/lib/site-content";
 import {
   updateSectionAction,
   updateAssetAction,
   uploadResumePdfAction,
   removeResumePdfAction,
+  uploadMilestoneImageAction,
+  updateOrbitVerificationCodeAction,
   type ContentActionState,
 } from "@/app/admin/content/actions";
 
@@ -76,6 +91,12 @@ const ICON_OPTIONS = [
   { value: "flame", label: "Flame" },
   { value: "laptop", label: "Laptop" },
   { value: "workflow", label: "Workflow" },
+  { value: "eye", label: "Eye" },
+  { value: "boxes", label: "Boxes" },
+  { value: "target", label: "Target" },
+  { value: "send", label: "Send" },
+  { value: "download", label: "Download" },
+  { value: "history", label: "History" },
 ];
 
 const STATUS_INDICATOR_OPTIONS: RawinSelectOption[] = [
@@ -119,7 +140,7 @@ const SECTIONS: SectionConfig[] = [
     key: "about",
     label: "About",
     icon: User,
-    description: "Personal introduction, narrative journey, and section headings.",
+    description: "Personal introduction, RAWIN evolution milestones, core principles, journey, and focus areas.",
   },
   {
     key: "contact",
@@ -141,9 +162,9 @@ const SECTIONS: SectionConfig[] = [
   },
   {
     key: "ai",
-    label: "AI Assistant",
+    label: "Rawin Orbit",
     icon: Bot,
-    description: "Autonomous assistant intro, initial greeting, and query placeholder.",
+    description: "RAWIN ORBIT intelligence interface titles, intro text, placeholder, and suggested prompts.",
   },
 ];
 
@@ -152,6 +173,58 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
   const [content, setContent] = useState<SiteContent>(initialContent);
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<ContentActionState | null>(null);
+
+  // Owner Verification Code state (Rawin Orbit Security)
+  const [newVerificationCode, setNewVerificationCode] = useState("");
+  const [confirmVerificationCode, setConfirmVerificationCode] = useState("");
+  const [showNewCode, setShowNewCode] = useState(false);
+  const [showConfirmCode, setShowConfirmCode] = useState(false);
+  const [verificationMsg, setVerificationMsg] = useState<ContentActionState | null>(null);
+  const [isSavingCode, setIsSavingCode] = useState(false);
+
+  const handleSaveVerificationCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingCode(true);
+    setVerificationMsg(null);
+
+    const trimmedNew = newVerificationCode.trim();
+    const trimmedConfirm = confirmVerificationCode.trim();
+
+    if (!trimmedNew) {
+      setVerificationMsg({ error: "Verification code cannot be empty." });
+      setIsSavingCode(false);
+      return;
+    }
+
+    if (trimmedNew !== trimmedConfirm) {
+      setVerificationMsg({ error: "New verification codes do not match." });
+      setIsSavingCode(false);
+      return;
+    }
+
+    if (trimmedNew.length < 4 || trimmedNew.length > 32) {
+      setVerificationMsg({ error: "Verification code must be between 4 and 32 characters." });
+      setIsSavingCode(false);
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("newCode", trimmedNew);
+      formData.append("confirmCode", trimmedConfirm);
+      const res = await updateOrbitVerificationCodeAction({}, formData);
+      setVerificationMsg(res);
+      if (res.success) {
+        setNewVerificationCode("");
+        setConfirmVerificationCode("");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to update verification code.";
+      setVerificationMsg({ error: msg });
+    } finally {
+      setIsSavingCode(false);
+    }
+  };
 
   // Asset CMS state
   const [assetUrls, setAssetUrls] = useState({
@@ -187,6 +260,7 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
   });
 
   const [assetLoading, setAssetLoading] = useState<string | null>(null);
+  const [milestoneLoading, setMilestoneLoading] = useState<string | null>(null);
 
   // Resume PDF & complex states
   const [resumePdfLoading, setResumePdfLoading] = useState<"upload" | "remove" | null>(null);
@@ -538,6 +612,375 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
         uses: {
           ...prev.uses,
           currentlyExploring: reindexed,
+        },
+      };
+    });
+  };
+
+  // About Evolution Handlers
+  const handleAddMilestone = () => {
+    setContent((prev) => {
+      const current = [...(prev.about?.evolution || [])];
+      const newMilestone: EvolutionMilestoneItem = {
+        id: `milestone-${Date.now()}`,
+        year: String(new Date().getFullYear()),
+        label: "NEW MILESTONE",
+        progression: "I am advancing.",
+        title: "New Milestone",
+        domain: "rawin.dev",
+        description: "Description of this milestone.",
+        technologies: ["Next.js", "TypeScript"],
+        url: "",
+        status: "archived",
+        isCurrent: false,
+        preview: "/images/evolution-2026.png",
+        previewAlt: "New milestone preview",
+        ctaText: "VIEW WEBSITE",
+        displayOrder: current.length + 1,
+      };
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          evolution: [...current, newMilestone],
+        },
+      };
+    });
+  };
+
+  const handleUpdateMilestone = (
+    index: number,
+    field: keyof EvolutionMilestoneItem,
+    value: any
+  ) => {
+    setContent((prev) => {
+      const current = [...(prev.about?.evolution || [])];
+      if (!current[index]) return prev;
+
+      if (field === "isCurrent") {
+        const isNowCurrent = Boolean(value);
+        const updated = current.map((m, idx) => {
+          if (idx === index) {
+            return {
+              ...m,
+              isCurrent: isNowCurrent,
+              status: isNowCurrent ? ("current" as const) : ("archived" as const),
+              ctaText: isNowCurrent ? "YOU ARE HERE" : m.ctaText === "YOU ARE HERE" ? "VIEW WEBSITE" : m.ctaText,
+            };
+          } else if (isNowCurrent) {
+            return {
+              ...m,
+              isCurrent: false,
+              status: "archived" as const,
+              ctaText: m.ctaText === "YOU ARE HERE" ? "VIEW WEBSITE" : m.ctaText,
+            };
+          }
+          return m;
+        });
+        return {
+          ...prev,
+          about: {
+            ...prev.about,
+            evolution: updated,
+          },
+        };
+      }
+
+      current[index] = {
+        ...current[index],
+        [field]: value,
+      };
+
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          evolution: current,
+        },
+      };
+    });
+  };
+
+  const handleDeleteMilestone = (index: number) => {
+    setContent((prev) => {
+      const current = [...(prev.about?.evolution || [])];
+      current.splice(index, 1);
+      const reindexed = current.map((m, idx) => ({
+        ...m,
+        displayOrder: idx + 1,
+      }));
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          evolution: reindexed,
+        },
+      };
+    });
+  };
+
+  const handleMoveMilestone = (index: number, direction: "up" | "down") => {
+    setContent((prev) => {
+      const current = [...(prev.about?.evolution || [])];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= current.length) return prev;
+      const temp = current[index];
+      current[index] = current[targetIndex];
+      current[targetIndex] = temp;
+      const reindexed = current.map((m, idx) => ({
+        ...m,
+        displayOrder: idx + 1,
+      }));
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          evolution: reindexed,
+        },
+      };
+    });
+  };
+
+  const handleUploadMilestoneImage = async (index: number, file: File) => {
+    const milestone = content.about?.evolution?.[index];
+    if (!milestone || !file) return;
+
+    setMilestoneLoading(`milestone-${index}`);
+    setFeedback(null);
+
+    const formData = new FormData();
+    formData.append("milestoneId", milestone.id || `m-${index}`);
+    formData.append("file", file);
+
+    try {
+      const res = await uploadMilestoneImageAction(formData);
+      if (res.error) {
+        setFeedback({ error: res.error });
+      } else if (res.url) {
+        handleUpdateMilestone(index, "preview", res.url);
+        setFeedback({ success: true, message: `Image uploaded for ${milestone.year} milestone.` });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Upload failed.";
+      setFeedback({ error: msg });
+    } finally {
+      setMilestoneLoading(null);
+    }
+  };
+
+  const handleResetMilestoneImage = (index: number) => {
+    const milestone = content.about?.evolution?.[index];
+    if (!milestone) return;
+    const defaultImg = `/images/evolution-${milestone.year || "2026"}.png`;
+    handleUpdateMilestone(index, "preview", defaultImg);
+    setFeedback({ success: true, message: `Milestone preview reset to ${defaultImg}` });
+  };
+
+  // About Principles Handlers
+  const handleAddPrinciple = () => {
+    setContent((prev) => {
+      const current = [...(prev.about?.principles || [])];
+      const newPrinciple: AboutPrincipleItem = {
+        id: `principle-${Date.now()}`,
+        number: `0${current.length + 1}`,
+        title: "NEW PRINCIPLE",
+        statement: "Principle statement goes here.",
+        icon: "layers",
+        displayOrder: current.length + 1,
+      };
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          principles: [...current, newPrinciple],
+        },
+      };
+    });
+  };
+
+  const handleUpdatePrinciple = (
+    index: number,
+    field: keyof AboutPrincipleItem,
+    value: any
+  ) => {
+    setContent((prev) => {
+      const current = [...(prev.about?.principles || [])];
+      if (!current[index]) return prev;
+      current[index] = { ...current[index], [field]: value };
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          principles: current,
+        },
+      };
+    });
+  };
+
+  const handleDeletePrinciple = (index: number) => {
+    setContent((prev) => {
+      const current = [...(prev.about?.principles || [])];
+      current.splice(index, 1);
+      const reindexed = current.map((p, idx) => ({ ...p, displayOrder: idx + 1 }));
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          principles: reindexed,
+        },
+      };
+    });
+  };
+
+  const handleMovePrinciple = (index: number, direction: "up" | "down") => {
+    setContent((prev) => {
+      const current = [...(prev.about?.principles || [])];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= current.length) return prev;
+      const temp = current[index];
+      current[index] = current[targetIndex];
+      current[targetIndex] = temp;
+      const reindexed = current.map((p, idx) => ({ ...p, displayOrder: idx + 1 }));
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          principles: reindexed,
+        },
+      };
+    });
+  };
+
+  // About Focus Areas Handlers
+  const handleAddFocusArea = () => {
+    setContent((prev) => {
+      const current = [...(prev.about?.focusAreas || [])];
+      const newFocus: AboutFocusItem = {
+        id: `focus-${Date.now()}`,
+        title: "NEW FOCUS AREA",
+        description: "Description of what you are building toward.",
+        icon: "terminal",
+        displayOrder: current.length + 1,
+      };
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          focusAreas: [...current, newFocus],
+        },
+      };
+    });
+  };
+
+  const handleUpdateFocusArea = (
+    index: number,
+    field: keyof AboutFocusItem,
+    value: any
+  ) => {
+    setContent((prev) => {
+      const current = [...(prev.about?.focusAreas || [])];
+      if (!current[index]) return prev;
+      current[index] = { ...current[index], [field]: value };
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          focusAreas: current,
+        },
+      };
+    });
+  };
+
+  const handleDeleteFocusArea = (index: number) => {
+    setContent((prev) => {
+      const current = [...(prev.about?.focusAreas || [])];
+      current.splice(index, 1);
+      const reindexed = current.map((f, idx) => ({ ...f, displayOrder: idx + 1 }));
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          focusAreas: reindexed,
+        },
+      };
+    });
+  };
+
+  const handleMoveFocusArea = (index: number, direction: "up" | "down") => {
+    setContent((prev) => {
+      const current = [...(prev.about?.focusAreas || [])];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= current.length) return prev;
+      const temp = current[index];
+      current[index] = current[targetIndex];
+      current[targetIndex] = temp;
+      const reindexed = current.map((f, idx) => ({ ...f, displayOrder: idx + 1 }));
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          focusAreas: reindexed,
+        },
+      };
+    });
+  };
+
+  // Rawin Orbit Suggested Prompts Handlers
+  const handleAddPrompt = () => {
+    setContent((prev) => {
+      const current = [...(prev.ai?.suggestedPrompts || [])];
+      current.push("New suggested question or prompt");
+      return {
+        ...prev,
+        ai: {
+          ...prev.ai,
+          suggestedPrompts: current,
+        },
+      };
+    });
+  };
+
+  const handleUpdatePrompt = (index: number, value: string) => {
+    setContent((prev) => {
+      const current = [...(prev.ai?.suggestedPrompts || [])];
+      current[index] = value;
+      return {
+        ...prev,
+        ai: {
+          ...prev.ai,
+          suggestedPrompts: current,
+        },
+      };
+    });
+  };
+
+  const handleDeletePrompt = (index: number) => {
+    setContent((prev) => {
+      const current = [...(prev.ai?.suggestedPrompts || [])];
+      current.splice(index, 1);
+      return {
+        ...prev,
+        ai: {
+          ...prev.ai,
+          suggestedPrompts: current,
+        },
+      };
+    });
+  };
+
+  const handleMovePrompt = (index: number, direction: "up" | "down") => {
+    setContent((prev) => {
+      const current = [...(prev.ai?.suggestedPrompts || [])];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= current.length) return prev;
+      const temp = current[index];
+      current[index] = current[targetIndex];
+      current[targetIndex] = temp;
+      return {
+        ...prev,
+        ai: {
+          ...prev.ai,
+          suggestedPrompts: current,
         },
       };
     });
@@ -1554,6 +1997,41 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
               />
             </div>
 
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-mono text-muted uppercase">Availability Status Color</label>
+              <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-ink-black/60 border border-white/[0.08]">
+                {(
+                  [
+                    { value: "green", label: "Green", dot: "bg-emerald-400" },
+                    { value: "orange", label: "Orange", dot: "bg-amber-400" },
+                    { value: "red", label: "Red", dot: "bg-rose-400" },
+                  ] as const
+                ).map((opt) => {
+                  const isSelected = (content.global.availabilityStatusColor || "green") === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => handleFieldChange("global", "availabilityStatusColor", opt.value)}
+                      className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-white/10 text-foreground border border-white/20 shadow-sm"
+                          : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${opt.dot} ${isSelected ? "ring-2 ring-white/30" : ""}`} />
+                      <span>{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="hidden"
+                name="availabilityStatusColor"
+                value={content.global.availabilityStatusColor || "green"}
+              />
+            </div>
+
             {/* Hidden sync inputs for backward compatibility */}
             <input
               type="hidden"
@@ -1581,16 +2059,6 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
               </button>
             </div>
 
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Short Bio (Footer)</label>
-              <textarea
-                rows={3}
-                name="shortBio"
-                value={content.global.shortBio}
-                onChange={(e) => handleFieldChange("global", "shortBio", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-              />
-            </div>
 
             <div className="flex flex-col gap-2 sm:col-span-2">
               <label className="text-xs font-mono text-muted uppercase">Footer Copyright Text</label>
@@ -1709,82 +2177,770 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
         )}
 
         {activeTab === "about" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
-              <input
-                type="text"
-                name="eyebrow"
-                value={content.about.eyebrow}
-                onChange={(e) => handleFieldChange("about", "eyebrow", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
+          <div className="flex flex-col gap-10">
+            {/* Hidden JSON inputs for array fields */}
+            <input
+              type="hidden"
+              name="evolution"
+              value={JSON.stringify(content.about.evolution || [])}
+            />
+            <input
+              type="hidden"
+              name="principles"
+              value={JSON.stringify(content.about.principles || [])}
+            />
+            <input
+              type="hidden"
+              name="focusAreas"
+              value={JSON.stringify(content.about.focusAreas || [])}
+            />
+
+            {/* 1. Identity & Narrative */}
+            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-pacific-cyan" />
+                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                  Introduction & Narrative
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
+                  <input
+                    type="text"
+                    name="eyebrow"
+                    value={content.about.eyebrow}
+                    onChange={(e) => handleFieldChange("about", "eyebrow", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Main Heading</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={content.about.title}
+                    onChange={(e) => handleFieldChange("about", "title", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Professional Subtitle</label>
+                  <input
+                    type="text"
+                    name="subtitle"
+                    value={content.about.subtitle}
+                    onChange={(e) => handleFieldChange("about", "subtitle", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Lead Introduction</label>
+                  <textarea
+                    rows={2}
+                    name="leadText"
+                    value={content.about.leadText}
+                    onChange={(e) => handleFieldChange("about", "leadText", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Narrative Text</label>
+                  <textarea
+                    rows={4}
+                    name="narrativeText"
+                    value={content.about.narrativeText}
+                    onChange={(e) => handleFieldChange("about", "narrativeText", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Main Heading</label>
-              <input
-                type="text"
-                name="title"
-                value={content.about.title}
-                onChange={(e) => handleFieldChange("about", "title", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
+            {/* 2. RAWIN EVOLUTION / A RECORD OF THE BUILD */}
+            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-pacific-cyan" />
+                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                    RAWIN Evolution
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddMilestone}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/20 text-xs font-mono transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Milestone
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
+                  <input
+                    type="text"
+                    name="evolutionEyebrow"
+                    value={content.about.evolutionEyebrow || ""}
+                    onChange={(e) => handleFieldChange("about", "evolutionEyebrow", e.target.value)}
+                    placeholder="RAWIN EVOLUTION"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
+                  <input
+                    type="text"
+                    name="evolutionHeading"
+                    value={content.about.evolutionHeading || ""}
+                    onChange={(e) => handleFieldChange("about", "evolutionHeading", e.target.value)}
+                    placeholder="A RECORD OF THE BUILD."
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Description</label>
+                  <textarea
+                    rows={2}
+                    name="evolutionDescription"
+                    value={content.about.evolutionDescription || ""}
+                    onChange={(e) => handleFieldChange("about", "evolutionDescription", e.target.value)}
+                    placeholder="Three generations of the digital workspace..."
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+              </div>
+
+              {/* Milestones List */}
+              <div className="flex flex-col gap-4 mt-2">
+                {(content.about.evolution || []).map((m, idx) => (
+                  <div
+                    key={m.id || idx}
+                    className="flex flex-col gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] relative"
+                  >
+                    <div className="flex items-center justify-between pb-3 border-b border-white/[0.04]">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-pacific-cyan/15 text-pacific-cyan font-semibold">
+                          #{idx + 1} {m.year || "YEAR"}
+                        </span>
+                        <span className="text-xs font-medium text-foreground">
+                          {m.title || "Untitled Milestone"}
+                        </span>
+                        {m.isCurrent && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-electric-indigo/20 text-electric-indigo font-bold tracking-wider">
+                            CURRENT
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMoveMilestone(idx, "up")}
+                          aria-label="Move milestone up"
+                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (content.about.evolution || []).length - 1}
+                          onClick={() => handleMoveMilestone(idx, "down")}
+                          aria-label="Move milestone down"
+                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMilestone(idx)}
+                          aria-label="Delete milestone"
+                          className="p-1 rounded hover:bg-red-500/20 text-red-400 transition-colors ml-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-mono text-muted uppercase">Year</label>
+                        <input
+                          type="text"
+                          value={m.year}
+                          onChange={(e) => handleUpdateMilestone(idx, "year", e.target.value)}
+                          placeholder="2026"
+                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-mono text-muted uppercase">Eyebrow / Status</label>
+                        <input
+                          type="text"
+                          value={m.eyebrow}
+                          onChange={(e) => handleUpdateMilestone(idx, "eyebrow", e.target.value)}
+                          placeholder="THE CURRENT ITERATION"
+                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-mono text-muted uppercase">Title</label>
+                        <input
+                          type="text"
+                          value={m.title}
+                          onChange={(e) => handleUpdateMilestone(idx, "title", e.target.value)}
+                          placeholder="RAWIN 3.0"
+                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-mono text-muted uppercase">Domain / URL Display</label>
+                        <input
+                          type="text"
+                          value={m.domain}
+                          onChange={(e) => handleUpdateMilestone(idx, "domain", e.target.value)}
+                          placeholder="rawin.dev"
+                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-mono text-muted uppercase">Target URL</label>
+                        <input
+                          type="text"
+                          value={m.url}
+                          onChange={(e) => handleUpdateMilestone(idx, "url", e.target.value)}
+                          placeholder="https://rawin.dev"
+                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] font-mono text-muted uppercase">CTA Button Text</label>
+                        <input
+                          type="text"
+                          value={m.ctaText}
+                          onChange={(e) => handleUpdateMilestone(idx, "ctaText", e.target.value)}
+                          placeholder="Current Website"
+                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 sm:col-span-2">
+                        <label className="text-[11px] font-mono text-muted uppercase">Progression Quote</label>
+                        <input
+                          type="text"
+                          value={m.quote}
+                          onChange={(e) => handleUpdateMilestone(idx, "quote", e.target.value)}
+                          placeholder="Architectural leap to Next.js 15 App Router..."
+                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-mono text-muted uppercase">Current Milestone</span>
+                          <span className="text-[10px] text-muted/60">Marks active site milestone</span>
+                        </div>
+                        <NeoToggle
+                          checked={Boolean(m.isCurrent)}
+                          onChange={(val) => handleUpdateMilestone(idx, "isCurrent", val)}
+                          ariaLabel={`Toggle current milestone for ${m.year}`}
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 sm:col-span-3">
+                        <label className="text-[11px] font-mono text-muted uppercase">Description</label>
+                        <textarea
+                          rows={2}
+                          value={m.description}
+                          onChange={(e) => handleUpdateMilestone(idx, "description", e.target.value)}
+                          placeholder="Full narrative for this milestone..."
+                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors resize-y leading-relaxed"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 sm:col-span-3">
+                        <label className="text-[11px] font-mono text-muted uppercase">Technologies (comma-separated)</label>
+                        <input
+                          type="text"
+                          value={Array.isArray(m.technologies) ? m.technologies.join(", ") : ""}
+                          onChange={(e) => {
+                            const tags = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+                            handleUpdateMilestone(idx, "technologies", tags);
+                          }}
+                          placeholder="Next.js 15, React 19, TypeScript, Tailwind v4"
+                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                        />
+                      </div>
+
+                      {/* Milestone Image Management */}
+                      <div className="flex flex-col gap-3 sm:col-span-3 p-3 rounded-lg bg-white/[0.01] border border-white/[0.05]">
+                        <span className="text-[11px] font-mono text-muted uppercase font-semibold">Milestone Image</span>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                          <div className="relative w-28 h-18 rounded-md overflow-hidden bg-ink-black/80 border border-white/[0.1] shrink-0 flex items-center justify-center">
+                            {m.preview ? (
+                              <img
+                                src={m.preview}
+                                alt={m.previewAlt || m.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <ImageIcon className="w-6 h-6 text-muted/40" />
+                            )}
+                          </div>
+                          <div className="flex-1 flex flex-col gap-2 w-full">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-mono text-foreground transition-colors">
+                                <Upload className="w-3.5 h-3.5 text-pacific-cyan" />
+                                <span>{milestoneLoading === `milestone-${idx}` ? "Uploading..." : "Upload Image"}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  disabled={milestoneLoading === `milestone-${idx}`}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleUploadMilestoneImage(idx, file);
+                                  }}
+                                  className="hidden"
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => handleResetMilestoneImage(idx)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-white/[0.05] text-xs font-mono text-muted transition-colors"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                Reset to Default
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <input
+                                type="text"
+                                value={m.preview}
+                                onChange={(e) => handleUpdateMilestone(idx, "preview", e.target.value)}
+                                placeholder="Image URL / Path"
+                                className="px-2.5 py-1.5 rounded-md bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                              />
+                              <input
+                                type="text"
+                                value={m.previewAlt}
+                                onChange={(e) => handleUpdateMilestone(idx, "previewAlt", e.target.value)}
+                                placeholder="Alt text"
+                                className="px-2.5 py-1.5 rounded-md bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Professional Subtitle</label>
-              <input
-                type="text"
-                name="subtitle"
-                value={content.about.subtitle}
-                onChange={(e) => handleFieldChange("about", "subtitle", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
+            {/* 3. HOW I BUILD / CORE PRINCIPLES */}
+            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-pacific-cyan" />
+                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                    How I Build (Core Principles)
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddPrinciple}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/20 text-xs font-mono transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Principle
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
+                  <input
+                    type="text"
+                    name="principlesEyebrow"
+                    value={content.about.principlesEyebrow || ""}
+                    onChange={(e) => handleFieldChange("about", "principlesEyebrow", e.target.value)}
+                    placeholder="HOW I BUILD"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
+                  <input
+                    type="text"
+                    name="principlesHeading"
+                    value={content.about.principlesHeading || ""}
+                    onChange={(e) => handleFieldChange("about", "principlesHeading", e.target.value)}
+                    placeholder="ENGINEERING PHILOSOPHY"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Description</label>
+                  <textarea
+                    rows={2}
+                    name="principlesDescription"
+                    value={content.about.principlesDescription || ""}
+                    onChange={(e) => handleFieldChange("about", "principlesDescription", e.target.value)}
+                    placeholder="Core rules that govern every line of code..."
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+              </div>
+
+              {/* Principles List */}
+              <div className="flex flex-col gap-3 mt-2">
+                {(content.about.principles || []).map((p, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]"
+                  >
+                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-pacific-cyan font-bold">
+                          {p.number || `0${idx + 1}`}
+                        </span>
+                        <span className="text-xs font-medium text-foreground">
+                          {p.title || "Untitled Principle"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMovePrinciple(idx, "up")}
+                          aria-label="Move principle up"
+                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (content.about.principles || []).length - 1}
+                          onClick={() => handleMovePrinciple(idx, "down")}
+                          aria-label="Move principle down"
+                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePrinciple(idx)}
+                          aria-label="Delete principle"
+                          className="p-1 rounded hover:bg-red-500/20 text-red-400 transition-colors ml-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted uppercase">Number</label>
+                        <input
+                          type="text"
+                          value={p.number}
+                          onChange={(e) => handleUpdatePrinciple(idx, "number", e.target.value)}
+                          placeholder="01"
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1 sm:col-span-2">
+                        <label className="text-[10px] font-mono text-muted uppercase">Title</label>
+                        <input
+                          type="text"
+                          value={p.title}
+                          onChange={(e) => handleUpdatePrinciple(idx, "title", e.target.value)}
+                          placeholder="Speed as a Feature"
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted uppercase">Icon</label>
+                        <select
+                          value={p.icon || "zap"}
+                          onChange={(e) => handleUpdatePrinciple(idx, "icon", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        >
+                          {ICON_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1 sm:col-span-4">
+                        <label className="text-[10px] font-mono text-muted uppercase">Statement / Detail</label>
+                        <input
+                          type="text"
+                          value={p.statement}
+                          onChange={(e) => handleUpdatePrinciple(idx, "statement", e.target.value)}
+                          placeholder="A slow interface is a broken interface..."
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Lead Introduction</label>
-              <textarea
-                rows={2}
-                name="leadText"
-                value={content.about.leadText}
-                onChange={(e) => handleFieldChange("about", "leadText", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-              />
+            {/* 4. ENGINEERING JOURNEY */}
+            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-pacific-cyan" />
+                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                  Engineering Journey Section
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
+                  <input
+                    type="text"
+                    name="journeyEyebrow"
+                    value={content.about.journeyEyebrow || ""}
+                    onChange={(e) => handleFieldChange("about", "journeyEyebrow", e.target.value)}
+                    placeholder="TIMELINE"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
+                  <input
+                    type="text"
+                    name="journeyHeading"
+                    value={content.about.journeyHeading || ""}
+                    onChange={(e) => handleFieldChange("about", "journeyHeading", e.target.value)}
+                    placeholder="ENGINEERING JOURNEY"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Description</label>
+                  <textarea
+                    rows={2}
+                    name="journeyDescription"
+                    value={content.about.journeyDescription || ""}
+                    onChange={(e) => handleFieldChange("about", "journeyDescription", e.target.value)}
+                    placeholder="Milestones along the way..."
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Philosophy Narrative</label>
-              <textarea
-                rows={4}
-                name="narrativeText"
-                value={content.about.narrativeText}
-                onChange={(e) => handleFieldChange("about", "narrativeText", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-              />
+            {/* 5. CURRENT FOCUS */}
+            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Compass className="w-4 h-4 text-pacific-cyan" />
+                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                    Current Focus Areas
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddFocusArea}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/20 text-xs font-mono transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Focus Area
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
+                  <input
+                    type="text"
+                    name="focusEyebrow"
+                    value={content.about.focusEyebrow || ""}
+                    onChange={(e) => handleFieldChange("about", "focusEyebrow", e.target.value)}
+                    placeholder="CURRENT FOCUS"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
+                  <input
+                    type="text"
+                    name="focusHeading"
+                    value={content.about.focusHeading || ""}
+                    onChange={(e) => handleFieldChange("about", "focusHeading", e.target.value)}
+                    placeholder="WHERE ATTENTION GOES"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Section Description</label>
+                  <textarea
+                    rows={2}
+                    name="focusDescription"
+                    value={content.about.focusDescription || ""}
+                    onChange={(e) => handleFieldChange("about", "focusDescription", e.target.value)}
+                    placeholder="Areas of active research and architectural exploration..."
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+              </div>
+
+              {/* Focus Areas List */}
+              <div className="flex flex-col gap-3 mt-2">
+                {(content.about.focusAreas || []).map((f, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]"
+                  >
+                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
+                      <span className="text-xs font-medium text-foreground">
+                        {f.title || "Untitled Focus Area"}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMoveFocusArea(idx, "up")}
+                          aria-label="Move focus area up"
+                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (content.about.focusAreas || []).length - 1}
+                          onClick={() => handleMoveFocusArea(idx, "down")}
+                          aria-label="Move focus area down"
+                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFocusArea(idx)}
+                          aria-label="Delete focus area"
+                          className="p-1 rounded hover:bg-red-500/20 text-red-400 transition-colors ml-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="flex flex-col gap-1 sm:col-span-3">
+                        <label className="text-[10px] font-mono text-muted uppercase">Title</label>
+                        <input
+                          type="text"
+                          value={f.title}
+                          onChange={(e) => handleUpdateFocusArea(idx, "title", e.target.value)}
+                          placeholder="Edge AI and Local Inference"
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted uppercase">Icon</label>
+                        <select
+                          value={f.icon || "terminal"}
+                          onChange={(e) => handleUpdateFocusArea(idx, "icon", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        >
+                          {ICON_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1 sm:col-span-4">
+                        <label className="text-[10px] font-mono text-muted uppercase">Description</label>
+                        <input
+                          type="text"
+                          value={f.description}
+                          onChange={(e) => handleUpdateFocusArea(idx, "description", e.target.value)}
+                          placeholder="Investigating hybrid architectures combining local and edge LLMs..."
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Journey Section Heading</label>
-              <input
-                type="text"
-                name="journeyHeading"
-                value={content.about.journeyHeading}
-                onChange={(e) => handleFieldChange("about", "journeyHeading", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Journey Section Description</label>
-              <input
-                type="text"
-                name="journeyDescription"
-                value={content.about.journeyDescription}
-                onChange={(e) => handleFieldChange("about", "journeyDescription", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
+            {/* 6. ABOUT CTA */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <Send className="w-4 h-4 text-pacific-cyan" />
+                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                  Call to Action (CTA)
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">CTA Eyebrow</label>
+                  <input
+                    type="text"
+                    name="ctaEyebrow"
+                    value={content.about.ctaEyebrow || ""}
+                    onChange={(e) => handleFieldChange("about", "ctaEyebrow", e.target.value)}
+                    placeholder="NEXT STEP"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">CTA Heading</label>
+                  <input
+                    type="text"
+                    name="ctaHeading"
+                    value={content.about.ctaHeading || ""}
+                    onChange={(e) => handleFieldChange("about", "ctaHeading", e.target.value)}
+                    placeholder="WANT TO BUILD TOGETHER?"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">CTA Description</label>
+                  <textarea
+                    rows={2}
+                    name="ctaDescription"
+                    value={content.about.ctaDescription || ""}
+                    onChange={(e) => handleFieldChange("about", "ctaDescription", e.target.value)}
+                    placeholder="Whether you need a high-performance web application..."
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Resume Button Text</label>
+                  <input
+                    type="text"
+                    name="ctaResumeText"
+                    value={content.about.ctaResumeText || ""}
+                    onChange={(e) => handleFieldChange("about", "ctaResumeText", e.target.value)}
+                    placeholder="View Resume"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Contact Button Text</label>
+                  <input
+                    type="text"
+                    name="ctaContactText"
+                    value={content.about.ctaContactText || ""}
+                    onChange={(e) => handleFieldChange("about", "ctaContactText", e.target.value)}
+                    placeholder="Get In Touch"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -3369,60 +4525,266 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
         )}
 
         {activeTab === "ai" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
-              <input
-                type="text"
-                name="eyebrow"
-                value={content.ai.eyebrow}
-                onChange={(e) => handleFieldChange("ai", "eyebrow", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
+          <div className="flex flex-col gap-8">
+            {/* Hidden JSON inputs for array fields */}
+            <input
+              type="hidden"
+              name="suggestedPrompts"
+              value={JSON.stringify(content.ai.suggestedPrompts || [])}
+            />
+
+            {/* Orbit Core Content */}
+            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-pacific-cyan" />
+                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                  Rawin Orbit Interface
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
+                  <input
+                    type="text"
+                    name="eyebrow"
+                    value={content.ai.eyebrow}
+                    onChange={(e) => handleFieldChange("ai", "eyebrow", e.target.value)}
+                    placeholder="RAWIN ORBIT"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Orbit Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={content.ai.title}
+                    onChange={(e) => handleFieldChange("ai", "title", e.target.value)}
+                    placeholder="Rawin Orbit"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Page Description</label>
+                  <textarea
+                    rows={2}
+                    name="description"
+                    value={content.ai.description}
+                    onChange={(e) => handleFieldChange("ai", "description", e.target.value)}
+                    placeholder="Interactive intelligence core powered by Cloudflare Workers AI..."
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Initial Greeting Message</label>
+                  <textarea
+                    rows={3}
+                    name="greetingMessage"
+                    value={content.ai.greetingMessage}
+                    onChange={(e) => handleFieldChange("ai", "greetingMessage", e.target.value)}
+                    placeholder="Greetings. I am Rawin Orbit, an intelligent cognitive interface..."
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Input Placeholder Text</label>
+                  <input
+                    type="text"
+                    name="inputPlaceholder"
+                    value={content.ai.inputPlaceholder}
+                    onChange={(e) => handleFieldChange("ai", "inputPlaceholder", e.target.value)}
+                    placeholder="Ask about projects, architecture, tech stack, or engineering philosophy..."
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Suggested Prompts Section Label</label>
+                  <input
+                    type="text"
+                    name="suggestedPromptsLabel"
+                    value={content.ai.suggestedPromptsLabel || ""}
+                    onChange={(e) => handleFieldChange("ai", "suggestedPromptsLabel", e.target.value)}
+                    placeholder="SUGGESTED PROMPTS"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Assistant Title</label>
-              <input
-                type="text"
-                name="title"
-                value={content.ai.title}
-                onChange={(e) => handleFieldChange("ai", "title", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
+            {/* Suggested Prompts Management */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-pacific-cyan" />
+                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                    Suggested Prompts ({(content.ai.suggestedPrompts || []).length})
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddPrompt}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/20 text-xs font-mono transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Prompt
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {(content.ai.suggestedPrompts || []).map((prompt, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
+                  >
+                    <span className="text-[11px] font-mono text-muted/60 bg-white/[0.04] px-2 py-1 rounded border border-white/[0.06] shrink-0">
+                      #{idx + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={prompt}
+                      onChange={(e) => handleUpdatePrompt(idx, e.target.value)}
+                      placeholder="e.g. What is RAWIN?"
+                      className="flex-1 px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                    />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() => handleMovePrompt(idx, "up")}
+                        aria-label="Move prompt up"
+                        className="p-1.5 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === (content.ai.suggestedPrompts || []).length - 1}
+                        onClick={() => handleMovePrompt(idx, "down")}
+                        aria-label="Move prompt down"
+                        className="p-1.5 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePrompt(idx)}
+                        aria-label="Delete prompt"
+                        className="p-1.5 rounded hover:bg-red-500/20 text-red-400 transition-colors ml-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Description</label>
-              <textarea
-                rows={2}
-                name="description"
-                value={content.ai.description}
-                onChange={(e) => handleFieldChange("ai", "description", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-              />
-            </div>
+            {/* Owner Verification Security Setting */}
+            <div className="flex flex-col gap-4 pt-8 border-t border-white/[0.08]">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-pacific-cyan" />
+                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                    Owner Verification
+                  </h3>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pacific-cyan/10 text-pacific-cyan border border-pacific-cyan/20">
+                    Security Setting
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-muted">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span>Active (Masked)</span>
+                </div>
+              </div>
 
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Initial Greeting Message</label>
-              <textarea
-                rows={3}
-                name="greetingMessage"
-                value={content.ai.greetingMessage}
-                onChange={(e) => handleFieldChange("ai", "greetingMessage", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-              />
-            </div>
+              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-mono text-muted uppercase">New Verification Code</label>
+                    <div className="relative">
+                      <input
+                        type={showNewCode ? "text" : "password"}
+                        value={newVerificationCode}
+                        onChange={(e) => setNewVerificationCode(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs font-mono text-foreground outline-none transition-colors pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewCode(!showNewCode)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground cursor-pointer"
+                      >
+                        {showNewCode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <span className="text-[10px] font-mono text-muted/60">
+                      Between 4 and 32 characters.
+                    </span>
+                  </div>
 
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Input Placeholder Text</label>
-              <input
-                type="text"
-                name="inputPlaceholder"
-                value={content.ai.inputPlaceholder}
-                onChange={(e) => handleFieldChange("ai", "inputPlaceholder", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-mono text-muted uppercase">Confirm New Code</label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmCode ? "text" : "password"}
+                        value={confirmVerificationCode}
+                        onChange={(e) => setConfirmVerificationCode(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs font-mono text-foreground outline-none transition-colors pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmCode(!showConfirmCode)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground cursor-pointer"
+                      >
+                        {showConfirmCode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <span className="text-[10px] font-mono text-muted/60">
+                      Must match new verification code.
+                    </span>
+                  </div>
+                </div>
+
+                {verificationMsg && (
+                  <div
+                    className={`p-3 rounded-xl border text-xs font-mono flex items-center gap-2 ${
+                      verificationMsg.success
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                        : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                    }`}
+                  >
+                    {verificationMsg.success ? (
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                    )}
+                    <span>{verificationMsg.message || verificationMsg.error}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSaveVerificationCode}
+                    disabled={isSavingCode || !newVerificationCode.trim()}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pacific-cyan hover:bg-pacific-cyan/90 text-ink-black text-xs font-mono font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_12px_rgba(24,155,173,0.3)] cursor-pointer"
+                  >
+                    {isSavingCode ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Lock className="w-3.5 h-3.5" />
+                    )}
+                    <span>Save Verification Code</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

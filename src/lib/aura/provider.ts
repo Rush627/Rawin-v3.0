@@ -2,6 +2,7 @@ import { getAuraConfig } from "./config";
 import { getAuraKnowledgeContext } from "./knowledge";
 import { buildAuraSystemPrompt } from "./prompts";
 import type { AuraMessage } from "./types";
+import type { OrbitIdentityState } from "../orbit-security";
 
 export interface StreamAuraResult {
   stream: ReadableStream<Uint8Array>;
@@ -92,7 +93,8 @@ function createCloudflareStreamTransformer(): TransformStream<Uint8Array, Uint8A
  */
 export async function queryAura(
   clientMessages: AuraMessage[],
-  stream = true
+  stream = true,
+  identityState: OrbitIdentityState = "UNKNOWN"
 ): Promise<StreamAuraResult | NonStreamAuraResult> {
   const config = getAuraConfig();
 
@@ -103,7 +105,7 @@ export async function queryAura(
   }
 
   const knowledgeContext = await getAuraKnowledgeContext();
-  const systemPrompt = buildAuraSystemPrompt(knowledgeContext);
+  const systemPrompt = buildAuraSystemPrompt(knowledgeContext, identityState);
 
   const payloadMessages = [
     { role: "system", content: systemPrompt },

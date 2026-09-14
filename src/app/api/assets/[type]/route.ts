@@ -14,13 +14,21 @@ export async function GET(
 ) {
   const { type: rawType } = await context.params;
 
-  let assetKey: AssetKey;
+  let assetKey: string;
+  let fallbackUrl: string;
+
   if (rawType === "profile" || rawType === "profilePhoto") {
     assetKey = "profilePhoto";
+    fallbackUrl = FALLBACK_ASSETS.profilePhoto;
   } else if (rawType === "logo") {
     assetKey = "logo";
+    fallbackUrl = FALLBACK_ASSETS.logo;
   } else if (rawType === "favicon" || rawType === "icon") {
     assetKey = "favicon";
+    fallbackUrl = FALLBACK_ASSETS.favicon;
+  } else if (rawType.startsWith("evolution-")) {
+    assetKey = rawType;
+    fallbackUrl = `/images/${rawType}.png`;
   } else {
     return NextResponse.json({ error: "Invalid asset type" }, { status: 400 });
   }
@@ -45,6 +53,5 @@ export async function GET(
   }
 
   // Graceful fallback to static file if not in GridFS or database is unavailable
-  const fallbackUrl = FALLBACK_ASSETS[assetKey];
   return NextResponse.redirect(new URL(fallbackUrl, req.url), 307);
 }

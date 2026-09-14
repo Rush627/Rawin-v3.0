@@ -15,6 +15,14 @@ import {
   Cpu,
   Boxes,
   Compass,
+  Sparkles,
+  Code,
+  Globe,
+  History,
+  FolderGit2,
+  Server,
+  Cloud,
+  type LucideIcon,
 } from "lucide-react";
 import RawinEvolution from "@/components/RawinEvolution";
 import ProfileCard from "@/components/ProfileCard";
@@ -30,52 +38,77 @@ export const metadata: Metadata = {
 
 export const revalidate = 0;
 
-const HOW_I_BUILD_PRINCIPLES = [
+const ICON_MAP: Record<string, LucideIcon> = {
+  layers: Layers,
+  eye: Eye,
+  zap: Zap,
+  palette: Palette,
+  briefcase: Briefcase,
+  target: Target,
+  terminal: Terminal,
+  cpu: Cpu,
+  boxes: Boxes,
+  compass: Compass,
+  sparkles: Sparkles,
+  code: Code,
+  globe: Globe,
+  history: History,
+  folder: FolderGit2,
+  server: Server,
+  cloud: Cloud,
+};
+
+function resolveIcon(name?: string, fallback: LucideIcon = Zap): LucideIcon {
+  if (!name) return fallback;
+  return ICON_MAP[name.toLowerCase()] || fallback;
+}
+
+const DEFAULT_PRINCIPLES = [
   {
     number: "01",
     title: "ARCHITECTURE",
-    icon: Layers,
+    icon: "layers",
     statement: "Build systems that stay understandable.",
   },
   {
     number: "02",
     title: "EXPERIENCE",
-    icon: Eye,
+    icon: "eye",
     statement: "Make interfaces feel intentional.",
   },
   {
     number: "03",
     title: "PERFORMANCE",
-    icon: Zap,
+    icon: "zap",
     statement: "Keep complexity from reaching the user.",
   },
   {
     number: "04",
     title: "CRAFT",
-    icon: Palette,
+    icon: "palette",
     statement: "Details matter.",
   },
 ];
 
-const CURRENT_FOCUS_AREAS = [
+const DEFAULT_FOCUS_AREAS = [
   {
     title: "WEB APPLICATIONS",
-    icon: Terminal,
+    icon: "terminal",
     description: "Full-stack apps with Next.js, TypeScript, and MongoDB. Focused on clean state and reliable API routes.",
   },
   {
     title: "INTERACTIVE INTERFACES",
-    icon: Compass,
+    icon: "compass",
     description: "Responsive layouts, micro-interactions, and fluid transitions that make software enjoyable to use.",
   },
   {
     title: "AI INTEGRATION",
-    icon: Cpu,
+    icon: "cpu",
     description: "Streaming responses, edge function workflows, and practical assistant tools inside web apps.",
   },
   {
     title: "MODERN WEB ARCHITECTURE",
-    icon: Boxes,
+    icon: "boxes",
     description: "Modular component systems, Tailwind styling, and maintainable project structures.",
   },
 ];
@@ -83,6 +116,16 @@ const CURRENT_FOCUS_AREAS = [
 export default async function AboutPage() {
   const siteContent = await getSiteContent();
   const aboutContent = siteContent.about;
+
+  const principlesList =
+    aboutContent.principles && aboutContent.principles.length > 0
+      ? aboutContent.principles
+      : DEFAULT_PRINCIPLES;
+
+  const focusList =
+    aboutContent.focusAreas && aboutContent.focusAreas.length > 0
+      ? aboutContent.focusAreas
+      : DEFAULT_FOCUS_AREAS;
 
   return (
     <div className="w-full max-w-4xl mx-auto pt-28 pb-20 px-4 sm:px-6 flex flex-col gap-20">
@@ -136,25 +179,35 @@ export default async function AboutPage() {
       </section>
 
       {/* SECTION 2: RAWIN EVOLUTION */}
-      <RawinEvolution />
+      <RawinEvolution
+        milestones={aboutContent.evolution}
+        eyebrow={aboutContent.evolutionEyebrow}
+        heading={aboutContent.evolutionHeading}
+        description={aboutContent.evolutionDescription}
+      />
 
       {/* SECTION 3: HOW I BUILD */}
       <section className="flex flex-col gap-8 w-full" data-particle-protected>
         <div className="flex flex-col gap-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
             <Layers className="w-3.5 h-3.5" />
-            <span>HOW I BUILD</span>
+            <span>{aboutContent.principlesEyebrow || "HOW I BUILD"}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
-            A few principles I keep close.
+            {aboutContent.principlesHeading || "A few principles I keep close."}
           </h2>
+          {aboutContent.principlesDescription && (
+            <p className="text-sm sm:text-base text-muted max-w-2xl leading-relaxed">
+              {aboutContent.principlesDescription}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {HOW_I_BUILD_PRINCIPLES.map((principle) => {
-            const Icon = principle.icon;
+          {principlesList.map((principle, idx) => {
+            const Icon = resolveIcon(principle.icon, Layers);
             return (
-              <BorderGlow key={principle.number} borderRadius={16} className="h-full">
+              <BorderGlow key={principle.number || idx} borderRadius={16} className="h-full">
                 <div
                   className="glass-card rounded-2xl p-6 border border-white/[0.06] flex flex-col justify-between gap-4 group h-full"
                 >
@@ -187,10 +240,10 @@ export default async function AboutPage() {
         <div className="flex flex-col gap-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
             <Briefcase className="w-3.5 h-3.5" />
-            <span>ENGINEERING JOURNEY</span>
+            <span>{aboutContent.journeyEyebrow || "ENGINEERING JOURNEY"}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
-            {aboutContent.journeyHeading}
+            {aboutContent.journeyHeading || "ENGINEERING JOURNEY"}
           </h2>
           <p className="text-sm sm:text-base text-muted max-w-2xl leading-relaxed">
             {aboutContent.journeyDescription}
@@ -244,21 +297,21 @@ export default async function AboutPage() {
         <div className="flex flex-col gap-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
             <Target className="w-3.5 h-3.5" />
-            <span>CURRENT FOCUS</span>
+            <span>{aboutContent.focusEyebrow || "CURRENT FOCUS"}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
-            What I&apos;m building toward.
+            {aboutContent.focusHeading || "What I'm building toward."}
           </h2>
           <p className="text-sm sm:text-base text-muted max-w-2xl leading-relaxed">
-            Exploring where thoughtful interface design and modern engineering can meet.
+            {aboutContent.focusDescription || "Exploring where thoughtful interface design and modern engineering can meet."}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {CURRENT_FOCUS_AREAS.map((focus) => {
-            const Icon = focus.icon;
+          {focusList.map((focus, idx) => {
+            const Icon = resolveIcon(focus.icon, Terminal);
             return (
-              <BorderGlow key={focus.title} borderRadius={16} className="h-full">
+              <BorderGlow key={focus.title || idx} borderRadius={16} className="h-full">
                 <div
                   className="glass-card rounded-2xl p-6 border border-white/[0.06] flex flex-col gap-3 group h-full"
                 >
@@ -286,13 +339,13 @@ export default async function AboutPage() {
         >
           <div className="flex flex-col gap-2">
             <span className="text-xs font-mono font-semibold tracking-wider text-pacific-cyan uppercase">
-              LET&apos;S BUILD TOGETHER
+              {aboutContent.ctaEyebrow || "LET'S BUILD TOGETHER"}
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground font-space">
-              Have something worth building?
+              {aboutContent.ctaHeading || "Have something worth building?"}
             </h2>
             <p className="text-sm text-muted">
-              Open to full-time roles, freelance projects, and collaborations.
+              {aboutContent.ctaDescription || "Open to full-time roles, freelance projects, and collaborations."}
             </p>
           </div>
 
@@ -302,14 +355,14 @@ export default async function AboutPage() {
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-sm hover:bg-pacific-cyan/90 transition-all shadow-[0_0_20px_rgba(24,155,173,0.3)]"
             >
               <Download className="w-4 h-4" />
-              <span>View Resume</span>
+              <span>{aboutContent.ctaResumeText || "View Resume"}</span>
             </Link>
             <Link
               href="/contact"
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-card text-foreground font-medium text-sm hover:border-pacific-cyan/40 transition-colors"
             >
               <Send className="w-4 h-4 text-pacific-cyan" />
-              <span>Get in Touch</span>
+              <span>{aboutContent.ctaContactText || "Get in Touch"}</span>
             </Link>
           </div>
         </section>

@@ -119,7 +119,7 @@ export default function CustomCursor() {
     <div
       ref={cursorRef}
       aria-hidden="true"
-      className="fixed top-0 left-0 pointer-events-none z-[45] opacity-0 will-change-transform"
+      className="fixed top-0 left-0 pointer-events-none z-20 opacity-0 will-change-transform"
       style={{
         mixBlendMode: "difference",
         transition: "opacity 0.2s ease",
@@ -127,19 +127,19 @@ export default function CustomCursor() {
     >
       <div
         ref={innerRef}
-        className="w-5 h-6 transition-transform duration-150 ease-out origin-top-left"
+        className="w-[17px] h-[19px] transition-transform duration-150 ease-out origin-top-left"
       >
-        {/* Mac-style arrow pointer with classic silhouette and apex at (0,0) */}
+        {/* Custom geometric pointer with sharp directional apex and distinctive concave lower-right cut */}
         <svg
-          width="18"
-          height="22"
-          viewBox="0 0 16 20"
+          width="17"
+          height="19"
+          viewBox="0 0 17 19"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-4 h-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
+          className="w-[17px] h-[19px] drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]"
         >
           <path
-            d="M0.5 0.5L0.5 15.5L4.5 11.5L7.8 19L9.8 18.1L6.5 10.8L11.5 10.8L0.5 0.5Z"
+            d="M0 0L16 7.5L10.5 9.5L5 17Z"
             fill="#FFFFFF"
             stroke="#101019"
             strokeWidth="0.8"

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Bot, ArrowUpRight } from "lucide-react";
+import CustomCursor from "@/components/CustomCursor";
 import "./GooeyNavEffect.css";
 
 const NAV_ITEMS = [
@@ -143,8 +144,12 @@ export default function Navbar({ logo }: NavbarProps = {}) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] md:pt-6 transition-all duration-300 pointer-events-none">
+      {/* Global custom cursor mounted inside header stacking context:
+          z-20 cursor sits above z-10 navbar glass/logo/Orbit, and behind z-30 navigation link text */}
+      <CustomCursor />
+
       <nav
-        className={`w-full max-w-6xl flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl transition-all duration-300 pointer-events-auto ${
+        className={`w-full max-w-6xl flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl transition-all duration-300 pointer-events-auto relative z-10 ${
           scrolled
             ? "glass-pill shadow-[0_8px_32px_rgba(0,0,0,0.5)] border-white/10"
             : "bg-surface/50 backdrop-blur-md border border-white/5"
@@ -178,7 +183,7 @@ export default function Navbar({ logo }: NavbarProps = {}) {
         </Link>
 
         {/* Desktop Navigation Links with Scoped Gooey Click Transition */}
-        <div ref={desktopNavRef} className="hidden lg:flex items-center gap-1 relative">
+        <div ref={desktopNavRef} className="hidden lg:flex items-center gap-1 relative z-20">
           {/* Scoped Gooey Particle Layer */}
           <div
             ref={gooeyContainerRef}
@@ -199,7 +204,7 @@ export default function Navbar({ logo }: NavbarProps = {}) {
                     : "text-muted hover:text-foreground hover:bg-white/[0.04]"
                 }`}
               >
-                <span className="relative z-10">{item.name}</span>
+                <span className="relative z-30">{item.name}</span>
                 {isActive && (
                   <motion.div
                     layoutId="activeNavIndicator"

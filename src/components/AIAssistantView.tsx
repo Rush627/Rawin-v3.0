@@ -39,6 +39,13 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
   const [orbitState, setOrbitState] = useState<OrbitCoreState>("idle");
   const [streamingContent, setStreamingContent] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [, setIdentityToken] = useState<string | null>(null);
+  const identityTokenRef = useRef<string | null>(null);
+
+  const activePrompts =
+    content?.suggestedPrompts && content.suggestedPrompts.length > 0
+      ? content.suggestedPrompts
+      : SUGGESTED_PROMPTS;
 
   const endRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -129,13 +136,23 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(identityTokenRef.current
+            ? { "x-orbit-identity-token": identityTokenRef.current }
+            : {}),
         },
         body: JSON.stringify({
           messages: outboundHistory,
           stream: true,
+          identityToken: identityTokenRef.current,
         }),
         signal: controller.signal,
       });
+
+      const nextToken = res.headers.get("x-orbit-identity-token");
+      if (nextToken) {
+        identityTokenRef.current = nextToken;
+        setIdentityToken(nextToken);
+      }
 
       if (!res.ok) {
         let errorText = "Something went wrong while communicating with Orbit.";
@@ -266,6 +283,8 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
     if (orbitState === "generating" || orbitState === "streaming") {
       handleStop();
     }
+    identityTokenRef.current = null;
+    setIdentityToken(null);
     setMessages([]);
     setStreamingContent("");
     setErrorMessage(null);
@@ -331,7 +350,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
             <OrbitCore state={orbitState} size="sm" />
             <div className="flex items-center gap-2.5">
               <span className="font-space font-bold text-sm tracking-wider text-foreground">
-                RAWIN ORBIT
+                {content?.title || "RAWIN ORBIT"}
               </span>
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] font-mono text-muted">
                 <span
@@ -375,7 +394,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               )}
               <OrbitCore state={orbitState} size="sm" />
               <span className="font-space font-bold text-xs tracking-wider text-foreground">
-                RAWIN ORBIT
+                {content?.title || "RAWIN ORBIT"}
               </span>
             </div>
 
@@ -427,19 +446,19 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               </div>
 
               <h1 className="text-2xl sm:text-4xl font-bold font-space text-foreground tracking-tight mb-2">
-                RAWIN ORBIT
+                {content?.title || "RAWIN ORBIT"}
               </h1>
 
               <p className="text-sm sm:text-base text-muted mb-6 sm:mb-10 leading-relaxed max-w-lg">
-                Ask about Rushan, RAWIN, projects, experience, or writing.
+                {content?.greetingMessage || "Ask about Rushan, RAWIN, projects, experience, or writing."}
               </p>
 
               <div className="w-full flex flex-col gap-2.5">
                 <span className="text-[11px] font-mono text-muted/60 text-left px-1">
-                  Suggested Prompts
+                  {content?.suggestedPromptsLabel || "Suggested Prompts"}
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 w-full text-left">
-                  {SUGGESTED_PROMPTS.map((prompt) => (
+                  {activePrompts.map((prompt) => (
                     <button
                       key={prompt}
                       type="button"
@@ -616,7 +635,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               maxLength={MAX_MESSAGE_CHARS}
               onChange={handleTextareaInput}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything about Rushan's work, experience, or skills..."
+              placeholder={content?.inputPlaceholder || "Ask anything about Rushan's work, experience, or skills..."}
               className="w-full bg-transparent px-2.5 py-1 text-sm sm:text-base text-foreground placeholder:text-muted/45 focus:outline-none resize-none min-h-[52px] max-h-[160px] font-sans leading-relaxed block border-0 shadow-none ring-0 focus:ring-0 overflow-y-auto"
             />
 
