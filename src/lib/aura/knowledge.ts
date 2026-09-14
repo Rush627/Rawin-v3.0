@@ -24,10 +24,10 @@ export async function getAuraKnowledgeContext(): Promise<string> {
 
     // 1. Site and Creator Semantics
     sections.push("[SITE & CREATOR]");
-    sections.push("Founder & Creator: Rushan Siddiqui");
+    sections.push("RAWIN Founder & Developer: Rushan Siddiqui");
     sections.push("Platform: RAWIN (personal engineering ecosystem and portfolio, current version RAWIN v3.0)");
     sections.push("AI: Rawin Orbit (short name: Orbit)");
-    sections.push("Relationship: Rushan Siddiqui founded RAWIN and created Rawin Orbit as part of RAWIN. Orbit is an AI assistant, not Rushan.");
+    sections.push("Relationship: Rushan Siddiqui founded RAWIN and is Orbit's developer. Orbit is an AI assistant created by Rushan for RAWIN.");
     sections.push("Role: Software Developer / Full Stack Engineer");
     sections.push(`Location: ${content.global?.location || "Uttar Pradesh, India"}`);
     sections.push(`Availability: ${content.global?.availabilityStatus || "Open to select opportunities"}`);
@@ -158,6 +158,6 @@ export async function getAuraKnowledgeContext(): Promise<string> {
     return cachedKnowledge;
   } catch (error) {
     console.error("[Orbit] Error compiling knowledge context:", error);
-    return "[SITE & CREATOR]\nFounder & Creator: Rushan Siddiqui\nPlatform: RAWIN 3.0\nAI: RAWIN ORBIT\nInquiries: /contact";
+    return "[SITE & CREATOR]\nRAWIN Founder & Developer: Rushan Siddiqui\nPlatform: RAWIN 3.0\nAI: RAWIN ORBIT\nRelationship: Rushan Siddiqui founded RAWIN and is Orbit's developer.\nInquiries: /contact";
   }
 }

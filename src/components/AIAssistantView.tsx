@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import GridScanOrbitBackground from "@/components/GridScanOrbitBackground";
-import OrbitCore, { OrbitCoreState } from "@/components/OrbitCore";
+import RawinOrbitOrb, { type OrbitVisualState } from "@/components/RawinOrbitOrb";
+import type { OrbitState } from "@/components/OrbitMark";
 import type { AIContent } from "@/lib/site-content";
 import type { OrbitMessage } from "@/lib/aura/types";
 
@@ -36,7 +37,7 @@ interface AIAssistantViewProps {
 export default function AIAssistantView({ content }: AIAssistantViewProps) {
   const [messages, setMessages] = useState<OrbitMessage[]>([]);
   const [input, setInput] = useState("");
-  const [orbitState, setOrbitState] = useState<OrbitCoreState>("idle");
+  const [orbitState, setOrbitState] = useState<OrbitState>("idle");
   const [streamingContent, setStreamingContent] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [, setIdentityToken] = useState<string | null>(null);
@@ -52,14 +53,25 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll when new content arrives
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    endRef.current?.scrollIntoView({ behavior });
-  }, []);
+  // Auto-scroll behavior: smooth when messages change, throttled without smooth-scroll jank during SSE streaming
+  const lastScrollTimeRef = useRef(0);
+  useEffect(() => {
+    if (messages.length === 0) return;
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, streamingContent, scrollToBottom]);
+    if (!streamingContent || !scrollContainerRef.current) return;
+    const now = Date.now();
+    if (now - lastScrollTimeRef.current > 100) {
+      lastScrollTimeRef.current = now;
+      const el = scrollContainerRef.current;
+      const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
+      if (isNearBottom) {
+        el.scrollTop = el.scrollHeight;
+      }
+    }
+  }, [streamingContent]);
 
   // Handle textarea dynamic auto-sizing
   const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -305,6 +317,10 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
   const isOrbitalActive =
     orbitState === "generating" || orbitState === "streaming";
 
+  const orbVisualState: OrbitVisualState = isOrbitalActive
+    ? "talking"
+    : "listening";
+
   return (
     <main
       className="relative w-full h-dvh max-h-dvh flex flex-col bg-transparent text-foreground overflow-hidden select-text"
@@ -327,7 +343,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
           Right: New Session / Balance spacer
         MOBILE (<md):
           Strict Requirement:
-          Left: ← Back to Home
+          Left: Back to Home
           Right: Orbit icon + RAWIN ORBIT (+ New Session when active)
         ========================================================================
       */}
@@ -347,7 +363,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
 
           {/* DESKTOP ONLY CENTER: RAWIN ORBIT Identity + State (Hidden on mobile) */}
           <div className="hidden md:flex items-center gap-3">
-            <OrbitCore state={orbitState} size="sm" />
+            <RawinOrbitOrb variant="header" state={orbVisualState} />
             <div className="flex items-center gap-2.5">
               <span className="font-space font-bold text-sm tracking-wider text-foreground">
                 {content?.title || "RAWIN ORBIT"}
@@ -392,7 +408,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                   <RotateCcw className="w-3 h-3 text-muted/80" />
                 </button>
               )}
-              <OrbitCore state={orbitState} size="sm" />
+              <RawinOrbitOrb variant="header" state={orbVisualState} />
               <span className="font-space font-bold text-xs tracking-wider text-foreground">
                 {content?.title || "RAWIN ORBIT"}
               </span>
@@ -418,69 +434,76 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
         </div>
       </header>
 
-      {/* 
-        ========================================================================
-        MAIN CONVERSATION CANVAS
-        Spacious desktop width: up to 1360px
-        Strict Left Alignment for ORBIT responses
-        Strict Right Alignment for USER messages
-        ========================================================================
-      */}
-      <div
-        ref={scrollContainerRef}
-        data-lenis-prevent
-        className="flex-1 min-h-0 w-full overflow-y-auto px-3.5 sm:px-8 lg:px-12 py-5 sm:py-8 flex flex-col scroll-smooth relative z-10"
-      >
-        <div className="w-full max-w-[1360px] mx-auto flex-1 flex flex-col">
-          {messages.length === 0 ? (
-            /* 
-              ------------------------------------------------------------------
-              REFINED ORBIT EMPTY STATE
-              Atmospheric Orbit Core + Clean typography + Curated prompts
-              NOTE: Main centered RAWIN ORBIT identity is completely untouched!
-              ------------------------------------------------------------------
-            */
-            <div className="flex flex-col items-center justify-center text-center my-auto py-6 sm:py-16 px-2 sm:px-4 max-w-2xl mx-auto w-full">
-              <div className="mb-6">
-                <OrbitCore state={orbitState} size="lg" />
-              </div>
+      {messages.length === 0 ? (
+        /* 
+          ========================================================================
+          STATE A: INITIAL EMPTY / LANDING STATE
+          Fixed, intentionally composed viewport perfectly centered between header and composer.
+          No accidental scrolling, no cut-off heading, subtitle, prompts, or orb.
+          ========================================================================
+        */
+        <div className="flex-1 min-h-0 w-full flex flex-col justify-center items-center overflow-hidden px-3.5 sm:px-8 lg:px-12 py-2 sm:py-4 relative z-10 select-text">
+          <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center text-center my-auto">
+            {/* Central Hero Orb */}
+            <div
+              className="mb-2 sm:mb-3 md:mb-4 shrink-0 flex items-center justify-center pointer-events-none select-none"
+              aria-hidden="true"
+            >
+              <RawinOrbitOrb variant="hero" state={orbVisualState} />
+            </div>
 
-              <h1 className="text-2xl sm:text-4xl font-bold font-space text-foreground tracking-tight mb-2">
-                {content?.title || "RAWIN ORBIT"}
-              </h1>
+            {/* RAWIN ORBIT Title */}
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-space text-foreground tracking-tight mb-1 sm:mb-2">
+              {content?.title || "RAWIN ORBIT"}
+            </h1>
 
-              <p className="text-sm sm:text-base text-muted mb-6 sm:mb-10 leading-relaxed max-w-lg">
-                {content?.greetingMessage || "Ask about Rushan, RAWIN, projects, experience, or writing."}
-              </p>
+            {/* Introduction Subtitle */}
+            <p className="text-xs sm:text-sm md:text-base text-muted mb-3.5 sm:mb-6 md:mb-8 leading-relaxed max-w-lg px-2">
+              {content?.greetingMessage || "I'm Rawin Orbit, the AI assistant built by Rushan Siddiqui for RAWIN."}
+            </p>
 
-              <div className="w-full flex flex-col gap-2.5">
-                <span className="text-[11px] font-mono text-muted/60 text-left px-1">
-                  {content?.suggestedPromptsLabel || "Suggested Prompts"}
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 w-full text-left">
-                  {activePrompts.map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => handlePromptSelect(prompt)}
-                      className="p-3 sm:p-3.5 rounded-xl glass-card text-xs font-mono text-muted hover:text-foreground hover:border-pacific-cyan/40 transition-all text-left flex items-center justify-between group cursor-pointer"
-                    >
-                      <span className="truncate mr-2">{prompt}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-muted/40 group-hover:text-pacific-cyan transition-colors shrink-0" />
-                    </button>
-                  ))}
-                </div>
+            {/* Suggested Prompts Section */}
+            <div className="w-full flex flex-col gap-1.5 sm:gap-2.5">
+              <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 text-left px-1">
+                {content?.suggestedPromptsLabel || "Suggested Prompts"}
+              </span>
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2.5 w-full text-left">
+                {activePrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => handlePromptSelect(prompt)}
+                    className="p-2.5 sm:p-3.5 rounded-xl glass-card text-[11px] sm:text-xs font-mono text-muted hover:text-foreground hover:border-pacific-cyan/40 transition-all text-left flex items-center justify-between group cursor-pointer"
+                  >
+                    <span className="truncate mr-1">{prompt}</span>
+                    <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted/40 group-hover:text-pacific-cyan transition-colors shrink-0" />
+                  </button>
+                ))}
               </div>
             </div>
-          ) : (
-            /* 
-              ------------------------------------------------------------------
-              ACTIVE CONVERSATION THREAD
-              STRICT MANDATORY ALIGNMENT:
-              Orbit -> LEFT ALIGNED
-              User  -> RIGHT ALIGNED
-              ------------------------------------------------------------------
-            */
+          </div>
+        </div>
+      ) : (
+        /* 
+          ========================================================================
+          STATE B: ACTIVE CONVERSATION
+          Scrollable conversation canvas allowing messages to accumulate and scroll naturally.
+          ========================================================================
+        */
+        <div
+          ref={scrollContainerRef}
+          data-lenis-prevent
+          className="flex-1 min-h-0 w-full overflow-y-auto px-3.5 sm:px-8 lg:px-12 py-3 sm:py-6 flex flex-col scroll-smooth relative z-10"
+        >
+          <div className="w-full max-w-[1360px] mx-auto flex-1 flex flex-col">
+            {/* Subtle top visual anchor at the beginning of the conversation thread */}
+            <div
+              className="w-full flex justify-center items-center shrink-0 pt-1 pb-3 sm:pb-4 pointer-events-none select-none"
+              aria-hidden="true"
+            >
+              <RawinOrbitOrb variant="hero" state={orbVisualState} />
+            </div>
+
             <div className="w-full flex flex-col gap-5 sm:gap-8 pb-4">
               {messages.map((m) => {
                 const isUser = m.role === "user";
@@ -514,8 +537,8 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                   >
                     <div className="flex items-start gap-2.5 sm:gap-4 max-w-[96%] sm:max-w-[85%] lg:max-w-[78%]">
                       {/* Left Badge: Small Orbit Core */}
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 sm:mt-1 bg-surface border border-white/[0.1] shadow-sm">
-                        <OrbitCore state="idle" size="sm" />
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 sm:mt-1 bg-surface border border-white/[0.1] shadow-sm overflow-hidden">
+                        <RawinOrbitOrb variant="message" state={orbVisualState} />
                       </div>
 
                       <div className="flex flex-col gap-1.5 min-w-0 flex-1 text-left">
@@ -539,8 +562,8 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               {isOrbitalActive && streamingContent && (
                 <div className="w-full flex justify-start items-start">
                   <div className="flex items-start gap-2.5 sm:gap-4 max-w-[96%] sm:max-w-[85%] lg:max-w-[78%]">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 sm:mt-1 bg-surface border border-white/[0.1] shadow-sm">
-                      <OrbitCore state="streaming" size="sm" />
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 sm:mt-1 bg-surface border border-white/[0.1] shadow-sm overflow-hidden">
+                      <RawinOrbitOrb variant="message" state={orbVisualState} />
                     </div>
 
                     <div className="flex flex-col gap-1.5 min-w-0 flex-1 text-left">
@@ -562,7 +585,9 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               {orbitState === "generating" && !streamingContent && (
                 <div className="w-full flex justify-start items-center">
                   <div className="flex items-center gap-3 max-w-[90%]">
-                    <OrbitCore state="generating" size="sm" />
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 bg-surface border border-white/[0.1] shadow-sm overflow-hidden">
+                      <RawinOrbitOrb variant="message" state={orbVisualState} />
+                    </div>
                     <div className="glass-card px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-white/[0.08] flex items-center gap-2 text-xs font-mono text-muted">
                       <span>Orbit is reasoning...</span>
                     </div>
@@ -570,11 +595,11 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                 </div>
               )}
             </div>
-          )}
 
-          <div ref={endRef} />
+            <div ref={endRef} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 
         ========================================================================

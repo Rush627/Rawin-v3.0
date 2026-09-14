@@ -163,24 +163,33 @@ export async function POST(req: NextRequest) {
 
     // 3. Identity Verification State Machine
     if (currentIdentity === "CLAIMED_RUSHAN_PENDING_VERIFICATION") {
+      // If visitor repeats or rephrases an identity claim instead of entering code, keep in pending state
+      if (isClaimingRushanIdentity(userText)) {
+        const nextToken = await signOrbitIdentityToken("CLAIMED_RUSHAN_PENDING_VERIFICATION");
+        const reply = "I don't know who you are, but Rushan Siddiqui is my developer. If you're Rushan, please confirm your identity with the verification code.";
+        return createDirectResponse(reply, nextToken, isStreamRequested);
+      }
+
       // Visitor was prompted for verification code and submitted candidate
       const candidate = extractCandidateCode(userText);
       const isMatch = await verifyOwnerCandidate(candidate, ip);
 
       if (isMatch) {
         const nextToken = await signOrbitIdentityToken("VERIFIED_RUSHAN");
-        const reply = "Identity confirmed. Welcome back, Rushan. Orbit is at your command.";
+        const reply = "Identity confirmed. Welcome back, Rushan. You're my developer.";
         return createDirectResponse(reply, nextToken, isStreamRequested);
       } else {
         const nextToken = await signOrbitIdentityToken("RUSHAN_VERIFICATION_FAILED");
-        const reply = "That verification didn't match. No problem, we can continue normally.";
+        const reply = "That verification code didn't match. We can continue normally with any general questions about RAWIN or projects.";
         return createDirectResponse(reply, nextToken, isStreamRequested);
       }
     }
 
     if (currentIdentity === "RUSHAN_VERIFICATION_FAILED") {
       // Once verification fails in this conversation, no retry is allowed
-      if (isClaimingRushanIdentity(userText)) {
+      const candidate = extractCandidateCode(userText);
+      const isPossibleCode = candidate.length >= 4 && candidate.length <= 32 && /^[A-Za-z0-9_-]+$/.test(candidate);
+      if (isClaimingRushanIdentity(userText) || isPossibleCode) {
         const nextToken = await signOrbitIdentityToken("RUSHAN_VERIFICATION_FAILED");
         const reply = "Verification was already attempted for this session and cannot be retried. We can continue with any general questions about RAWIN, projects, or architecture.";
         return createDirectResponse(reply, nextToken, isStreamRequested);
@@ -191,14 +200,14 @@ export async function POST(req: NextRequest) {
     if (currentIdentity === "UNKNOWN") {
       if (isClaimingRushanIdentity(userText)) {
         const nextToken = await signOrbitIdentityToken("CLAIMED_RUSHAN_PENDING_VERIFICATION");
-        const reply = "If you're Rushan, please confirm your identity with the verification code.";
+        const reply = "I don't know who you are, but Rushan Siddiqui is my developer. If you're Rushan, please confirm your identity with the verification code.";
         return createDirectResponse(reply, nextToken, isStreamRequested);
       }
     }
 
     if (currentIdentity === "VERIFIED_RUSHAN") {
       if (isClaimingRushanIdentity(userText)) {
-        const reply = "You are already verified as Rushan for this conversation.";
+        const reply = "Yes. You're Rushan Siddiqui, my developer.";
         return createDirectResponse(reply, rawToken || "", isStreamRequested);
       }
     }

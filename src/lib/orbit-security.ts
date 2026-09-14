@@ -294,39 +294,66 @@ export async function verifyOrbitIdentityToken(
  */
 export function isClaimingRushanIdentity(input: string): boolean {
   if (!input) return false;
-  const normalized = input
+  const raw = input.trim();
+  const normalized = raw
     .toLowerCase()
-    .trim()
     .replace(/['’]/g, "")
     .replace(/[.,!?;:"`-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
-  // Questions or queries about Rushan are NOT identity claims
-  if (
-    /^(who|what|where|when|why|how|is|are|does|can|could|tell|about)\b/.test(
-      normalized
-    ) ||
-    normalized.includes("who is") ||
-    normalized.includes("tell me about") ||
-    normalized.includes("did rushan") ||
-    normalized.includes("does rushan") ||
-    normalized.includes("projects of rushan") ||
-    normalized.includes("skills of rushan")
-  ) {
+  // Pure third-person queries about Rushan, Orbit, or RAWIN are NOT identity claims
+  const isThirdPersonQuery =
+    /\b(who\s+(is|are|was|were|created|built|founded|made|designed))\b/.test(normalized) ||
+    /\b(tell\s+me\s+about\s+(rushan|your\s+developer|the\s+developer|rawin|orbit))\b/.test(normalized) ||
+    /\b(is\s+rushan(\s+siddiqui)?\s+(the|your)?\s*(developer|founder|creator))\b/.test(normalized) ||
+    /\b(is\s+rushan(\s+siddiqui)?\s+the\s+founder\s+of\s+rawin)\b/.test(normalized) ||
+    /\b(are\s+you\s+(rushan|the\s+developer|the\s+founder|an\s+ai|orbit))\b/.test(normalized) ||
+    /\b(what\s+(is|did)\s+(rushan|rawin|orbit))\b/.test(normalized) ||
+    /\b(projects\s+of\s+rushan|skills\s+of\s+rushan)\b/.test(normalized);
+
+  if (isThirdPersonQuery) {
     return false;
   }
 
-  // Identity claims
-  return (
-    /\b(i\s*am|i\s*m|im|this\s*is|its|it\s*is|hey\s*im|hi\s*im|myself)\s+rushan(\s+siddiqui)?\b/.test(
+  // 1. Explicit claims of being Rushan
+  const claimsRushanName =
+    /\b(i\s*am|im|this\s*is|its|it\s*is|hey\s*im|hi\s*im|myself)\s+rushan(\s+siddiqui)?\b/.test(
       normalized
     ) ||
     /\brushan\s+siddiqui\s+here\b/.test(normalized) ||
     /\brushan\s+here\b/.test(normalized) ||
     normalized === "rushan" ||
-    normalized === "rushan siddiqui"
-  );
+    normalized === "rushan siddiqui";
+
+  if (claimsRushanName) return true;
+
+  // 2. Explicit claims of being Orbit's or RAWIN's developer, founder, or creator
+  const claimsCreatorRole =
+    /\b(i\s*am|im|this\s*is)\s+(your|the|rawins?|orbits?)?\s*(developer|dev|founder|creator|architect|maker|builder)\b/.test(
+      normalized
+    ) ||
+    /\b(i\s*am|im)\s+the\s+developer\s+of\s+(rawin|orbit)\b/.test(normalized) ||
+    /\b(i\s*am|im)\s+the\s+founder\s+of\s+rawin\b/.test(normalized) ||
+    /\b(i\s*am|im)\s+your\s+developer\s+rushan\b/.test(normalized) ||
+    /\b(i\s*am|im)\s+rushan\s+your\s+developer\b/.test(normalized) ||
+    /\b(i\s*am|im)\s+the\s+(person|one|engineer|developer|founder)\s+who\s+(created|built|made|designed)\s+(you|rawin|orbit)\b/.test(
+      normalized
+    ) ||
+    /\b(you\s*are\s*talking\s*to|speaking\s*to)\s+(your\s+|the\s+)?(developer|founder|creator|rushan)\b/.test(
+      normalized
+    );
+
+  if (claimsCreatorRole) return true;
+
+  // 3. Explicit claims of having built or created Orbit or RAWIN
+  const claimsBuiltAction =
+    /\bi\s+(created|built|designed|made)\s+you\b/.test(normalized) ||
+    /\bi\s+(created|built|founded|designed|made)\s+(rawin|orbit)\b/.test(normalized);
+
+  if (claimsBuiltAction) return true;
+
+  return false;
 }
 
 /**
