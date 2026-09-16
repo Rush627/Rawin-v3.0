@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useEffect } from "react";
 import Image from "next/image";
 import {
   Globe,
@@ -46,9 +46,12 @@ import {
   ShieldCheck,
   Lock,
   EyeOff,
+  BookOpen,
 } from "lucide-react";
 import RawinSelect, { type RawinSelectOption } from "./RawinSelect";
 import NeoToggle from "@/components/NeoToggle";
+import OrbitKnowledgeManager from "./OrbitKnowledgeManager";
+import type { OrbitKnowledgeItem } from "@/lib/orbit-knowledge";
 import type {
   SiteContent,
   ContentSectionKey,
@@ -108,10 +111,13 @@ const STATUS_INDICATOR_OPTIONS: RawinSelectOption[] = [
 
 interface SiteContentEditorProps {
   initialContent: SiteContent;
+  initialKnowledge?: OrbitKnowledgeItem[];
 }
 
+export type AdminTabKey = ContentSectionKey | "orbit-knowledge";
+
 interface SectionConfig {
-  key: ContentSectionKey;
+  key: AdminTabKey;
   label: string;
   icon: typeof Globe;
   description: string;
@@ -166,13 +172,31 @@ const SECTIONS: SectionConfig[] = [
     icon: Bot,
     description: "RAWIN ORBIT intelligence interface titles, intro text, placeholder, and suggested prompts.",
   },
+  {
+    key: "orbit-knowledge",
+    label: "Orbit Knowledge",
+    icon: BookOpen,
+    description: "Manual authoritative facts, education, and knowledge base for Rawin Orbit.",
+  },
 ];
 
-export default function SiteContentEditor({ initialContent }: SiteContentEditorProps) {
-  const [activeTab, setActiveTab] = useState<ContentSectionKey>("global");
+export default function SiteContentEditor({ initialContent, initialKnowledge = [] }: SiteContentEditorProps) {
+  const [activeTab, setActiveTab] = useState<AdminTabKey>("global");
   const [content, setContent] = useState<SiteContent>(initialContent);
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<ContentActionState | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "orbit-knowledge" || tabParam === "knowledge") {
+        setActiveTab("orbit-knowledge");
+      } else if (tabParam && SECTIONS.some((s) => s.key === tabParam)) {
+        setActiveTab(tabParam as AdminTabKey);
+      }
+    }
+  }, []);
 
   // Owner Verification Code state (Rawin Orbit Security)
   const [newVerificationCode, setNewVerificationCode] = useState("");
@@ -1406,7 +1430,7 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
-      const result = await updateSectionAction(activeTab, null, formData);
+      const result = await updateSectionAction(activeTab as ContentSectionKey, null, formData);
       setFeedback(result);
     });
   };
@@ -1474,8 +1498,10 @@ export default function SiteContentEditor({ initialContent }: SiteContentEditorP
         </div>
       )}
 
-      {/* Site Assets Visual Manager */}
-      {activeTab === "assets" ? (
+      {/* Orbit Knowledge Base Manager */}
+      {activeTab === "orbit-knowledge" ? (
+        <OrbitKnowledgeManager initialItems={initialKnowledge || []} />
+      ) : activeTab === "assets" ? (
         <div className="flex flex-col gap-6">
           <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">

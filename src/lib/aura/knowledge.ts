@@ -2,22 +2,66 @@ import { getSiteContent } from "@/lib/site-content";
 import { getProjects } from "@/lib/projects";
 import { PROJECTS as canonicalProjects } from "@/data/projects";
 import { getPublishedPosts } from "@/lib/blog";
+import { getActiveOrbitKnowledgeForAura } from "@/lib/orbit-knowledge";
+import { getDatabase } from "@/lib/mongodb";
 
 let cachedKnowledge: string | null = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes in-memory cache
+const CACHE_TTL_MS = 60 * 1000; // 1 minute max TTL fallback
+
+/**
+ * Invalidates the in-memory knowledge cache immediately.
+ * Called upon CMS updates so subsequent requests retrieve fresh data without rebuild/restart.
+ */
+export function invalidateAuraKnowledgeCache(): void {
+  cachedKnowledge = null;
+  lastCacheTime = 0;
+}
 
 export async function getAuraKnowledgeContext(): Promise<string> {
   const now = Date.now();
-  if (cachedKnowledge && now - lastCacheTime < CACHE_TTL_MS) {
+
+  // Fast path: if cache exists and is fresh within 3 seconds, serve from memory
+  if (cachedKnowledge && now - lastCacheTime < 3000) {
     return cachedKnowledge;
   }
 
+  // If cache is active, verify against latest orbit_knowledge update timestamp
+  if (cachedKnowledge && now - lastCacheTime < CACHE_TTL_MS) {
+    const activeCache = cachedKnowledge;
+    try {
+      const db = await getDatabase();
+      if (db) {
+        const latestDoc = await db
+          .collection("orbit_knowledge")
+          .find({}, { projection: { updatedAt: 1 } })
+          .sort({ updatedAt: -1 })
+          .limit(1)
+          .toArray();
+
+        if (latestDoc.length > 0 && latestDoc[0].updatedAt) {
+          const docUpdateTime = new Date(latestDoc[0].updatedAt).getTime();
+          if (docUpdateTime > lastCacheTime) {
+            // Document was updated after last cache compilation: invalidate
+            cachedKnowledge = null;
+          } else {
+            return activeCache;
+          }
+        } else {
+          return activeCache;
+        }
+      }
+    } catch {
+      return activeCache;
+    }
+  }
+
   try {
-    const [content, dbProjects, posts] = await Promise.all([
+    const [content, dbProjects, posts, manualKnowledge] = await Promise.all([
       getSiteContent(),
       getProjects().catch(() => []),
       getPublishedPosts().catch(() => []),
+      getActiveOrbitKnowledgeForAura().catch(() => []),
     ]);
 
     const sections: string[] = [];
@@ -152,6 +196,29 @@ export async function getAuraKnowledgeContext(): Promise<string> {
       if (twitter) sections.push(`X: ${twitter}`);
     }
     sections.push("Direct Contact Page: /contact");
+
+    // 8. Authoritative Manual Knowledge (Managed via Orbit Knowledge CMS)
+    if (manualKnowledge && manualKnowledge.length > 0) {
+      sections.push("\n[AUTHORITATIVE ORBIT KNOWLEDGE]");
+      sections.push("The following verified knowledge was entered directly by Rushan Siddiqui via the Admin CMS:");
+
+      const categoryLabels: Record<string, string> = {
+        profile: "Personal & Profile",
+        education: "Education",
+        skills: "Skills & Technologies",
+        rawin: "RAWIN Platform",
+        orbit: "Rawin Orbit AI",
+        custom: "Custom Facts & Directives",
+      };
+
+      for (const item of manualKnowledge) {
+        const catLabel = categoryLabels[item.category] || item.category.toUpperCase();
+        const statusLabel = item.status === "current" ? "CURRENT" : "HISTORICAL";
+        const priorityLabel = item.priority === "high" ? " [HIGH PRIORITY]" : "";
+        sections.push(`\n- [${catLabel}] ${item.title} (Status: ${statusLabel}${priorityLabel}):`);
+        sections.push(`  ${item.content.trim().split("\n").join("\n  ")}`);
+      }
+    }
 
     cachedKnowledge = sections.join("\n");
     lastCacheTime = now;

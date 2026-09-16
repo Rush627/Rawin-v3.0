@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Sliders, ArrowLeft } from "lucide-react";
 import { getAdminSession } from "@/lib/auth";
 import { getSiteContent } from "@/lib/site-content";
+import { getOrbitKnowledgeList } from "@/lib/orbit-knowledge";
 import SiteContentEditor from "@/components/admin/SiteContentEditor";
 
 export const metadata = {
@@ -18,7 +19,10 @@ export default async function AdminContentPage() {
     redirect("/admin/login?redirect=/admin/content");
   }
 
-  const content = await getSiteContent();
+  const [content, knowledgeItems] = await Promise.all([
+    getSiteContent(),
+    getOrbitKnowledgeList(),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -45,7 +49,7 @@ export default async function AdminContentPage() {
       </div>
 
       {/* Editor Main */}
-      <SiteContentEditor initialContent={content} />
+      <SiteContentEditor initialContent={content} initialKnowledge={knowledgeItems} />
     </div>
   );
 }

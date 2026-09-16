@@ -132,7 +132,9 @@ export default function RawinSelect({
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block ${isSmall ? "w-auto" : "w-full"} ${className}`}
+      className={`relative inline-block ${isSmall ? "w-auto" : "w-full"} ${
+        isOpen ? "z-30" : ""
+      } ${className}`}
       onKeyDown={handleKeyDown}
     >
       {/* Hidden input to ensure FormData captures the value in Server Actions */}
@@ -184,7 +186,7 @@ export default function RawinSelect({
           id={`${selectId}-listbox`}
           role="listbox"
           tabIndex={-1}
-          className={`absolute left-0 top-full mt-1.5 z-50 rounded-xl bg-ink-black/95 backdrop-blur-xl border border-white/[0.12] shadow-[0_16px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(24,155,173,0.12)] p-1.5 flex flex-col gap-1 overflow-hidden animate-in fade-in zoom-in-95 duration-150 ${
+          className={`absolute left-0 top-full mt-1.5 z-50 rounded-xl bg-ink-black/95 backdrop-blur-xl border border-white/[0.12] shadow-[0_16px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(24,155,173,0.12)] p-1.5 flex flex-col gap-1 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-150 ${
             isSmall ? "min-w-[130px] text-xs" : "w-full text-sm"
           }`}
         >

@@ -27,6 +27,7 @@ import {
 import RawinEvolution from "@/components/RawinEvolution";
 import ProfileCard from "@/components/ProfileCard";
 import BorderGlow from "@/components/BorderGlow";
+import EngineeringJourneyCircuit from "@/components/EngineeringJourneyCircuit";
 import { TIMELINE } from "@/data/experience";
 import { getSiteContent } from "@/lib/site-content";
 
@@ -250,46 +251,7 @@ export default async function AboutPage() {
           </p>
         </div>
 
-        <div className="relative flex flex-col gap-8 sm:gap-10 border-l border-white/[0.08] ml-2 sm:ml-4 pl-6 sm:pl-8">
-          {TIMELINE.map((item) => (
-            <div
-              key={item.period}
-              className="relative flex flex-col gap-3 group"
-            >
-              {/* Node indicator */}
-              <div className="absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full bg-ink-black border-2 border-pacific-cyan/60 group-hover:border-pacific-cyan group-hover:shadow-[0_0_10px_rgba(24,155,173,0.5)] transition-all" />
-
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full bg-pacific-cyan/10 text-pacific-cyan border border-pacific-cyan/20">
-                  {item.period}
-                </span>
-                <span className="text-xs font-mono text-muted/70">
-                  {item.companyOrContext}
-                </span>
-              </div>
-
-              <h3 className="text-lg sm:text-xl font-bold text-foreground font-space">
-                {item.role}
-              </h3>
-
-              <p className="text-sm text-muted leading-relaxed">
-                {item.description}
-              </p>
-
-              <ul className="flex flex-col gap-1.5 pt-1">
-                {item.highlights.map((highlight, hIdx) => (
-                  <li
-                    key={hIdx}
-                    className="flex items-start gap-2 text-xs sm:text-sm text-muted/80"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-pacific-cyan/60 shrink-0 mt-2" />
-                    <span>{highlight}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+        <EngineeringJourneyCircuit items={TIMELINE} />
       </section>
 
       {/* SECTION 5: CURRENT FOCUS */}

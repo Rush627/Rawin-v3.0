@@ -16,6 +16,7 @@ import { GithubIcon } from "@/components/SocialIcons";
 import HeroRoleTyping from "@/components/HeroRoleTyping";
 import LaptopShowcase from "@/components/LaptopShowcase";
 import BorderGlow from "@/components/BorderGlow";
+import SelectedProjectsDeck from "@/components/SelectedProjectsDeck";
 import { getFeaturedProjects } from "@/lib/projects";
 import { getSiteContent } from "@/lib/site-content";
 import { TECH_ARSENAL } from "@/data/techArsenal";
@@ -150,129 +151,8 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        {/* Project Case Studies Cards */}
-        <div className="flex flex-col gap-12">
-          {featuredProjects.map((project) => (
-            <article
-              key={project._id || project.slug}
-              data-particle-protected
-              className="glass-card rounded-2xl p-6 sm:p-8 md:p-10 border border-white/[0.08] hover:border-pacific-cyan/30 flex flex-col gap-6"
-            >
-              {/* Header row */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 rounded-md text-xs font-mono font-medium bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/20">
-                    {project.category}
-                  </span>
-                  <span className="text-xs font-mono text-muted/60">{project.year}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  {project.githubUrl && (
-                    <a
-                      href={project.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-white/5 transition-colors"
-                      aria-label="View Source Code"
-                    >
-                      <GithubIcon className="w-4 h-4" />
-                    </a>
-                  )}
-                  {project.liveUrl && (
-                    <a
-                      href={project.liveUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-pacific-cyan/10 text-pacific-cyan hover:bg-pacific-cyan/20 transition-colors"
-                    >
-                      <span>Live Preview</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {/* Title & description */}
-              <div>
-                <h3 className="text-2xl sm:text-3xl font-bold text-foreground font-space">
-                  {project.title}
-                </h3>
-                {project.tagline && (
-                  <p className="text-base text-apricot-cream/90 font-medium mt-1">
-                    {project.tagline}
-                  </p>
-                )}
-                <p className="text-sm sm:text-base text-muted leading-relaxed mt-3 max-w-3xl">
-                  {project.description}
-                </p>
-              </div>
-
-              {/* Preview Image if uploaded */}
-              {project.previewImage && project.previewImage !== "/images/profile.png" && (
-                <div className="relative w-full aspect-[21/9] sm:aspect-[2.4/1] max-h-72 rounded-xl overflow-hidden border border-white/[0.08] bg-ink-black/60">
-                  <Image
-                    src={project.previewImage}
-                    alt={project.title}
-                    fill
-                    unoptimized
-                    className="object-cover transition-transform duration-500 hover:scale-[1.01]"
-                    sizes="(max-width: 768px) 100vw, 1100px"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.7)] via-transparent to-transparent pointer-events-none" />
-                </div>
-              )}
-
-
-              {/* Problem vs Solution breakdown */}
-              {(project.problem || project.solution) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  {project.problem && (
-                    <div className="p-4 rounded-xl bg-ink-black/40 border border-white/5">
-                      <span className="text-xs font-mono uppercase text-red-400/90 tracking-wider">The Challenge</span>
-                      <p className="text-xs sm:text-sm text-muted/90 mt-1.5 leading-relaxed">{project.problem}</p>
-                    </div>
-                  )}
-                  {project.solution && (
-                    <div className="p-4 rounded-xl bg-ink-black/40 border border-white/5">
-                      <span className="text-xs font-mono uppercase text-emerald-400/90 tracking-wider">The Architecture</span>
-                      <p className="text-xs sm:text-sm text-muted/90 mt-1.5 leading-relaxed">{project.solution}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Outcome & Engineering Focus Row */}
-              <div className="pt-4 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-wrap gap-2">
-                  {project.technologies.map((tech) => (
-                    <span
-                      key={tech}
-                      className="px-2.5 py-1 rounded-md text-xs font-mono text-muted/80 bg-white/[0.04] border border-white/[0.06]"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-
-                {project.engineeringFocus && project.engineeringFocus.length > 0 && (
-                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                    <span className="text-[10px] font-mono uppercase text-muted/50 tracking-wider">
-                      Engineering Focus:
-                    </span>
-                    {project.engineeringFocus.map((focus) => (
-                      <span
-                        key={focus}
-                        className="px-2.5 py-0.5 rounded-full text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/20"
-                      >
-                        {focus}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+        {/* Project Case Studies Stacking Deck */}
+        <SelectedProjectsDeck projects={featuredProjects} />
       </section>
 
       {/* ------------------------------------------------------------- */}
