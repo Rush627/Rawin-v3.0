@@ -99,16 +99,47 @@ body {
 
 /* Subtle film grain animation */
 @keyframes grain-shift {
-  0%, 100% { transform: translate(0, 0); }
-  10% { transform: translate(-2%, -3%); }
-  20% { transform: translate(3%, 1%); }
-  30% { transform: translate(-1%, 4%); }
-  40% { transform: translate(4%, -2%); }
-  50% { transform: translate(-3%, 3%); }
-  60% { transform: translate(2%, -4%); }
-  70% { transform: translate(-4%, 1%); }
-  80% { transform: translate(3%, 3%); }
-  90% { transform: translate(-2%, -1%); }
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  10% {
+    transform: translate(-2%, -3%);
+  }
+
+  20% {
+    transform: translate(3%, 1%);
+  }
+
+  30% {
+    transform: translate(-1%, 4%);
+  }
+
+  40% {
+    transform: translate(4%, -2%);
+  }
+
+  50% {
+    transform: translate(-3%, 3%);
+  }
+
+  60% {
+    transform: translate(2%, -4%);
+  }
+
+  70% {
+    transform: translate(-4%, 1%);
+  }
+
+  80% {
+    transform: translate(3%, 3%);
+  }
+
+  90% {
+    transform: translate(-2%, -1%);
+  }
 }
 
 .animate-grain {
@@ -122,6 +153,7 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
 input[type="number"] {
   -moz-appearance: textfield;
 }
@@ -149,6 +181,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 /* Custom cursor visibility for desktop pointers only */
 @media (hover: hover) and (pointer: fine) {
+
   html.custom-cursor-active,
   html.custom-cursor-active * {
     cursor: none !important;
@@ -173,3 +206,91 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
+/* Continuous technical ticker marquee */
+@keyframes ticker-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 24s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Large outlined RAW typography signature */
+.raw-footer-signature {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(24, 155, 173, 0.75);
+  text-shadow: 0 0 24px rgba(24, 155, 173, 0.15);
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .raw-footer-signature {
+    -webkit-text-stroke: 2px rgba(24, 155, 173, 0.8);
+    text-shadow: 0 0 32px rgba(24, 155, 173, 0.2);
+  }
+}
+
+/* Engineering Signal Timeline traveling pulse */
+@keyframes circuit-pulse {
+  0% {
+    stroke-dashoffset: 280;
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.15;
+  }
+}
+
+/* Continuous horizontal card-flow animation */
+@keyframes horizontal-card-flow {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-horizontal-card-flow {
+  display: flex;
+  width: max-content;
+  animation: horizontal-card-flow var(--flow-duration, 38s) linear infinite;
+  will-change: transform;
+}
+
+.animate-horizontal-card-flow:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-horizontal-card-flow {
+    animation: none !important;
+    transform: none !important;
+  }
+}

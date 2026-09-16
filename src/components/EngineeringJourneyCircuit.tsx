@@ -1,37 +1,88 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Briefcase } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import type { TimelineItem } from "@/data/experience";
 
 interface EngineeringJourneyCircuitProps {
   items: TimelineItem[];
 }
 
-interface CircuitPoint {
-  x: number;
-  y: number;
+function ExperienceCard({
+  item,
+  index,
+}: {
+  item: TimelineItem;
+  index: number;
+}) {
+  const badgeNumber = `0${index + 1}`;
+
+  return (
+    <div className="relative group w-[280px] sm:w-[300px] lg:w-[310px] h-[440px] sm:h-[450px] shrink-0">
+      <div className="glass-card rounded-2xl p-5 sm:p-6 border border-white/[0.08] bg-ink-black/85 group-hover:border-pacific-cyan/45 group-hover:bg-ink-black/95 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex flex-col justify-between h-full">
+        {/* Top Header and Content */}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-2">
+            {/* Badge and Period */}
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-bold text-pacific-cyan px-2 py-0.5 rounded-md bg-pacific-cyan/15 border border-pacific-cyan/25">
+                {badgeNumber}
+              </span>
+              <span className="text-xs font-mono font-semibold text-muted/90">
+                {item.period}
+              </span>
+            </div>
+
+            {/* Milestone Node Terminal */}
+            <div
+              className="w-4 h-4 rounded-full bg-ink-black border border-pacific-cyan/40 group-hover:border-pacific-cyan flex items-center justify-center transition-all duration-300 shadow-[0_0_8px_rgba(24,155,173,0.25)] group-hover:shadow-[0_0_12px_rgba(24,155,173,0.5)]"
+              aria-hidden="true"
+            >
+              <div className="w-1.5 h-1.5 rounded-full bg-pacific-cyan/80 group-hover:bg-pacific-cyan transition-colors" />
+            </div>
+          </div>
+
+          {/* Organization / Eyebrow */}
+          <span className="text-[11px] font-mono uppercase tracking-wider text-pacific-cyan/80 font-medium pt-0.5">
+            {item.companyOrContext}
+          </span>
+
+          {/* Role Title */}
+          <h3 className="text-base sm:text-lg font-bold text-foreground font-space leading-snug tracking-tight">
+            {item.role}
+          </h3>
+
+          {/* Description */}
+          <p className="text-xs sm:text-sm text-muted leading-relaxed">
+            {item.description}
+          </p>
+        </div>
+
+        {/* Highlights List */}
+        <div className="pt-3 border-t border-white/[0.08] mt-3">
+          <ul className="flex flex-col gap-2">
+            {item.highlights.map((highlight, hIdx) => (
+              <li
+                key={hIdx}
+                className="flex items-start gap-2 text-xs text-muted/80 leading-relaxed"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-pacific-cyan/60 shrink-0 mt-1.5" />
+                <span>{highlight}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function EngineeringJourneyCircuit({ items }: EngineeringJourneyCircuitProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const terminalRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const pathRef = useRef<SVGPathElement>(null);
-  const [pathD, setPathD] = useState<string>("");
-  const [cornerPoints, setCornerPoints] = useState<CircuitPoint[]>([]);
-  const [totalPathLength, setTotalPathLength] = useState<number>(0);
-  const [activeNodes, setActiveNodes] = useState<boolean[]>([true, false, false]);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  // Desktop capability check (>= 1024px, hover capability, no reduced motion)
+  // Desktop capability check (>= 1024px)
   useEffect(() => {
-    const checkDesktop = () => {
-      const isWide = window.innerWidth >= 1024;
-      const canHover = window.matchMedia("(hover: hover)").matches;
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      return isWide && canHover && !reducedMotion;
-    };
-
+    const checkDesktop = () => window.innerWidth >= 1024;
     setIsDesktop(checkDesktop());
 
     const handleResize = () => {
@@ -42,139 +93,16 @@ export default function EngineeringJourneyCircuit({ items }: EngineeringJourneyC
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Measure terminal positions and build orthogonal circuit path
-  const measureAndBuildCircuit = useCallback(() => {
-    const container = containerRef.current;
-    if (!container || !isDesktop) return;
-
-    const cRect = container.getBoundingClientRect();
-    const pts: CircuitPoint[] = [];
-
-    for (let i = 0; i < items.length; i++) {
-      const el = terminalRefs.current[i];
-      if (el) {
-        const r = el.getBoundingClientRect();
-        pts.push({
-          x: r.left - cRect.left + r.width / 2,
-          y: r.top - cRect.top + r.height / 2,
-        });
-      }
-    }
-
-    if (pts.length < 2) return;
-
-    // Build 90-degree orthogonal circuit trace
-    // pt0 (Card 1 right) -> step across and down -> pt1 (Card 2 left)
-    // pt1 (Card 2 left) -> step across and down -> pt2 (Card 3 right)
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    const corners: CircuitPoint[] = [];
-
-    for (let i = 0; i < pts.length - 1; i++) {
-      const pCurrent = pts[i];
-      const pNext = pts[i + 1];
-
-      // Route orthogonal circuit path:
-      // Halfway X between the terminals, bend vertically, then bend horizontally to next terminal
-      const midX = (pCurrent.x + pNext.x) / 2;
-
-      // 1st corner
-      corners.push({ x: midX, y: pCurrent.y });
-      // 2nd corner
-      corners.push({ x: midX, y: pNext.y });
-
-      d += ` H ${midX} V ${pNext.y} H ${pNext.x}`;
-    }
-
-    setPathD(d);
-    setCornerPoints(corners);
-
-    if (pathRef.current) {
-      const len = pathRef.current.getTotalLength();
-      setTotalPathLength(len);
-      pathRef.current.style.strokeDasharray = `${len}`;
-      pathRef.current.style.strokeDashoffset = `${len}`;
-    }
-  }, [items.length, isDesktop]);
-
-  // Handle ResizeObserver to update circuit geometry when layout changes
+  // Reduced motion preference check
   useEffect(() => {
-    if (!isDesktop) return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(media.matches);
+    const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, []);
 
-    measureAndBuildCircuit();
-
-    const container = containerRef.current;
-    if (!container) return;
-
-    const ro = new ResizeObserver(() => {
-      measureAndBuildCircuit();
-    });
-    ro.observe(container);
-
-    return () => ro.disconnect();
-  }, [isDesktop, measureAndBuildCircuit]);
-
-  // Update total path length once path is rendered
-  useEffect(() => {
-    if (!pathRef.current || !pathD) return;
-    const len = pathRef.current.getTotalLength();
-    setTotalPathLength(len);
-    pathRef.current.style.strokeDasharray = `${len}`;
-  }, [pathD]);
-
-  // Section-level scroll progress loop using requestAnimationFrame
-  useEffect(() => {
-    if (!isDesktop) return;
-
-    let ticking = false;
-    const container = containerRef.current;
-    if (!container) return;
-
-    const onScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          ticking = false;
-          if (!container || !pathRef.current || totalPathLength <= 0) return;
-
-          const rect = container.getBoundingClientRect();
-          const windowHeight = window.innerHeight;
-
-          // Progress runs from when section is 75% down viewport to 25% down viewport
-          const start = windowHeight * 0.75;
-          const end = windowHeight * 0.25 - rect.height;
-          const totalDist = start - end;
-
-          const current = start - rect.top;
-          const progress = Math.max(0, Math.min(1, current / totalDist));
-
-          // Reveal circuit line via strokeDashoffset
-          const offset = totalPathLength * (1 - progress);
-          pathRef.current.style.strokeDashoffset = `${offset}`;
-
-          // Activate terminals as circuit reaches them
-          // Node 0 is always active when section appears
-          // Node 1 activates at ~40% progress
-          // Node 2 activates at ~80% progress
-          const n0 = progress >= 0.05;
-          const n1 = progress >= 0.45;
-          const n2 = progress >= 0.85;
-
-          setActiveNodes((prev) => {
-            if (prev[0] === n0 && prev[1] === n1 && prev[2] === n2) return prev;
-            return [n0, n1, n2];
-          });
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    // Initial call
-    onScroll();
-
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [isDesktop, totalPathLength]);
-
-  // Mobile / Tablet fallback layout: clean vertical timeline with border
+  // Mobile and Tablet layout: clean vertical timeline with border (< 1024px)
   if (!isDesktop) {
     return (
       <div className="relative flex flex-col gap-8 sm:gap-10 border-l border-white/[0.08] ml-2 sm:ml-4 pl-6 sm:pl-8">
@@ -207,150 +135,73 @@ export default function EngineeringJourneyCircuit({ items }: EngineeringJourneyC
     );
   }
 
-  // Desktop Circuit Layout
+  // Reduced motion accessible fallback for desktop
+  if (prefersReducedMotion) {
+    return (
+      <div className="relative w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
+        {items.map((item, idx) => (
+          <ExperienceCard key={`static-${idx}`} item={item} index={idx} />
+        ))}
+      </div>
+    );
+  }
+
+  // Dynamically calculate repeated sequence so one loop set is at least 2800px wide
+  // (guaranteeing that even on ultrawide screens, the right edge is NEVER blank)
+  const CARD_SPAN_PX = 334; // 310px max card width + 24px gap
+  const targetMinSpan = 2800;
+  const repeatPerSet = Math.max(2, Math.ceil(targetMinSpan / (items.length * CARD_SPAN_PX)));
+
+  const setList: { item: TimelineItem; originalIndex: number }[] = [];
+  for (let r = 0; r < repeatPerSet; r++) {
+    items.forEach((item, idx) => {
+      setList.push({ item, originalIndex: idx });
+    });
+  }
+
+  // Smooth, readable cinematic drifting speed (~38px/sec)
+  const flowDuration = Math.round((setList.length * CARD_SPAN_PX) / 38);
+
+  // Desktop Continuous Horizontal Card Flow: Near full-width stage across viewport
   return (
-    <div ref={containerRef} className="relative w-full py-6">
-      {/* Background Circuit SVG Overlay */}
-      <svg
-        className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible"
-        aria-hidden="true"
+    <div className="relative w-[calc(100vw-40px)] left-1/2 -translate-x-1/2 overflow-hidden py-4 select-none">
+      {/* Horizontal Viewport Mask with subtle edge clearance */}
+      <div
+        className="relative w-full overflow-hidden z-10 py-2"
+        style={{
+          maskImage:
+            "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 1.5%, black 3.5%, black 96.5%, rgba(0,0,0,0.4) 98.5%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 1.5%, black 3.5%, black 96.5%, rgba(0,0,0,0.4) 98.5%, transparent 100%)",
+        }}
       >
-        <defs>
-          <linearGradient id="circuit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#189BAD" stopOpacity="0.9" />
-            <stop offset="50%" stopColor="#38BDF8" stopOpacity="1" />
-            <stop offset="100%" stopColor="#189BAD" stopOpacity="0.9" />
-          </linearGradient>
-          <filter id="circuit-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#189BAD" floodOpacity="0.6" />
-          </filter>
-        </defs>
-
-        {pathD && (
-          <>
-            {/* Background passive trace track */}
-            <path
-              d={pathD}
-              fill="none"
-              stroke="rgba(255, 255, 255, 0.08)"
-              strokeWidth="2"
-              strokeDasharray="6 4"
-            />
-
-            {/* Corner vias / solder junctions */}
-            {cornerPoints.map((corner, cIdx) => (
-              <circle
-                key={cIdx}
-                cx={corner.x}
-                cy={corner.y}
-                r="3.5"
-                fill="#101019"
-                stroke="rgba(24, 155, 173, 0.4)"
-                strokeWidth="1.5"
-              />
-            ))}
-
-            {/* Active illuminated foreground trace */}
-            <path
-              ref={pathRef}
-              d={pathD}
-              fill="none"
-              stroke="url(#circuit-grad)"
-              strokeWidth="2.5"
-              filter="url(#circuit-glow)"
-              style={{
-                strokeLinecap: "round",
-                strokeLinejoin: "round",
-                transition: "stroke-dashoffset 0.1s linear",
-              }}
-            />
-          </>
-        )}
-      </svg>
-
-      {/* Staggered Milestone Cards */}
-      <div className="relative z-10 flex flex-col gap-20 w-full">
-        {items.map((item, idx) => {
-          // Staggered positioning:
-          // 0 -> Left column
-          // 1 -> Right column
-          // 2 -> Left column
-          const isLeft = idx % 2 === 0;
-          const isActive = activeNodes[idx];
-          const badgeNumber = `0${idx + 1}`;
-
-          return (
-            <div
-              key={item.period}
-              className={`relative flex items-center w-full ${
-                isLeft ? "justify-start" : "justify-end"
-              }`}
-            >
-              <div
-                className={`relative w-full max-w-[500px] glass-card rounded-2xl p-6 sm:p-8 border transition-all duration-500 ${
-                  isActive
-                    ? "border-pacific-cyan/40 bg-ink-black/85 shadow-[0_12px_32px_rgba(0,0,0,0.6),0_0_24px_rgba(24,155,173,0.12)]"
-                    : "border-white/[0.08] bg-ink-black/70 hover:border-white/[0.16]"
-                }`}
-              >
-                {/* Milestone Node Terminal Pad */}
-                <div
-                  ref={(el) => {
-                    terminalRefs.current[idx] = el;
-                  }}
-                  className={`absolute top-8 ${
-                    isLeft ? "-right-4 translate-x-1/2" : "-left-4 -translate-x-1/2"
-                  } w-8 h-8 rounded-full bg-ink-black border-2 flex items-center justify-center transition-all duration-500 ${
-                    isActive
-                      ? "border-pacific-cyan shadow-[0_0_16px_rgba(24,155,173,0.8)]"
-                      : "border-white/20"
-                  }`}
-                  aria-hidden="true"
-                >
-                  <div
-                    className={`w-3 h-3 rounded-full transition-colors duration-500 ${
-                      isActive ? "bg-pacific-cyan animate-pulse" : "bg-white/20"
-                    }`}
-                  />
-                </div>
-
-                {/* Card Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-pacific-cyan px-2 py-0.5 rounded-md bg-pacific-cyan/15 border border-pacific-cyan/25">
-                      {badgeNumber}
-                    </span>
-                    <span className="text-xs font-mono font-semibold text-muted">
-                      {item.period}
-                    </span>
-                  </div>
-                  <span className="text-xs font-mono text-muted/70">{item.companyOrContext}</span>
-                </div>
-
-                {/* Title & Description */}
-                <h3 className="text-xl font-bold text-foreground font-space mb-2">
-                  {item.role}
-                </h3>
-                <p className="text-sm text-muted leading-relaxed mb-4">
-                  {item.description}
-                </p>
-
-                {/* Highlights List */}
-                <ul className="flex flex-col gap-2 pt-2 border-t border-white/[0.06]">
-                  {item.highlights.map((highlight, hIdx) => (
-                    <li
-                      key={hIdx}
-                      className="flex items-start gap-2.5 text-xs sm:text-sm text-muted/80"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-pacific-cyan/60 shrink-0 mt-2" />
-                      <span>{highlight}</span>
-                    </li>
-                  ))}
-                </ul>
+        {/* Continuous Horizontal Card Flow Track (Right to Left) */}
+        <div
+          className="animate-horizontal-card-flow flex flex-row cursor-default"
+          style={
+            {
+              "--flow-duration": `${flowDuration}s`,
+            } as React.CSSProperties
+          }
+        >
+          {/* Set 1 */}
+          <div className="flex flex-row">
+            {setList.map((entry, idx) => (
+              <div key={`flow-set1-${idx}`} className="pr-6 shrink-0">
+                <ExperienceCard item={entry.item} index={entry.originalIndex} />
               </div>
-            </div>
-          );
-        })}
+            ))}
+          </div>
+
+          {/* Set 2 (Identical duplicate for seamless continuous infinite loop) */}
+          <div className="flex flex-row" aria-hidden="true">
+            {setList.map((entry, idx) => (
+              <div key={`flow-set2-${idx}`} className="pr-6 shrink-0">
+                <ExperienceCard item={entry.item} index={entry.originalIndex} />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

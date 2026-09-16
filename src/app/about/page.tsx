@@ -185,6 +185,7 @@ export default async function AboutPage() {
         eyebrow={aboutContent.evolutionEyebrow}
         heading={aboutContent.evolutionHeading}
         description={aboutContent.evolutionDescription}
+        milestoneLabels={aboutContent.milestoneLabels}
       />
 
       {/* SECTION 3: HOW I BUILD */}

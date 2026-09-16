@@ -33,6 +33,7 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "availabilityBadge",
     "availabilityStatusColor",
     "footerCopyright",
+    "footerBulletNotification",
     "contactEmail",
     "location",
   ],
@@ -57,6 +58,11 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "evolutionHeading",
     "evolutionDescription",
     "evolution",
+    "milestoneLabels",
+    "milestone01Label",
+    "milestone02Label",
+    "milestone03Label",
+    "currentEraLabel",
     "principlesEyebrow",
     "principlesHeading",
     "principles",
@@ -221,6 +227,14 @@ export async function updateSectionAction(
       if (key === "updatedYear") {
         if (!/^\d{4}$/.test(trimmed)) {
           return { error: "Updated year must be a valid 4-digit year (e.g. 2026)." };
+        }
+        payload[key] = trimmed;
+        continue;
+      }
+
+      if (key === "footerBulletNotification") {
+        if (trimmed.length > 300) {
+          return { error: "Footer bullet notification cannot exceed 300 characters." };
         }
         payload[key] = trimmed;
         continue;
@@ -760,6 +774,58 @@ export async function updateSectionAction(
         } catch {
           return { error: "Invalid JSON for evolution milestones." };
         }
+        continue;
+      }
+
+      if (key === "milestoneLabels") {
+        try {
+          const parsed = typeof trimmed === "string" ? JSON.parse(trimmed || "{}") : trimmed;
+          if (!parsed || typeof parsed !== "object") {
+            return { error: "Milestone labels must be an object." };
+          }
+          const milestone01 = String(parsed.milestone01 ?? "2022 Milestone").trim().slice(0, 80);
+          const milestone02 = String(parsed.milestone02 ?? "2023 Milestone").trim().slice(0, 80);
+          const milestone03 = String(parsed.milestone03 ?? "2026 Milestone").trim().slice(0, 80);
+          const currentEra = String(parsed.currentEra ?? "CURRENT ERA").trim().slice(0, 80);
+
+          if (!milestone01) return { error: "Milestone 01 Label cannot be empty." };
+          if (!milestone02) return { error: "Milestone 02 Label cannot be empty." };
+          if (!milestone03) return { error: "Milestone 03 Label cannot be empty." };
+          if (!currentEra) return { error: "Current Era Label cannot be empty." };
+
+          for (const [name, val] of Object.entries({ milestone01, milestone02, milestone03, currentEra })) {
+            if (/[\u2014\u2013]/.test(val)) {
+              return { error: `Label "${name}" contains an em dash.` };
+            }
+          }
+
+          payload[key] = {
+            milestone01,
+            milestone02,
+            milestone03,
+            currentEra,
+          };
+        } catch {
+          return { error: "Invalid JSON for milestone labels." };
+        }
+        continue;
+      }
+
+      if (key === "milestone01Label" || key === "milestone02Label" || key === "milestone03Label" || key === "currentEraLabel") {
+        if (/[\u2014\u2013]/.test(trimmed)) {
+          return { error: `Field "${key}" contains an em dash.` };
+        }
+        const fieldName = key === "milestone01Label"
+          ? "milestone01"
+          : key === "milestone02Label"
+          ? "milestone02"
+          : key === "milestone03Label"
+          ? "milestone03"
+          : "currentEra";
+        if (!payload.milestoneLabels || typeof payload.milestoneLabels !== "object") {
+          payload.milestoneLabels = {};
+        }
+        payload.milestoneLabels[fieldName] = trimmed.slice(0, 80);
         continue;
       }
 

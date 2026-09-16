@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { History, ArrowUpRight } from "lucide-react";
 import { EVOLUTION_MILESTONES, type EvolutionMilestone } from "@/data/evolution";
-import type { EvolutionMilestoneItem } from "@/lib/site-content";
+import type { EvolutionMilestoneItem, AboutMilestoneLabels } from "@/lib/site-content";
 import RawinEvolutionConstellation from "@/components/RawinEvolutionConstellation";
 
 // Symmetrical 8-point geometric star icon path for milestone header anchors
@@ -16,6 +16,7 @@ export interface RawinEvolutionProps {
   eyebrow?: string;
   heading?: string;
   description?: string;
+  milestoneLabels?: AboutMilestoneLabels;
 }
 
 interface NormalizedMilestone {
@@ -39,6 +40,7 @@ export default function RawinEvolution({
   eyebrow = "A RECORD OF THE BUILD",
   heading = "From a first HTML page to a full engineering platform.",
   description = "RAWIN has evolved alongside the way I build for the web.",
+  milestoneLabels,
 }: RawinEvolutionProps = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const milestoneRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -170,7 +172,7 @@ export default function RawinEvolution({
                 {isCurrent && (
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 rounded-full text-[9px] sm:text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse motion-reduce:animate-none" />
-                    CURRENT ERA
+                    {milestoneLabels?.currentEra || "CURRENT ERA"}
                   </span>
                 )}
               </div>
@@ -279,7 +281,13 @@ export default function RawinEvolution({
                     )}
 
                     <span className="text-[9px] sm:text-[11px] font-mono text-muted/60">
-                      {milestone.year} Milestone
+                      {idx === 0
+                        ? milestoneLabels?.milestone01 || `${milestone.year} Milestone`
+                        : idx === 1
+                        ? milestoneLabels?.milestone02 || `${milestone.year} Milestone`
+                        : idx === 2
+                        ? milestoneLabels?.milestone03 || `${milestone.year} Milestone`
+                        : `${milestone.year} Milestone`}
                     </span>
                   </div>
                 </div>

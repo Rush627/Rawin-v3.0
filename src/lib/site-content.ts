@@ -10,6 +10,7 @@ export interface GlobalContent {
   availabilityBadge: string;
   availabilityStatusColor?: "green" | "orange" | "red";
   footerCopyright: string;
+  footerBulletNotification?: string;
   contactEmail: string;
   location: string;
 }
@@ -64,6 +65,13 @@ export interface AboutFocusItem {
   displayOrder: number;
 }
 
+export interface AboutMilestoneLabels {
+  milestone01?: string;
+  milestone02?: string;
+  milestone03?: string;
+  currentEra?: string;
+}
+
 export interface AboutContent {
   eyebrow?: string;
   title: string;
@@ -74,6 +82,7 @@ export interface AboutContent {
   evolutionHeading?: string;
   evolutionDescription?: string;
   evolution: EvolutionMilestoneItem[];
+  milestoneLabels?: AboutMilestoneLabels;
   principlesEyebrow?: string;
   principlesHeading?: string;
   principlesDescription?: string;
@@ -313,6 +322,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     availabilityBadge: "Available for hire",
     availabilityStatusColor: "green",
     footerCopyright: "RAWIN. All rights reserved. Designed & built by Rushan Siddiqui.",
+    footerBulletNotification:
+      "BUILDING WITH INTENT • CRAFTING DIGITAL EXPERIENCES • ALWAYS LEARNING",
     contactEmail: "rushansiddiqui5262@gmail.com",
     location: "Jaunpur, Uttar Pradesh, India",
   },
@@ -394,6 +405,12 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         displayOrder: 3,
       },
     ],
+    milestoneLabels: {
+      milestone01: "2022 Milestone",
+      milestone02: "2023 Milestone",
+      milestone03: "2026 Milestone",
+      currentEra: "CURRENT ERA",
+    },
     principlesEyebrow: "HOW I BUILD",
     principlesHeading: "A few principles I keep close.",
     principles: [
@@ -811,8 +828,8 @@ export function mergeWithDefaults(doc: any): SiteContent {
     typeof doc.contact?.showPhoneNumber === "boolean"
       ? doc.contact.showPhoneNumber
       : (typeof doc.contact?.showPhoneNumber === "string"
-          ? doc.contact.showPhoneNumber === "true"
-          : DEFAULT_SITE_CONTENT.contact.showPhoneNumber);
+        ? doc.contact.showPhoneNumber === "true"
+        : DEFAULT_SITE_CONTENT.contact.showPhoneNumber);
 
   const canonicalSocials: ContactSocials = {
     github:
@@ -858,6 +875,10 @@ export function mergeWithDefaults(doc: any): SiteContent {
       availabilityBadge: doc.global?.availabilityBadge || DEFAULT_SITE_CONTENT.global.availabilityBadge,
       availabilityStatusColor: (doc.global?.availabilityStatusColor as "green" | "orange" | "red") || "green",
       footerCopyright: doc.global?.footerCopyright || DEFAULT_SITE_CONTENT.global.footerCopyright,
+      footerBulletNotification:
+        (doc.global?.footerBulletNotification || DEFAULT_SITE_CONTENT.global.footerBulletNotification || "")
+          .trim()
+          .slice(0, 300),
       contactEmail: canonicalEmail,
       location: canonicalLocation,
     },
@@ -886,34 +907,52 @@ export function mergeWithDefaults(doc: any): SiteContent {
       evolutionDescription: doc.about?.evolutionDescription || DEFAULT_SITE_CONTENT.about.evolutionDescription,
       evolution: Array.isArray(doc.about?.evolution) && doc.about.evolution.length > 0
         ? doc.about.evolution.map((m: any, idx: number) => ({
-            id: String(m.id || `milestone-${idx + 1}`),
-            year: String(m.year || "2026"),
-            label: String(m.label || "MILESTONE"),
-            progression: String(m.progression || ""),
-            title: String(m.title || "Milestone Title"),
-            domain: String(m.domain || "rawin.dev"),
-            description: String(m.description || ""),
-            technologies: Array.isArray(m.technologies) ? m.technologies.map((t: any) => String(t).trim()).filter(Boolean) : [],
-            url: typeof m.url === "string" && m.url.trim() ? m.url.trim() : undefined,
-            status: m.isCurrent || m.status === "current" ? ("current" as const) : ("archived" as const),
-            isCurrent: Boolean(m.isCurrent || m.status === "current"),
-            preview: String(m.preview || `/images/evolution-${m.year || "2026"}.png`),
-            previewAlt: typeof m.previewAlt === "string" ? m.previewAlt : `${m.title || ""} (${m.year || ""}) preview`,
-            ctaText: String(m.ctaText || (m.isCurrent ? "YOU ARE HERE" : "VIEW WEBSITE")),
-            displayOrder: typeof m.displayOrder === "number" ? m.displayOrder : idx + 1,
-          }))
+          id: String(m.id || `milestone-${idx + 1}`),
+          year: String(m.year || "2026"),
+          label: String(m.label || "MILESTONE"),
+          progression: String(m.progression || ""),
+          title: String(m.title || "Milestone Title"),
+          domain: String(m.domain || "rawin.dev"),
+          description: String(m.description || ""),
+          technologies: Array.isArray(m.technologies) ? m.technologies.map((t: any) => String(t).trim()).filter(Boolean) : [],
+          url: typeof m.url === "string" && m.url.trim() ? m.url.trim() : undefined,
+          status: m.isCurrent || m.status === "current" ? ("current" as const) : ("archived" as const),
+          isCurrent: Boolean(m.isCurrent || m.status === "current"),
+          preview: String(m.preview || `/images/evolution-${m.year || "2026"}.png`),
+          previewAlt: typeof m.previewAlt === "string" ? m.previewAlt : `${m.title || ""} (${m.year || ""}) preview`,
+          ctaText: String(m.ctaText || (m.isCurrent ? "YOU ARE HERE" : "VIEW WEBSITE")),
+          displayOrder: typeof m.displayOrder === "number" ? m.displayOrder : idx + 1,
+        }))
         : DEFAULT_SITE_CONTENT.about.evolution,
+      milestoneLabels: {
+        milestone01:
+          typeof doc.about?.milestoneLabels?.milestone01 === "string" && doc.about.milestoneLabels.milestone01.trim()
+            ? doc.about.milestoneLabels.milestone01.trim().slice(0, 80)
+            : DEFAULT_SITE_CONTENT.about.milestoneLabels?.milestone01 || "2022 Milestone",
+        milestone02:
+          typeof doc.about?.milestoneLabels?.milestone02 === "string" && doc.about.milestoneLabels.milestone02.trim()
+            ? doc.about.milestoneLabels.milestone02.trim().slice(0, 80)
+            : DEFAULT_SITE_CONTENT.about.milestoneLabels?.milestone02 || "2023 Milestone",
+        milestone03:
+          typeof doc.about?.milestoneLabels?.milestone03 === "string" && doc.about.milestoneLabels.milestone03.trim()
+            ? doc.about.milestoneLabels.milestone03.trim().slice(0, 80)
+            : DEFAULT_SITE_CONTENT.about.milestoneLabels?.milestone03 || "2026 Milestone",
+        currentEra:
+          typeof doc.about?.milestoneLabels?.currentEra === "string" && doc.about.milestoneLabels.currentEra.trim()
+            ? doc.about.milestoneLabels.currentEra.trim().slice(0, 80)
+            : DEFAULT_SITE_CONTENT.about.milestoneLabels?.currentEra || "CURRENT ERA",
+      },
       principlesEyebrow: doc.about?.principlesEyebrow || DEFAULT_SITE_CONTENT.about.principlesEyebrow,
       principlesHeading: doc.about?.principlesHeading || DEFAULT_SITE_CONTENT.about.principlesHeading,
       principles: Array.isArray(doc.about?.principles) && doc.about.principles.length > 0
         ? doc.about.principles.map((p: any, idx: number) => ({
-            id: String(p.id || `principle-${idx + 1}`),
-            number: String(p.number || `0${idx + 1}`),
-            title: String(p.title || ""),
-            statement: String(p.statement || ""),
-            icon: String(p.icon || "layers"),
-            displayOrder: typeof p.displayOrder === "number" ? p.displayOrder : idx + 1,
-          }))
+          id: String(p.id || `principle-${idx + 1}`),
+          number: String(p.number || `0${idx + 1}`),
+          title: String(p.title || ""),
+          statement: String(p.statement || ""),
+          icon: String(p.icon || "layers"),
+          displayOrder: typeof p.displayOrder === "number" ? p.displayOrder : idx + 1,
+        }))
         : DEFAULT_SITE_CONTENT.about.principles,
       journeyEyebrow: doc.about?.journeyEyebrow || DEFAULT_SITE_CONTENT.about.journeyEyebrow,
       journeyHeading: doc.about?.journeyHeading || DEFAULT_SITE_CONTENT.about.journeyHeading,
@@ -923,12 +962,12 @@ export function mergeWithDefaults(doc: any): SiteContent {
       focusDescription: doc.about?.focusDescription || DEFAULT_SITE_CONTENT.about.focusDescription,
       focusAreas: Array.isArray(doc.about?.focusAreas) && doc.about.focusAreas.length > 0
         ? doc.about.focusAreas.map((f: any, idx: number) => ({
-            id: String(f.id || `focus-${idx + 1}`),
-            title: String(f.title || ""),
-            description: String(f.description || ""),
-            icon: String(f.icon || "terminal"),
-            displayOrder: typeof f.displayOrder === "number" ? f.displayOrder : idx + 1,
-          }))
+          id: String(f.id || `focus-${idx + 1}`),
+          title: String(f.title || ""),
+          description: String(f.description || ""),
+          icon: String(f.icon || "terminal"),
+          displayOrder: typeof f.displayOrder === "number" ? f.displayOrder : idx + 1,
+        }))
         : DEFAULT_SITE_CONTENT.about.focusAreas,
       ctaEyebrow: doc.about?.ctaEyebrow || DEFAULT_SITE_CONTENT.about.ctaEyebrow,
       ctaHeading: doc.about?.ctaHeading || DEFAULT_SITE_CONTENT.about.ctaHeading,
@@ -965,7 +1004,7 @@ export function mergeWithDefaults(doc: any): SiteContent {
         text: doc.resume?.status?.text || DEFAULT_SITE_CONTENT.resume.status.text,
         indicator:
           doc.resume?.status?.indicator &&
-          ["green", "orange", "cyan", "gray"].includes(doc.resume.status.indicator)
+            ["green", "orange", "cyan", "gray"].includes(doc.resume.status.indicator)
             ? doc.resume.status.indicator
             : DEFAULT_SITE_CONTENT.resume.status.indicator,
       },
@@ -990,12 +1029,12 @@ export function mergeWithDefaults(doc: any): SiteContent {
       },
       pdf: doc.resume?.pdf?.fileId
         ? {
-            fileId: doc.resume.pdf.fileId,
-            filename: doc.resume.pdf.filename || "Rushan-Siddiqui-Resume.pdf",
-            url: doc.resume.pdf.url || "/api/resume/download",
-            size: doc.resume.pdf.size,
-            updatedAt: doc.resume.pdf.updatedAt,
-          }
+          fileId: doc.resume.pdf.fileId,
+          filename: doc.resume.pdf.filename || "Rushan-Siddiqui-Resume.pdf",
+          url: doc.resume.pdf.url || "/api/resume/download",
+          size: doc.resume.pdf.size,
+          updatedAt: doc.resume.pdf.updatedAt,
+        }
         : null,
     },
     uses: {
@@ -1103,8 +1142,8 @@ export function mergeWithDefaults(doc: any): SiteContent {
         return doc.maintenance?.endsAt instanceof Date
           ? doc.maintenance.endsAt.toISOString()
           : typeof doc.maintenance?.endsAt === "string"
-          ? doc.maintenance.endsAt
-          : null;
+            ? doc.maintenance.endsAt
+            : null;
       })(),
     },
     createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt,
@@ -1246,7 +1285,7 @@ export async function storeAssetFile(
       .find({ "metadata.assetType": assetType })
       .toArray();
     for (const file of existingFiles) {
-      await bucket.delete(file._id).catch(() => {});
+      await bucket.delete(file._id).catch(() => { });
     }
   } catch (cleanErr) {
     console.warn("[SiteContent] Clean prior asset notice:", cleanErr);
@@ -1366,7 +1405,7 @@ export async function resetAssetToDefault(assetType: AssetKey): Promise<boolean>
         .find({ "metadata.assetType": assetType })
         .toArray();
       for (const file of existingFiles) {
-        await bucket.delete(file._id).catch(() => {});
+        await bucket.delete(file._id).catch(() => { });
       }
     } catch (cleanErr) {
       console.warn("[SiteContent] Reset asset notice:", cleanErr);
@@ -1417,7 +1456,7 @@ export async function storeMilestoneImage(
       .find({ "metadata.assetType": assetType })
       .toArray();
     for (const file of existingFiles) {
-      await bucket.delete(file._id).catch(() => {});
+      await bucket.delete(file._id).catch(() => { });
     }
   } catch (cleanErr) {
     console.warn("[SiteContent] Clean prior milestone image notice:", cleanErr);
@@ -1508,7 +1547,7 @@ export async function storeResumePdfFile(
       })
       .toArray();
     for (const file of existingFiles) {
-      await bucket.delete(file._id).catch(() => {});
+      await bucket.delete(file._id).catch(() => { });
     }
   } catch (cleanErr) {
     console.warn("[SiteContent] Clean prior resume PDF notice:", cleanErr);
@@ -1591,7 +1630,7 @@ export async function removeResumePdfFile(): Promise<boolean> {
       .find({ "metadata.assetType": RESUME_PDF_ASSET_TYPE })
       .toArray();
     for (const file of existingFiles) {
-      await bucket.delete(file._id).catch(() => {});
+      await bucket.delete(file._id).catch(() => { });
     }
   } catch (cleanErr) {
     console.warn("[SiteContent] Remove resume PDF notice:", cleanErr);

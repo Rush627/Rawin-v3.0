@@ -19,30 +19,56 @@ const TORCH_MESSAGES = [
 ];
 
 export default function TorchSpotlight() {
+  const [isDesktop, setIsDesktop] = useState<boolean>(false);
   const [isActive, setIsActive] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [showMessage, setShowMessage] = useState<boolean>(false);
-  const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false);
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const posRef = useRef<{ x: number; y: number }>({ x: -1000, y: -1000 });
   const rafRef = useRef<number | null>(null);
 
-  // Initialize state & sync with localStorage
+  // Robust device detection: Torch is strictly desktop/laptop only (>= 1024px and non-touch-only)
   useEffect(() => {
+    const checkDesktop = () => {
+      // Must be desktop breakpoint >= 1024px
+      if (typeof window === "undefined" || window.innerWidth < 1024) {
+        return false;
+      }
+      // Must not be a pure touch interface
+      const isTouchOnly = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+      if (isTouchOnly) {
+        return false;
+      }
+      return true;
+    };
+
+    const isCurrentDesktop = checkDesktop();
+    setIsDesktop(isCurrentDesktop);
+
+    if (!isCurrentDesktop) return;
+
+    // Desktop initialization (matching finalized fe6b4ba desktop build)
     const saved = localStorage.getItem("rawin_torch_active");
     if (saved === "true") {
       setIsActive(true);
     }
 
-    const hasHover = window.matchMedia("(hover: hover)").matches;
-    if (hasHover) {
-      const randomMsg = TORCH_MESSAGES[Math.floor(Math.random() * TORCH_MESSAGES.length)];
-      setMessage(randomMsg);
-      setShowMessage(true);
-      const timer = setTimeout(() => setShowMessage(false), 7000);
-      return () => clearTimeout(timer);
-    }
+    const randomMsg = TORCH_MESSAGES[Math.floor(Math.random() * TORCH_MESSAGES.length)];
+    setMessage(randomMsg);
+    setShowMessage(true);
+    const timer = setTimeout(() => setShowMessage(false), 7000);
+
+    const handleResize = () => {
+      setIsDesktop(checkDesktop());
+    };
+
+    window.addEventListener("resize", handleResize, { passive: true });
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   // Sync state with localStorage
@@ -66,9 +92,9 @@ export default function TorchSpotlight() {
     setShowMessage(false);
   }, []);
 
-  // Update pointer coordinates using requestAnimationFrame (60 FPS, supports both mouse and touch pointers)
+  // Update pointer coordinates using requestAnimationFrame (60 FPS desktop mouse tracker)
   useEffect(() => {
-    if (!isActive) return;
+    if (!isDesktop || !isActive) return;
 
     const onPointerMove = (e: PointerEvent) => {
       posRef.current.x = e.clientX;
@@ -94,9 +120,14 @@ export default function TorchSpotlight() {
         rafRef.current = null;
       }
     };
-  }, [isActive]);
+  }, [isDesktop, isActive]);
 
   const pathname = usePathname();
+
+  // Completely removed from smartphones, tablets, and touch interfaces
+  if (!isDesktop) {
+    return null;
+  }
 
   // Intentionally hide on admin routes and AI experience only
   if (

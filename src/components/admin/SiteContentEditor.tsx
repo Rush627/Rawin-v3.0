@@ -641,6 +641,31 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
     });
   };
 
+  // About Milestone Label Handlers
+  const handleMilestoneLabelChange = (
+    field: "milestone01" | "milestone02" | "milestone03" | "currentEra",
+    val: string
+  ) => {
+    setContent((prev) => {
+      const currentLabels = prev.about?.milestoneLabels || {
+        milestone01: "2022 Milestone",
+        milestone02: "2023 Milestone",
+        milestone03: "2026 Milestone",
+        currentEra: "CURRENT ERA",
+      };
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          milestoneLabels: {
+            ...currentLabels,
+            [field]: val,
+          },
+        },
+      };
+    });
+  };
+
   // About Evolution Handlers
   const handleAddMilestone = () => {
     setContent((prev) => {
@@ -2096,6 +2121,21 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
               />
             </div>
+
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <label className="text-xs font-mono text-muted uppercase">Footer Bullet Notification</label>
+              <input
+                type="text"
+                name="footerBulletNotification"
+                value={content.global.footerBulletNotification || ""}
+                onChange={(e) => handleFieldChange("global", "footerBulletNotification", e.target.value)}
+                placeholder="BUILDING WITH INTENT • CRAFTING DIGITAL EXPERIENCES • ALWAYS LEARNING"
+                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+              />
+              <span className="text-[11px] font-mono text-muted/60">
+                Scrolling notification shown in the mobile footer.
+              </span>
+            </div>
           </div>
         )}
 
@@ -2220,6 +2260,18 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               name="focusAreas"
               value={JSON.stringify(content.about.focusAreas || [])}
             />
+            <input
+              type="hidden"
+              name="milestoneLabels"
+              value={JSON.stringify(
+                content.about.milestoneLabels || {
+                  milestone01: "2022 Milestone",
+                  milestone02: "2023 Milestone",
+                  milestone03: "2026 Milestone",
+                  currentEra: "CURRENT ERA",
+                }
+              )}
+            />
 
             {/* 1. Identity & Narrative */}
             <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
@@ -2339,6 +2391,62 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                     placeholder="Three generations of the digital workspace..."
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
                   />
+                </div>
+              </div>
+
+              {/* Record of the Build Milestone & Era Labels */}
+              <div className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <History className="w-3.5 h-3.5 text-pacific-cyan" />
+                  <span className="text-xs font-mono font-semibold text-foreground uppercase tracking-wider">
+                    Record of the Build Labels
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-mono text-muted uppercase">Milestone 01 Label</label>
+                    <input
+                      type="text"
+                      name="milestone01Label"
+                      value={content.about.milestoneLabels?.milestone01 ?? "2022 Milestone"}
+                      onChange={(e) => handleMilestoneLabelChange("milestone01", e.target.value)}
+                      placeholder="2022 Milestone"
+                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-mono text-muted uppercase">Milestone 02 Label</label>
+                    <input
+                      type="text"
+                      name="milestone02Label"
+                      value={content.about.milestoneLabels?.milestone02 ?? "2023 Milestone"}
+                      onChange={(e) => handleMilestoneLabelChange("milestone02", e.target.value)}
+                      placeholder="2023 Milestone"
+                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-mono text-muted uppercase">Milestone 03 Label</label>
+                    <input
+                      type="text"
+                      name="milestone03Label"
+                      value={content.about.milestoneLabels?.milestone03 ?? "2026 Milestone"}
+                      onChange={(e) => handleMilestoneLabelChange("milestone03", e.target.value)}
+                      placeholder="2026 Milestone"
+                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-mono text-muted uppercase">Current Era Label</label>
+                    <input
+                      type="text"
+                      name="currentEraLabel"
+                      value={content.about.milestoneLabels?.currentEra ?? "CURRENT ERA"}
+                      onChange={(e) => handleMilestoneLabelChange("currentEra", e.target.value)}
+                      placeholder="CURRENT ERA"
+                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                    />
+                  </div>
                 </div>
               </div>
 
