@@ -1,0 +1,165 @@
+/* RAWIN 3.0 - Navbar Orbit Subtle Alive Animation */
+
+:root {
+  --orbit-bounce-offset: -2.5px;
+  --orbit-bubble-scale: 1;
+  --orbit-bubble-top: -13.5px;
+  --orbit-bubble-left: 2.5px;
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --orbit-bounce-offset: -1.5px;
+    --orbit-bubble-scale: 0.9;
+    --orbit-bubble-top: -12px;
+    --orbit-bubble-left: 2px;
+  }
+}
+
+.rawin-orbit-bot-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 1. Robot Icon Bounce (periodic subtle 2-3s movement) */
+.rawin-orbit-bot {
+  transform: translateY(0);
+  will-change: transform;
+  animation: rawinOrbitBounce 3.4s infinite cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+@keyframes rawinOrbitBounce {
+  0%, 88%, 100% {
+    transform: translateY(0);
+  }
+  91% {
+    transform: translateY(var(--orbit-bounce-offset, -2.5px));
+  }
+  94% {
+    transform: translateY(calc(var(--orbit-bounce-offset, -2.5px) * 0.7));
+  }
+  97% {
+    transform: translateY(0.3px);
+  }
+}
+
+/* 2. Robot Eye Blink (organic 100-150ms closed state synchronized with bounce) */
+.rawin-orbit-bot-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rawinOrbitBlink 3.4s infinite ease-in-out;
+}
+
+@keyframes rawinOrbitBlink {
+  0%, 89%, 100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  92% {
+    opacity: 0.15;
+    transform: scaleY(0.2);
+  }
+  94% {
+    opacity: 0;
+    transform: scaleY(0.05);
+  }
+  96% {
+    opacity: 0.7;
+    transform: scaleY(0.7);
+  }
+}
+
+/* 3. Tiny Subtle Thought Bubble (approx every 4-5s, visible for ~0.9s, floats softly) */
+.rawin-orbit-thought-bubble {
+  position: absolute;
+  top: var(--orbit-bubble-top, -12px);
+  left: var(--orbit-bubble-left, 2px);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform, opacity;
+  animation: rawinOrbitThought 5.4s infinite cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom left;
+  z-index: 30;
+}
+
+@keyframes rawinOrbitThought {
+  0%, 65%, 100% {
+    opacity: 0;
+    transform: translateY(2px) scale(0.6);
+    visibility: hidden;
+  }
+  70% {
+    opacity: 0.95;
+    transform: translateY(0) scale(var(--orbit-bubble-scale, 1));
+    visibility: visible;
+  }
+  74%, 84% {
+    opacity: 1;
+    transform: translateY(-0.8px) scale(var(--orbit-bubble-scale, 1));
+    visibility: visible;
+  }
+  89% {
+    opacity: 0;
+    transform: translateY(-2.5px) scale(calc(var(--orbit-bubble-scale, 1) * 0.85));
+    visibility: hidden;
+  }
+}
+
+.rawin-orbit-bubble-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5px;
+  padding: 1.5px 3.5px;
+  background: rgba(20, 20, 34, 0.92);
+  border: 1px solid rgba(24, 155, 173, 0.45);
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 6px rgba(24, 155, 173, 0.15);
+}
+
+.rawin-orbit-thought-dot {
+  width: 1.5px;
+  height: 1.5px;
+  border-radius: 50%;
+  background-color: #189BAD;
+}
+
+.rawin-orbit-bubble-dot-1 {
+  position: absolute;
+  bottom: -4px;
+  left: -1px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background-color: rgba(24, 155, 173, 0.8);
+  box-shadow: 0 0 3px rgba(24, 155, 173, 0.4);
+}
+
+.rawin-orbit-bubble-dot-2 {
+  position: absolute;
+  bottom: -7px;
+  left: -3px;
+  width: 1.5px;
+  height: 1.5px;
+  border-radius: 50%;
+  background-color: rgba(24, 155, 173, 0.6);
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .rawin-orbit-bot,
+  .rawin-orbit-bot-eye,
+  .rawin-orbit-thought-bubble {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .rawin-orbit-thought-bubble {
+    display: none !important;
+  }
+}

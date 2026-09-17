@@ -281,6 +281,8 @@ export interface AIContent {
   description: string;
   greetingMessage: string;
   inputPlaceholder: string;
+  mobileComposerPlaceholder?: string;
+  desktopComposerPlaceholder?: string;
   suggestedPrompts: string[];
   suggestedPromptsLabel?: string;
 }
@@ -929,7 +931,9 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     description: "Ask about Rushan, RAWIN, projects, experience, or writing.",
     greetingMessage:
       "I'm Rawin Orbit, the AI assistant built by Rushan Siddiqui for RAWIN.",
-    inputPlaceholder: "Ask anything about Rushan's work, experience, or skills...",
+    inputPlaceholder: "Ask Orbit",
+    mobileComposerPlaceholder: "Ask Orbit",
+    desktopComposerPlaceholder: "Only Ask Orbit",
     suggestedPromptsLabel: "Suggested Prompts",
     suggestedPrompts: [
       "What is RAWIN?",
@@ -1305,6 +1309,12 @@ export function mergeWithDefaults(doc: any): SiteContent {
           ? doc.ai.greetingMessage
           : DEFAULT_SITE_CONTENT.ai.greetingMessage,
       inputPlaceholder: doc.ai?.inputPlaceholder || DEFAULT_SITE_CONTENT.ai.inputPlaceholder,
+      mobileComposerPlaceholder:
+        doc.ai?.mobileComposerPlaceholder ||
+        DEFAULT_SITE_CONTENT.ai.mobileComposerPlaceholder,
+      desktopComposerPlaceholder:
+        doc.ai?.desktopComposerPlaceholder ||
+        DEFAULT_SITE_CONTENT.ai.desktopComposerPlaceholder,
       suggestedPromptsLabel: doc.ai?.suggestedPromptsLabel || DEFAULT_SITE_CONTENT.ai.suggestedPromptsLabel,
       suggestedPrompts: Array.isArray(doc.ai?.suggestedPrompts) && doc.ai.suggestedPrompts.length > 0
         ? doc.ai.suggestedPrompts.map((p: any) => String(p).trim()).filter(Boolean)

@@ -131,6 +131,8 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "description",
     "greetingMessage",
     "inputPlaceholder",
+    "mobileComposerPlaceholder",
+    "desktopComposerPlaceholder",
     "suggestedPromptsLabel",
     "suggestedPrompts",
   ],

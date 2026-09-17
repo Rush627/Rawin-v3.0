@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Bot, ArrowUpRight } from "lucide-react";
-import CustomCursor from "@/components/CustomCursor";
-import "./GooeyNavEffect.css";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { Menu, X, ArrowUpRight } from "lucide-react";
+import NavbarOrbitIcon from "@/components/NavbarOrbitIcon";
+import "./NavbarOrbitEffect.css";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/" },
@@ -18,73 +18,6 @@ const NAV_ITEMS = [
   { name: "Resume", href: "/resume" },
   { name: "Contact", href: "/contact" },
 ];
-
-const PARTICLE_COLORS = [
-  "#189BAD", // RAWIN Pacific Cyan
-  "#71C4FF", // Sky Cyan
-  "#FFFFFF", // Pure White
-  "#A5F3FC", // Cyan White
-  "#38BDF8", // Vibrant Light Cyan
-];
-
-function triggerGooeyBurst(container: HTMLElement, centerX: number, centerY: number) {
-  const count = 12;
-  const maxDist = 48;
-  const minDist = 22;
-  const baseTime = 560;
-  const timeVariance = 100;
-
-  const particles: HTMLElement[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const particle = document.createElement("span");
-    particle.className = "rawin-nav-gooey-particle";
-    particle.style.left = `${centerX}px`;
-    particle.style.top = `${centerY}px`;
-
-    const point = document.createElement("span");
-    point.className = "rawin-nav-gooey-point";
-
-    const angle = (2 * Math.PI * i) / count + (Math.random() - 0.5) * 0.45;
-    const distance = minDist + Math.random() * (maxDist - minDist);
-    const startX = Math.cos(angle) * distance;
-    const startY = Math.sin(angle) * distance;
-
-    const endAngle = angle + (Math.random() - 0.5) * 0.5;
-    const endDist = distance * (0.35 + Math.random() * 0.2);
-    const endX = Math.cos(endAngle) * endDist;
-    const endY = Math.sin(endAngle) * endDist;
-
-    const rotate = (Math.random() - 0.5) * 140;
-    const duration = baseTime + (Math.random() - 0.5) * timeVariance;
-    const scale = 0.8 + Math.random() * 0.45;
-    const color = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)];
-
-    particle.style.setProperty("--start-x", `${startX.toFixed(1)}px`);
-    particle.style.setProperty("--start-y", `${startY.toFixed(1)}px`);
-    particle.style.setProperty("--end-x", `${endX.toFixed(1)}px`);
-    particle.style.setProperty("--end-y", `${endY.toFixed(1)}px`);
-    particle.style.setProperty("--rotate", `${rotate.toFixed(1)}deg`);
-    particle.style.setProperty("--time", `${Math.round(duration)}ms`);
-
-    point.style.setProperty("--color", color);
-    point.style.setProperty("--scale", scale.toFixed(2));
-    point.style.setProperty("--time", `${Math.round(duration)}ms`);
-
-    particle.appendChild(point);
-    container.appendChild(particle);
-    particles.push(particle);
-  }
-
-  // Auto clean-up after animation finishes
-  window.setTimeout(() => {
-    particles.forEach((p) => {
-      if (p.parentNode === container) {
-        container.removeChild(p);
-      }
-    });
-  }, baseTime + timeVariance + 80);
-}
 
 interface NavbarProps {
   logo?: {
@@ -97,29 +30,6 @@ export default function Navbar({ logo }: NavbarProps = {}) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const desktopNavRef = useRef<HTMLDivElement>(null);
-  const gooeyContainerRef = useRef<HTMLDivElement>(null);
-
-  const handleDesktopNavClick = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-      if (pathname === href) return;
-      if (
-        typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ) {
-        return;
-      }
-      if (!desktopNavRef.current || !gooeyContainerRef.current) return;
-
-      const containerRect = desktopNavRef.current.getBoundingClientRect();
-      const linkRect = e.currentTarget.getBoundingClientRect();
-      const centerX = linkRect.left + linkRect.width / 2 - containerRect.left;
-      const centerY = linkRect.top + linkRect.height / 2 - containerRect.top;
-
-      triggerGooeyBurst(gooeyContainerRef.current, centerX, centerY);
-    },
-    [pathname]
-  );
 
   // Detect scroll to adjust navbar background elevation
   useEffect(() => {
@@ -143,34 +53,65 @@ export default function Navbar({ logo }: NavbarProps = {}) {
   const logoAlt = logo?.alt || "RAWIN Logo";
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] md:pt-6 transition-all duration-300 pointer-events-none">
-      {/* Global custom cursor mounted inside header stacking context:
-          z-20 cursor sits above z-10 navbar glass/logo/Orbit, and behind z-30 navigation link text */}
-      <CustomCursor />
-
-      <nav
-        className={`w-full max-w-6xl flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl transition-all duration-300 pointer-events-auto relative z-10 ${
-          scrolled
-            ? "glass-pill shadow-[0_8px_32px_rgba(0,0,0,0.5)] border-white/10"
-            : "bg-surface/50 backdrop-blur-md border border-white/5"
-        }`}
+    <>
+      {/* Layer 1 (z-[40]): Navbar Glass Surface, Glows, Active Nav Pill & Button Backgrounds (below Custom Cursor at z-50) */}
+      <div
+        aria-hidden="true"
+        className="fixed top-0 left-0 right-0 z-[40] flex justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] md:pt-6 transition-all duration-300 pointer-events-none select-none"
       >
+        <div
+          className={`w-full max-w-6xl flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl transition-all duration-300 pointer-events-none ${
+            scrolled
+              ? "glass-pill shadow-[0_8px_32px_rgba(0,0,0,0.5)] border-white/10"
+              : "bg-surface/50 backdrop-blur-md border border-white/5"
+          }`}
+        >
+          {/* Logo Background Glow Track (sits below cursor at z-50) */}
+          <div className="relative flex items-center py-1 px-1.5 rounded-xl shrink-0">
+            {/* Subtle Ambient Radial Back-Glow */}
+            <div
+              className="absolute inset-0 rounded-xl bg-pacific-cyan/20 blur-lg opacity-40 transition-all duration-500 pointer-events-none -z-10"
+            />
+            {/* Soft inner core aura */}
+            <div
+              className="absolute inset-1 rounded-lg bg-gradient-to-r from-pacific-cyan/15 via-apricot-cream/10 to-pacific-cyan/15 blur-sm opacity-50 transition-opacity duration-300 pointer-events-none -z-10"
+            />
+            {/* Sizing anchor */}
+            <div className="invisible h-7 sm:h-8 w-[115px]" />
+          </div>
+
+          {/* Center spacer maintaining flex layout structure */}
+          <div className="hidden lg:block w-0 h-0 pointer-events-none" aria-hidden="true" />
+
+          {/* Action Controls Background Track (sits below cursor at z-50) */}
+          <div className="flex items-center gap-2 sm:gap-3 pointer-events-none">
+            <div
+              className={`inline-flex items-center gap-1.5 lg:gap-2 px-2.5 sm:px-3 lg:px-3.5 py-1.5 lg:py-2 text-xs lg:text-[13px] font-medium rounded-lg transition-all duration-200 border shrink-0 ${
+                pathname === "/ai"
+                  ? "bg-pacific-cyan border-pacific-cyan shadow-[0_0_15px_rgba(24,155,173,0.4)]"
+                  : "glass-card hover:border-pacific-cyan/40"
+              }`}
+            >
+              <div className="invisible w-3.5 h-3.5 lg:w-4 lg:h-4" />
+              <span className="invisible">Orbit</span>
+            </div>
+            {/* Mobile hamburger sizing anchor */}
+            <div className="lg:hidden min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg invisible shrink-0" />
+          </div>
+        </div>
+      </div>
+
+      {/* Layer 3 (z-[60]): Navbar Interactive Content (rendered above Custom Cursor at z-50) */}
+      <header className="fixed top-0 left-0 right-0 z-[60] flex justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] md:pt-6 transition-all duration-300 pointer-events-none">
+        <nav
+          className="w-full max-w-6xl flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl transition-all duration-300 pointer-events-auto relative"
+        >
         {/* Brand Logo with Unified Atmospheric Glow */}
         <Link
           href="/"
           className="relative flex items-center group py-1 px-1.5 rounded-xl transition-all duration-300 shrink-0"
           aria-label="RAWIN Home"
         >
-          {/* Subtle Ambient Radial Back-Glow */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 rounded-xl bg-pacific-cyan/20 blur-lg opacity-40 group-hover:opacity-80 group-hover:scale-110 transition-all duration-500 pointer-events-none -z-10"
-          />
-          {/* Soft inner core aura */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-1 rounded-lg bg-gradient-to-r from-pacific-cyan/15 via-apricot-cream/10 to-pacific-cyan/15 blur-sm opacity-50 group-hover:opacity-90 transition-opacity duration-300 pointer-events-none -z-10"
-          />
           <Image
             src={logoSrc}
             alt={logoAlt}
@@ -178,58 +119,53 @@ export default function Navbar({ logo }: NavbarProps = {}) {
             height={40}
             priority
             unoptimized
-            className="relative h-7 sm:h-8 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(24,155,173,0.35)] group-hover:drop-shadow-[0_0_14px_rgba(24,155,173,0.6)] group-hover:scale-105 transition-all duration-300"
+            style={{ mixBlendMode: "screen" }}
+            className="relative h-7 sm:h-8 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(24,155,173,0.35)] group-hover:drop-shadow-[0_0_14px_rgba(24,155,173,0.6)] group-hover:scale-105 transition-all duration-300 mix-blend-screen"
           />
         </Link>
 
-        {/* Desktop Navigation Links with Scoped Gooey Click Transition */}
-        <div ref={desktopNavRef} className="hidden lg:flex items-center gap-1 relative z-20">
-          {/* Scoped Gooey Particle Layer */}
-          <div
-            ref={gooeyContainerRef}
-            className="rawin-nav-gooey-effect"
-            aria-hidden="true"
-          />
-
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={(e) => handleDesktopNavClick(e, item.href)}
-                className={`relative px-3.5 py-1.5 text-sm font-medium rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/60 ${
-                  isActive
-                    ? "text-ink-black font-semibold"
-                    : "text-muted hover:text-foreground hover:bg-white/[0.04]"
-                }`}
-              >
-                <span className="relative z-30">{item.name}</span>
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNavIndicator"
-                    className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_12px_rgba(255,255,255,0.25)] z-0"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-              </Link>
-            );
-          })}
-        </div>
+        {/* Desktop Navigation Links */}
+        <LayoutGroup id="rawin-navbar-nav-group">
+          <div className="hidden lg:flex items-center gap-1 relative z-20">
+            {NAV_ITEMS.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`relative inline-flex items-center justify-center px-3.5 py-1.5 text-sm font-medium rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/60 ${
+                    isActive
+                      ? "text-ink-black font-semibold"
+                      : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="rawin-desktop-nav-active-pill"
+                      className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_12px_rgba(255,255,255,0.25)] z-0"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10 select-none">{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </LayoutGroup>
 
         {/* Action Controls: RAWIN ORBIT & Mobile Hamburger */}
         <div className="flex items-center gap-2 sm:gap-3 pointer-events-auto">
           {/* RAWIN ORBIT Quick Trigger - ALWAYS visible on mobile & desktop */}
           <Link
             href="/ai"
-            className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 border shrink-0 ${
+            className={`inline-flex items-center gap-1.5 lg:gap-2 px-2.5 sm:px-3 lg:px-3.5 py-1.5 lg:py-2 text-xs lg:text-[13px] font-medium rounded-lg transition-all duration-200 border border-transparent shrink-0 active:scale-95 ${
               pathname === "/ai"
-                ? "bg-pacific-cyan text-ink-black border-pacific-cyan font-semibold shadow-[0_0_15px_rgba(24,155,173,0.4)]"
-                : "glass-card text-muted hover:text-pacific-cyan hover:border-pacific-cyan/40 active:scale-95"
+                ? "text-ink-black font-semibold"
+                : "text-muted hover:text-pacific-cyan"
             }`}
             aria-label="RAWIN Orbit AI Assistant"
           >
-            <Bot className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
+            <NavbarOrbitIcon className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-pacific-cyan shrink-0" />
             <span>Orbit</span>
           </Link>
 
@@ -299,7 +235,7 @@ export default function Navbar({ logo }: NavbarProps = {}) {
                     className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 text-pacific-cyan text-base font-medium active:bg-pacific-cyan/20"
                   >
                     <div className="flex items-center gap-2">
-                      <Bot className="w-4 h-4" />
+                      <NavbarOrbitIcon className="w-4 h-4 text-pacific-cyan shrink-0" />
                       <span>Orbit</span>
                     </div>
                     <ArrowUpRight className="w-4 h-4" />
@@ -311,5 +247,6 @@ export default function Navbar({ logo }: NavbarProps = {}) {
         )}
       </AnimatePresence>
     </header>
+  </>
   );
 }

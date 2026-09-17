@@ -5340,13 +5340,25 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Input Placeholder Text</label>
+                  <label className="text-xs font-mono text-muted uppercase">Mobile Composer Placeholder</label>
                   <input
                     type="text"
-                    name="inputPlaceholder"
-                    value={content.ai.inputPlaceholder}
-                    onChange={(e) => handleFieldChange("ai", "inputPlaceholder", e.target.value)}
-                    placeholder="Ask about projects, architecture, tech stack, or engineering philosophy..."
+                    name="mobileComposerPlaceholder"
+                    value={content.ai.mobileComposerPlaceholder || ""}
+                    onChange={(e) => handleFieldChange("ai", "mobileComposerPlaceholder", e.target.value)}
+                    placeholder="Ask Orbit"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Desktop Composer Placeholder</label>
+                  <input
+                    type="text"
+                    name="desktopComposerPlaceholder"
+                    value={content.ai.desktopComposerPlaceholder || ""}
+                    onChange={(e) => handleFieldChange("ai", "desktopComposerPlaceholder", e.target.value)}
+                    placeholder="Only Ask Orbit"
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
                   />
                 </div>

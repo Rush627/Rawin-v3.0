@@ -28,6 +28,8 @@ export default function TorchSpotlight() {
   const posRef = useRef<{ x: number; y: number }>({ x: -1000, y: -1000 });
   const rafRef = useRef<number | null>(null);
 
+  const [isButtonHovered, setIsButtonHovered] = useState<boolean>(false);
+
   // Robust device detection: Torch is strictly desktop/laptop only (>= 1024px and non-touch-only)
   useEffect(() => {
     const checkDesktop = () => {
@@ -152,8 +154,8 @@ export default function TorchSpotlight() {
         }}
       />
 
-      {/* Floating Controller Cluster (container non-blocking, only children interactive) */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
+      {/* Layer 3 (z-[45]): Torch Button Surface and Message Bubble (sits below custom cursor at z-50) */}
+      <div className="fixed bottom-6 right-6 z-[45] flex flex-col items-end gap-3 pointer-events-none">
         {/* Message Bubble */}
         <div
           className={`glass-panel max-w-xs px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform ${
@@ -168,11 +170,17 @@ export default function TorchSpotlight() {
           </div>
         </div>
 
-        {/* Toggle Button */}
+        {/* Toggle Button Surface */}
         <button
           onClick={toggleTorch}
-          onMouseEnter={showRandomMessage}
-          onMouseLeave={hideMessage}
+          onMouseEnter={() => {
+            setIsButtonHovered(true);
+            showRandomMessage();
+          }}
+          onMouseLeave={() => {
+            setIsButtonHovered(false);
+            hideMessage();
+          }}
           aria-label={isActive ? "Disable Torch Mode" : "Enable Torch Mode"}
           title={isActive ? "Torch Mode Active" : "Light up the page"}
           className={`group relative flex items-center justify-center w-12 h-12 rounded-full border transition-all duration-300 shadow-xl cursor-pointer pointer-events-auto ${
@@ -181,18 +189,28 @@ export default function TorchSpotlight() {
               : "bg-surface/80 border-surface-border text-muted hover:text-foreground hover:border-pacific-cyan/50 hover:bg-surface"
           }`}
         >
+          {/* Invisible sizing anchor for button geometry */}
+          <div className="w-5 h-5 pointer-events-none opacity-0" aria-hidden="true" />
+        </button>
+      </div>
+
+      {/* Layer 1 (z-[65]): Torch Lightbulb Icon Overlay (sits above custom cursor at z-50) */}
+      <div className="fixed bottom-6 right-6 z-[65] pointer-events-none">
+        <div className="w-12 h-12 flex items-center justify-center relative pointer-events-none">
           <Lightbulb
-            className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${
+            className={`w-5 h-5 transition-transform duration-300 ${
+              isButtonHovered ? "scale-110 text-foreground" : "text-muted"
+            } ${
               isActive ? "fill-pacific-cyan/40 text-pacific-cyan animate-pulse" : ""
             }`}
           />
           {isActive && (
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pacific-cyan opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-pacific-cyan"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pacific-cyan opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-pacific-cyan" />
             </span>
           )}
-        </button>
+        </div>
       </div>
     </>
   );
