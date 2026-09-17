@@ -17,31 +17,31 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ node, ...props }) => (
-            <h1 className="text-2xl sm:text-3xl font-bold font-space text-foreground mt-8 mb-4 tracking-tight" {...props} />
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-space text-foreground mt-10 mb-4 tracking-tight max-w-4xl" {...props} />
           ),
           h2: ({ node, ...props }) => (
-            <h2 className="text-xl sm:text-2xl font-bold font-space text-foreground mt-7 mb-3 tracking-tight border-b border-white/[0.06] pb-2" {...props} />
+            <h2 className="text-xl sm:text-2xl lg:text-[1.75rem] font-bold font-space text-foreground mt-9 mb-3.5 tracking-tight border-b border-white/[0.06] pb-2 max-w-4xl" {...props} />
           ),
           h3: ({ node, ...props }) => (
-            <h3 className="text-lg sm:text-xl font-bold font-space text-foreground mt-6 mb-2 tracking-tight" {...props} />
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold font-space text-foreground mt-7 mb-2.5 tracking-tight max-w-4xl" {...props} />
           ),
           h4: ({ node, ...props }) => (
-            <h4 className="text-base sm:text-lg font-bold font-space text-foreground mt-4 mb-2 tracking-tight" {...props} />
+            <h4 className="text-base sm:text-lg font-bold font-space text-foreground mt-5 mb-2 tracking-tight max-w-4xl" {...props} />
           ),
           p: ({ node, ...props }) => (
-            <p className="text-sm sm:text-base text-muted/90 leading-relaxed mb-4" {...props} />
+            <p className="text-base sm:text-[17px] text-muted/90 leading-relaxed sm:leading-[1.8] mb-5 max-w-4xl" {...props} />
           ),
           ul: ({ node, ...props }) => (
-            <ul className="list-disc list-outside ml-5 space-y-1.5 mb-4 text-sm sm:text-base text-muted/90" {...props} />
+            <ul className="list-disc list-outside ml-5 space-y-2 mb-5 text-base sm:text-[17px] text-muted/90 leading-relaxed max-w-4xl" {...props} />
           ),
           ol: ({ node, ...props }) => (
-            <ol className="list-decimal list-outside ml-5 space-y-1.5 mb-4 text-sm sm:text-base text-muted/90" {...props} />
+            <ol className="list-decimal list-outside ml-5 space-y-2 mb-5 text-base sm:text-[17px] text-muted/90 leading-relaxed max-w-4xl" {...props} />
           ),
           li: ({ node, ...props }) => (
             <li className="leading-relaxed" {...props} />
           ),
           blockquote: ({ node, ...props }) => (
-            <blockquote className="border-l-2 border-apricot-cream/70 pl-4 py-1.5 my-5 text-sm sm:text-base italic text-foreground/80 bg-white/[0.02] rounded-r-xl" {...props} />
+            <blockquote className="border-l-2 border-apricot-cream/70 pl-5 py-2 my-6 text-base sm:text-[17px] italic text-foreground/85 bg-white/[0.02] rounded-r-xl max-w-4xl" {...props} />
           ),
           hr: ({ node, ...props }) => (
             <hr className="border-white/[0.08] my-8" {...props} />

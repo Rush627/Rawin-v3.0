@@ -231,18 +231,38 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
-/* Large outlined RAW typography signature */
+/* Smartphone Outlined RAWIN Footer Wordmark */
+.rawin-outline-raw {
+  color: transparent;
+  -webkit-text-stroke: 1.5px #189BAD;
+  user-select: none;
+}
+
+.rawin-outline-in {
+  color: transparent;
+  -webkit-text-stroke: 1.5px #F5F7FA;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .rawin-outline-raw {
+    -webkit-text-stroke: 2px #189BAD;
+  }
+  .rawin-outline-in {
+    -webkit-text-stroke: 2px #F5F7FA;
+  }
+}
+
+/* Backward compatibility */
 .raw-footer-signature {
   color: transparent;
-  -webkit-text-stroke: 1.5px rgba(24, 155, 173, 0.75);
-  text-shadow: 0 0 24px rgba(24, 155, 173, 0.15);
+  -webkit-text-stroke: 1.5px #189BAD;
   user-select: none;
 }
 
 @media (min-width: 640px) {
   .raw-footer-signature {
-    -webkit-text-stroke: 2px rgba(24, 155, 173, 0.8);
-    text-shadow: 0 0 32px rgba(24, 155, 173, 0.2);
+    -webkit-text-stroke: 2px #189BAD;
   }
 }
 

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import {
@@ -29,6 +30,8 @@ export default function MobileClosingAndFooter({
   footerCopyright,
   currentYear,
 }: MobileClosingAndFooterProps) {
+  const pathname = usePathname();
+  const isExcludedStory = pathname === "/blog" || pathname === "/contact";
   const shouldReduceMotion = useReducedMotion();
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -208,7 +211,8 @@ export default function MobileClosingAndFooter({
       {/* ------------------------------------------------------------- */}
       {/* NEXT STUDIO INSPIRED CLOSING ANIMATION SCENE (Mobile / Tablet)*/}
       {/* ------------------------------------------------------------- */}
-      {shouldReduceMotion ? (
+      {!isExcludedStory && (
+        shouldReduceMotion ? (
         // Static fallback for reduced motion preference
         <div className="w-full py-16 px-5 sm:px-8 flex flex-col gap-10">
           <div className="flex flex-col">
@@ -360,12 +364,12 @@ export default function MobileClosingAndFooter({
             </div>
           </div>
         </div>
-      )}
+      ))}
 
       {/* ------------------------------------------------------------- */}
       {/* MOBILE & TABLET FOOTER: REFINED MINIMAL CLOSING STATEMENT    */}
       {/* ------------------------------------------------------------- */}
-      <div className="bg-ink-black/95 pt-0 pb-[env(safe-area-inset-bottom,0px)] relative z-20 flex flex-col w-full overflow-x-clip">
+      <div className={`bg-ink-black/95 ${isExcludedStory ? "pt-6 sm:pt-8 border-t border-white/[0.08]" : "pt-0"} pb-[env(safe-area-inset-bottom,0px)] relative z-20 flex flex-col w-full overflow-x-clip`}>
         {/* Continuous Marquee / Notification Strip */}
         <div
           className="w-full overflow-hidden border-y border-white/[0.08] bg-[#0c0c14] py-2.5 sm:py-3 select-none"
@@ -443,16 +447,17 @@ export default function MobileClosingAndFooter({
           </p>
         </div>
 
-        {/* Giant Outlined RAW Typography Signature (Spans full width, partially clipped 30-40% at bottom) */}
+        {/* Giant Outlined RAWIN Typography Signature (Spans full width, intentionally clipped at bottom) */}
         <div
-          className="w-full overflow-hidden select-none flex justify-center items-start pointer-events-none mt-1 sm:mt-2 h-[clamp(4.6rem,21vw,10.5rem)]"
+          className="w-full overflow-hidden select-none flex justify-center items-start pointer-events-none mt-1 sm:mt-2 h-[clamp(2.5rem,10.8vw,6.2rem)]"
           aria-hidden="true"
         >
           <span
-            className="raw-footer-signature font-space font-black tracking-[0.04em] sm:tracking-[0.06em] text-[clamp(7.2rem,33vw,16.5rem)] leading-[0.76] text-center block whitespace-nowrap"
-            aria-label="RAW"
+            className="font-space font-black tracking-[0.03em] sm:tracking-[0.05em] text-[clamp(5.2rem,23vw,12rem)] leading-[0.76] text-center block whitespace-nowrap"
+            aria-label="RAWIN"
           >
-            RAW
+            <span className="rawin-outline-raw">RAW</span>
+            <span className="rawin-outline-in">IN</span>
           </span>
         </div>
       </div>

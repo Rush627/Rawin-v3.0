@@ -61,7 +61,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   return (
-    <article className="w-full max-w-3xl mx-auto pt-28 pb-20 px-4 sm:px-6 flex flex-col gap-10">
+    <article className="w-full max-w-5xl mx-auto pt-24 sm:pt-28 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8 flex flex-col gap-8 sm:gap-10">
 
       {/* ─── Back navigation ─── */}
       <nav aria-label="Return to blog">
@@ -75,7 +75,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </nav>
 
       {/* ─── Article header ─── */}
-      <header className="flex flex-col gap-6 pb-8 border-b border-white/[0.08]">
+      <header className="flex flex-col gap-5 sm:gap-6 pb-8 border-b border-white/[0.08]">
 
         {/* Eyebrow row */}
         <div className="flex flex-wrap items-center gap-3">
@@ -92,13 +92,13 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground font-space leading-tight">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.65rem] font-bold tracking-tight text-foreground font-space leading-[1.2] max-w-4xl">
           {post.title}
         </h1>
 
         {/* Excerpt / lead */}
         {post.excerpt && (
-          <p className="text-base sm:text-lg text-apricot-cream/80 font-medium leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-apricot-cream/85 font-medium leading-relaxed max-w-4xl">
             {post.excerpt}
           </p>
         )}
@@ -109,7 +109,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <Calendar className="w-3.5 h-3.5 text-pacific-cyan/60" />
             {formatDateLong(post.publishedAt)}
           </span>
-          <span className="text-white/20" aria-hidden="true">·</span>
+          <span className="text-white/20" aria-hidden="true">&middot;</span>
           <span className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-pacific-cyan/60" />
             {post.readTime}
@@ -130,9 +130,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </div>
         )}
 
-        {/* Cover image : shown below header if present */}
+        {/* Cover image */}
         {post.coverImage && (
-          <div className="relative w-full rounded-xl overflow-hidden border border-white/[0.08] aspect-[16/7] mt-2">
+          <div className="relative w-full rounded-2xl overflow-hidden border border-white/[0.08] aspect-[16/9] sm:aspect-[21/9] md:aspect-[2.4/1] max-h-[440px] mt-2 bg-ink-black/60">
             <Image
               src={post.coverImage}
               alt={post.title}
@@ -140,7 +140,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               priority
               unoptimized
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, 768px"
+              sizes="(max-width: 1024px) 100vw, 1024px"
             />
             {/* Subtle bottom fade */}
             <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.4)] to-transparent pointer-events-none" />
@@ -149,12 +149,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </header>
 
       {/* ─── Markdown body ─── */}
-      <section aria-label="Article content" className="py-2">
+      <section aria-label="Article content" className="py-2 w-full">
         <MarkdownRenderer content={post.content} />
       </section>
 
       {/* ─── Footer strip ─── */}
-      <footer className="pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <footer className="pt-8 sm:pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Link
           href="/blog"
           className="inline-flex items-center gap-2 text-xs font-mono text-muted/60 hover:text-pacific-cyan transition-colors group"
@@ -164,7 +164,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </Link>
 
         <div className="text-[11px] font-mono text-muted/40 tracking-wider uppercase">
-          RAWIN · Engineering Notes
+          RAWIN · DEV LOG
         </div>
       </footer>
     </article>

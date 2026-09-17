@@ -1,41 +1,38 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { BookOpen, Calendar, Clock, ArrowRight, Sparkles, PenLine } from "lucide-react";
+import { BookOpen, ArrowRight, Sparkles, PenLine } from "lucide-react";
 import { getPublishedPosts } from "@/lib/blog";
 import type { BlogPost } from "@/lib/blog";
-import BlogCard3D from "@/components/BlogCard3D";
-import BorderGlow from "@/components/BorderGlow";
 
 export const metadata: Metadata = {
-  title: "Blog & Architecture Notes | Rushan Siddiqui",
+  title: "The Dev Log | Rushan Siddiqui",
   description:
-    "Engineering insights, web performance deep dives, and architectural patterns by Rushan Siddiqui.",
+    "Exploring the intersection of software architecture, intelligent agents, and performant web systems.",
 };
 
 export const revalidate = 0;
 
 function formatDate(dateStr?: string): string {
-  if (!dateStr) return "Recent";
+  if (!dateStr) return "RECENT";
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", month: "short", year: "numeric" });
+    return d
+      .toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", month: "short", year: "numeric" })
+      .toUpperCase();
   } catch {
-    return dateStr;
+    return (dateStr || "RECENT").toUpperCase();
   }
 }
 
-function formatDateLong(dateStr?: string): string {
-  if (!dateStr) return "Recent";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", month: "long", day: "numeric", year: "numeric" });
-  } catch {
-    return dateStr;
-  }
+function formatReadTime(readTime?: string): string {
+  if (!readTime) return "5 MIN READ";
+  const upper = readTime.toUpperCase();
+  if (upper.includes("READ")) return upper;
+  return `${upper} READ`;
 }
 
-/** Typographic cover fallback : shown when no coverImage is present */
+/** Typographic cover fallback shown when no coverImage is present */
 function ArticleCoverFallback({ title, index }: { title: string; index: number }) {
   const accents = [
     "from-pacific-cyan/20 to-transparent",
@@ -59,7 +56,7 @@ function ArticleCoverFallback({ title, index }: { title: string; index: number }
         }}
       />
       {/* First letter accent */}
-      <div className="absolute bottom-4 right-5 text-[6rem] font-bold font-space text-white/[0.05] leading-none select-none pointer-events-none">
+      <div className="absolute bottom-4 right-5 text-[5rem] sm:text-[6rem] font-bold font-space text-white/[0.05] leading-none select-none pointer-events-none">
         {title.trim().charAt(0).toUpperCase()}
       </div>
       {/* Thin top accent line */}
@@ -68,179 +65,192 @@ function ArticleCoverFallback({ title, index }: { title: string; index: number }
   );
 }
 
-/** Featured / Latest article : dominant editorial card */
+/** Featured Article : Editorial Lead Entry */
 function FeaturedArticle({ post, isFeatured }: { post: BlogPost; isFeatured: boolean }) {
   return (
-    <BorderGlow borderRadius={16} className="w-full">
-      <BlogCard3D isFeatured={isFeatured} className="w-full">
-        <Link href={`/blog/${post.slug}`} className="group block" aria-label={`Read: ${post.title}`}>
-          <article className="relative rounded-2xl border border-white/[0.08] group-hover:border-pacific-cyan/30 overflow-hidden transition-all duration-300 bg-[rgba(22,22,34,0.5)]">
-          {/* Cover image / fallback */}
-          <div className="relative w-full h-52 sm:h-64 md:h-72 overflow-hidden">
-            {post.coverImage ? (
-              <Image
-                src={post.coverImage}
-                alt={post.title}
-                fill
-                priority
-                unoptimized
-                className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                sizes="(max-width: 768px) 100vw, 900px"
-              />
-            ) : (
-              <ArticleCoverFallback title={post.title} index={0} />
-            )}
-            {/* Gradient overlay at bottom */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.92)] via-[rgba(16,16,25,0.4)] to-transparent" />
+    <Link
+      href={`/blog/${post.slug}`}
+      className="group block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/50 rounded-2xl"
+      aria-label={`Read ${post.title}`}
+    >
+      <article className="relative w-full rounded-2xl border border-white/[0.08] group-hover:border-pacific-cyan/30 overflow-hidden transition-all duration-300 bg-gradient-to-b from-[#161626]/95 via-[#131322]/90 to-[#101019]/95 shadow-[0_4px_24px_rgba(0,0,0,0.28)] md:grid md:grid-cols-12 md:gap-0">
+        {/* Subtle ambient radial highlight */}
+        <div
+          className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,rgba(24,155,173,0.06)_0%,transparent_60%)]"
+          aria-hidden="true"
+        />
 
-            {/* Badge overlaid on image */}
-            <div className="absolute top-5 left-5 flex items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-ink-black/70 backdrop-blur-sm border border-pacific-cyan/30 text-pacific-cyan">
-                {isFeatured ? "FEATURED" : "LATEST"}
+        {/* Cover image or fallback */}
+        <div className="relative w-full h-52 sm:h-60 md:h-full min-h-[220px] md:min-h-[300px] md:col-span-5 lg:col-span-5 overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.06] bg-ink-black/60 shrink-0">
+          {post.coverImage ? (
+            <Image
+              src={post.coverImage}
+              alt={post.title}
+              fill
+              priority
+              unoptimized
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.015]"
+              sizes="(max-width: 768px) 100vw, 500px"
+            />
+          ) : (
+            <ArticleCoverFallback title={post.title} index={0} />
+          )}
+          {/* Subtle bottom gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.7)] via-transparent to-transparent pointer-events-none" />
+
+          {/* Featured marker */}
+          {isFeatured && (
+            <div className="absolute top-3.5 left-3.5 flex items-center">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-ink-black/85 backdrop-blur-sm border border-pacific-cyan/30 text-pacific-cyan uppercase tracking-wider">
+                Featured
               </span>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Content area */}
-          <div className="p-6 sm:p-8 flex flex-col gap-4">
-            {/* Meta */}
-            <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-muted/70">
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-3 h-3 text-pacific-cyan/70" />
-                {formatDateLong(post.publishedAt)}
+        {/* Content area */}
+        <div className="relative z-10 p-5 sm:p-6 lg:p-7 md:col-span-7 lg:col-span-7 flex flex-col justify-between gap-3.5 sm:gap-4">
+          <div className="flex flex-col gap-2.5 sm:gap-3">
+            {/* Metadata row */}
+            <div className="flex items-center gap-2 text-[11px] font-mono text-muted/70 tracking-wider uppercase flex-wrap">
+              <span>{formatDate(post.publishedAt)}</span>
+              <span className="text-white/20" aria-hidden="true">
+                &middot;
               </span>
-              <span className="text-white/20" aria-hidden="true">·</span>
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-3 h-3 text-pacific-cyan/70" />
-                {post.readTime}
-              </span>
+              <span>{formatReadTime(post.readTime)}</span>
+              {isFeatured && (
+                <>
+                  <span className="text-white/20" aria-hidden="true">
+                    &middot;
+                  </span>
+                  <span className="text-apricot-cream/90 font-medium">Featured</span>
+                </>
+              )}
             </div>
 
             {/* Title */}
-            <h2 className="text-2xl sm:text-3xl md:text-[2rem] font-bold font-space text-foreground leading-tight tracking-tight group-hover:text-pacific-cyan transition-colors duration-300">
+            <h2 className="text-xl sm:text-2xl lg:text-[1.65rem] font-bold font-space text-foreground leading-snug tracking-tight group-hover:text-pacific-cyan transition-colors duration-200">
               {post.title}
             </h2>
 
             {/* Excerpt */}
             {post.excerpt && (
-              <p className="text-sm sm:text-base text-muted leading-relaxed line-clamp-3">
+              <p className="text-xs sm:text-sm text-muted/80 leading-relaxed font-sans line-clamp-3">
                 {post.excerpt}
               </p>
             )}
-
-            {/* Bottom row: tags + CTA */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-white/[0.06]">
-              <div className="flex flex-wrap gap-1.5">
-                {post.tags.slice(0, 4).map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2 py-0.5 rounded text-[11px] font-mono text-pacific-cyan/80 bg-pacific-cyan/[0.07] border border-pacific-cyan/15"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-pacific-cyan group-hover:gap-2.5 transition-all duration-200">
-                Read Article
-                <ArrowRight className="w-3.5 h-3.5" />
-              </span>
-            </div>
           </div>
-        </article>
-      </Link>
-      </BlogCard3D>
-    </BorderGlow>
+
+          {/* Bottom row: tags + arrow */}
+          <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex flex-wrap gap-1.5">
+              {post.tags.slice(0, 4).map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-muted/70 bg-white/[0.03] border border-white/[0.06]"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+
+            <span className="inline-flex items-center gap-1.5 text-xs font-mono text-pacific-cyan/80 group-hover:text-pacific-cyan transition-colors ml-auto">
+              <span>Read Entry</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200" />
+            </span>
+          </div>
+        </div>
+      </article>
+    </Link>
   );
 }
 
-/** Regular article card : editorial grid item */
+/** Regular Article Card : Editorial Engineering Log Card */
 function ArticleCard({ post, index }: { post: BlogPost; index: number }) {
-  // EXCLUSION C: The blog article card on the LEFT side (index % 2 === 0) must NOT receive BorderGlow
-  const isLeftCard = index % 2 === 0;
-
-  const cardElement = (
-    <BlogCard3D isFeatured={false} className="h-full">
-      <Link
-        href={`/blog/${post.slug}`}
-        className="group block h-full"
-        aria-label={`Read: ${post.title}`}
-      >
-        <article className="h-full flex flex-col rounded-xl border border-white/[0.06] group-hover:border-pacific-cyan/25 overflow-hidden bg-[rgba(22,22,34,0.45)] transition-all duration-300">
-        {/* Cover image or fallback : compact */}
+  return (
+    <Link
+      href={`/blog/${post.slug}`}
+      className="group block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/50 rounded-2xl"
+      aria-label={`Read ${post.title}`}
+    >
+      <article className="h-full flex flex-col rounded-2xl border border-white/[0.08] group-hover:border-pacific-cyan/30 overflow-hidden bg-gradient-to-b from-[#161626]/95 via-[#131322]/90 to-[#101019]/95 shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all duration-300">
+        {/* Cover image or fallback */}
         {post.coverImage ? (
-          <div className="relative w-full h-36 overflow-hidden shrink-0">
+          <div className="relative w-full aspect-[16/9] sm:aspect-[16/10] max-h-44 sm:max-h-48 overflow-hidden border-b border-white/[0.06] bg-ink-black/60 shrink-0">
             <Image
               src={post.coverImage}
               alt={post.title}
               fill
               loading="lazy"
               unoptimized
-              className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.015]"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 450px"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.8)] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.7)] via-transparent to-transparent pointer-events-none" />
+            {post.featured && (
+              <div className="absolute top-2.5 left-2.5 flex items-center">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-semibold bg-ink-black/85 backdrop-blur-sm border border-pacific-cyan/30 text-pacific-cyan uppercase tracking-wider">
+                  Featured
+                </span>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="relative w-full h-28 overflow-hidden shrink-0">
+          <div className="relative w-full aspect-[16/9] sm:aspect-[16/10] max-h-40 sm:max-h-44 overflow-hidden border-b border-white/[0.06] shrink-0">
             <ArticleCoverFallback title={post.title} index={index + 1} />
           </div>
         )}
 
-        {/* Card body */}
-        <div className="flex flex-col gap-3 p-5 flex-1">
-          {/* Meta row */}
-          <div className="flex items-center gap-2.5 text-[11px] font-mono text-muted/60">
-            <span>{formatDate(post.publishedAt)}</span>
-            <span className="text-white/20" aria-hidden="true">·</span>
-            <span>{post.readTime}</span>
-            {post.featured && (
-              <>
-                <span className="text-white/20" aria-hidden="true">·</span>
-                <span className="text-apricot-cream/70 font-semibold">Featured</span>
-              </>
+        {/* Content area */}
+        <div className="flex flex-col gap-3 p-4 sm:p-5 flex-1 justify-between">
+          <div className="flex flex-col gap-2">
+            {/* Metadata row */}
+            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono text-muted/70 tracking-wider uppercase flex-wrap">
+              <span>{formatDate(post.publishedAt)}</span>
+              <span className="text-white/20" aria-hidden="true">
+                &middot;
+              </span>
+              <span>{formatReadTime(post.readTime)}</span>
+              {post.featured && (
+                <>
+                  <span className="text-white/20" aria-hidden="true">
+                    &middot;
+                  </span>
+                  <span className="text-apricot-cream/90 font-medium">Featured</span>
+                </>
+              )}
+            </div>
+
+            {/* Title */}
+            <h3 className="text-base sm:text-lg font-bold font-space text-foreground leading-snug tracking-tight group-hover:text-pacific-cyan transition-colors duration-200 line-clamp-2 sm:line-clamp-3">
+              {post.title}
+            </h3>
+
+            {/* Excerpt */}
+            {post.excerpt && (
+              <p className="text-xs text-muted/80 leading-relaxed font-sans line-clamp-2 sm:line-clamp-3">
+                {post.excerpt}
+              </p>
             )}
           </div>
 
-          {/* Title : primary element */}
-          <h3 className="text-base sm:text-lg font-bold font-space text-foreground leading-snug tracking-tight group-hover:text-pacific-cyan transition-colors duration-300 line-clamp-3 flex-1">
-            {post.title}
-          </h3>
-
-          {/* Excerpt */}
-          {post.excerpt && (
-            <p className="text-xs text-muted/80 leading-relaxed line-clamp-2">
-              {post.excerpt}
-            </p>
-          )}
-
-          {/* Tags + arrow */}
-          <div className="pt-3 border-t border-white/[0.05] flex flex-wrap items-center justify-between gap-2 mt-auto">
+          {/* Bottom row: tags + arrow */}
+          <div className="pt-2.5 sm:pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-auto">
             <div className="flex flex-wrap gap-1">
               {post.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="px-1.5 py-0.5 rounded text-[10px] font-mono text-muted/60 bg-white/[0.04] border border-white/[0.05]"
+                  className="px-1.5 py-0.5 rounded text-[10px] font-mono text-muted/70 bg-white/[0.03] border border-white/[0.06]"
                 >
                   #{tag}
                 </span>
               ))}
             </div>
-            <ArrowRight className="w-3.5 h-3.5 text-pacific-cyan/60 group-hover:translate-x-1 group-hover:text-pacific-cyan transition-all duration-200" />
+            <ArrowRight className="w-3.5 h-3.5 text-pacific-cyan/70 group-hover:text-pacific-cyan group-hover:translate-x-1 transition-all duration-200 shrink-0 ml-auto" />
           </div>
         </div>
       </article>
     </Link>
-    </BlogCard3D>
-  );
-
-  if (isLeftCard) {
-    return cardElement;
-  }
-
-  return (
-    <BorderGlow borderRadius={12} className="h-full">
-      {cardElement}
-    </BorderGlow>
   );
 }
 
@@ -257,39 +267,36 @@ export default async function BlogPage() {
     : [];
 
   return (
-    <div className="w-full max-w-5xl mx-auto pt-28 pb-20 px-4 sm:px-6 flex flex-col gap-16">
-
-      {/* ─── HERO ─── */}
-      <section className="flex flex-col gap-5 max-w-3xl">
-        {/* Eyebrow */}
+    <div className="w-full max-w-5xl mx-auto pt-24 sm:pt-28 pb-10 sm:pb-12 px-4 sm:px-6 flex flex-col gap-10 sm:gap-12 lg:gap-14">
+      {/* ─── PAGE HEADER / EDITORIAL HERO ─── */}
+      <section className="flex flex-col gap-3.5 sm:gap-4.5 max-w-3xl">
+        {/* Eyebrow badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
           <BookOpen className="w-3.5 h-3.5" />
           <span>Articles &amp; Architecture Notes</span>
         </div>
 
-        {/* Heading */}
+        {/* Primary Editorial Heading */}
         <div className="flex flex-col gap-2">
-          <h1 className="text-4xl sm:text-5xl md:text-[3.5rem] font-bold tracking-tight text-foreground font-space leading-[1.1]">
-            Engineering{" "}
-            <span className="text-pacific-cyan">Writing</span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground font-space leading-[1.15]">
+            The Dev <span className="text-pacific-cyan">Log</span>
           </h1>
           {/* Thin accent rule */}
-          <div className="flex items-center gap-3 mt-1">
+          <div className="flex items-center gap-2.5 mt-0.5">
             <div className="h-[2px] w-10 bg-pacific-cyan/50 rounded-full" />
-            <div className="h-[1px] w-6 bg-pacific-cyan/20 rounded-full" />
+            <div className="h-[1px] w-5 bg-pacific-cyan/20 rounded-full" />
           </div>
         </div>
 
-        {/* Description */}
-        <p className="text-base text-muted leading-relaxed max-w-xl">
-          Reflections on software architecture, frontend performance, serverless systems, and
-          interface craftsmanship.
+        {/* Subheading / Positioning Statement */}
+        <p className="text-sm sm:text-base lg:text-lg text-muted/90 leading-relaxed max-w-2xl">
+          Exploring the intersection of software architecture, intelligent agents, and performant web systems.
         </p>
 
-        {/* Stats line */}
+        {/* Dynamic Article Count */}
         {posts.length > 0 && (
-          <div className="flex items-center gap-2 text-xs font-mono text-muted/50">
-            <PenLine className="w-3.5 h-3.5 text-pacific-cyan/50" />
+          <div className="flex items-center gap-2 text-xs font-mono text-muted/60">
+            <PenLine className="w-3.5 h-3.5 text-pacific-cyan/60" />
             <span>
               {posts.length} published article{posts.length !== 1 ? "s" : ""}
             </span>
@@ -316,32 +323,31 @@ export default async function BlogPage() {
         </section>
       ) : (
         <>
-          {/* ─── FEATURED / LATEST ARTICLE ─── */}
+          {/* ─── FEATURED ARTICLE ─── */}
           {featuredPost && (
             <section aria-label={featuredIsFeatured ? "Featured article" : "Latest article"}>
               <FeaturedArticle post={featuredPost} isFeatured={featuredIsFeatured} />
             </section>
           )}
 
-          {/* ─── ALL ARTICLES GRID ─── */}
+          {/* ─── RECENT ENTRIES STREAM ─── */}
           {remainingPosts.length > 0 && (
-            <section aria-label="All articles" className="flex flex-col gap-8">
+            <section aria-label="Recent entries" className="flex flex-col gap-6">
               {/* Section header */}
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[11px] font-mono text-muted/50 uppercase tracking-widest">
-                    All Articles
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-muted/60 uppercase tracking-widest">
+                    Recent Entries
                   </span>
-                  <div className="h-[1px] w-16 bg-white/[0.08]" />
                 </div>
-                <span className="text-[11px] font-mono text-muted/40">
-                  {remainingPosts.length} more
+                <span className="text-xs font-mono text-muted/40">
+                  {remainingPosts.length} {remainingPosts.length === 1 ? "entry" : "entries"}
                 </span>
               </div>
 
               {/* Grid */}
               <div
-                className="grid grid-cols-1 sm:grid-cols-2 gap-5"
+                className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6"
                 role="list"
                 aria-label="Article list"
               >
@@ -356,14 +362,13 @@ export default async function BlogPage() {
 
           {/* Edge case: only 1 post total (featured only, no remaining) */}
           {remainingPosts.length === 0 && posts.length > 1 && (
-            <section aria-label="All articles" className="flex flex-col gap-8">
-              <div className="flex items-center gap-4">
-                <span className="text-[11px] font-mono text-muted/50 uppercase tracking-widest">
-                  All Articles
+            <section aria-label="Recent entries" className="flex flex-col gap-6">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <span className="text-xs font-mono text-muted/60 uppercase tracking-widest">
+                  Recent Entries
                 </span>
-                <div className="h-[1px] flex-1 bg-white/[0.06] max-w-[80px]" />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5" role="list">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6" role="list">
                 {posts.slice(1).map((post, i) => (
                   <div key={post._id || post.slug} role="listitem">
                     <ArticleCard post={post} index={i} />
@@ -377,3 +382,4 @@ export default async function BlogPage() {
     </div>
   );
 }
+

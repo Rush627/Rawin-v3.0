@@ -225,14 +225,17 @@ export default function Footer({
     };
   }, [shouldReduceMotion]);
 
-  // Route Exception 1: Admin and AI Orbit have no footer
+  // Route Exception 1: Admin, AI Orbit, and individual Blog article pages have no marketing CTA or site footer
   if (
     pathname.startsWith("/admin") ||
     pathname === "/ai" ||
-    pathname.startsWith("/ai/")
+    pathname.startsWith("/ai/") ||
+    pathname.startsWith("/blog/")
   ) {
     return null;
   }
+
+  const isBlogListing = pathname === "/blog";
 
   const resolvedCopyright =
     footerCopyright ||
@@ -241,24 +244,42 @@ export default function Footer({
   const year = currentYear ?? 2026;
   const copyrightText = `© ${year} ${resolvedCopyright}`;
 
-  // Route Exception 2: Contact page renders only the sleek minimal bottom strip
+  // Route Exception 2: Contact page
+  // Desktop/laptop: renders existing sleek minimal bottom strip (100% unchanged)
+  // Smartphone/tablet: renders dedicated shared smartphone footer
   if (pathname === "/contact") {
     return (
-      <footer className="relative z-20 w-full border-t border-white/[0.06] bg-ink-black py-8 px-6 mt-16">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted sm:pr-16">
-          <p>{copyrightText}</p>
-          <button
-            type="button"
-            onClick={scrollToTop}
-            aria-label="Back to top"
-            className="flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-lg glass-card hover:text-foreground hover:border-pacific-cyan/40 transition-colors cursor-pointer relative z-30 shadow-md active:scale-95 touch-manipulation"
-            style={{ touchAction: "manipulation" }}
-          >
-            <span>Back to top</span>
-            <ArrowUp className="w-3.5 h-3.5 text-pacific-cyan" />
-          </button>
+      <>
+        {/* Desktop/laptop Contact footer : 100% frozen & unchanged */}
+        <div className="hidden lg:block w-full">
+          <footer className="relative z-20 w-full border-t border-white/[0.06] bg-ink-black py-8 px-6 mt-16">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted sm:pr-16">
+              <p>{copyrightText}</p>
+              <button
+                type="button"
+                onClick={scrollToTop}
+                aria-label="Back to top"
+                className="flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-lg glass-card hover:text-foreground hover:border-pacific-cyan/40 transition-colors cursor-pointer relative z-30 shadow-md active:scale-95 touch-manipulation"
+                style={{ touchAction: "manipulation" }}
+              >
+                <span>Back to top</span>
+                <ArrowUp className="w-3.5 h-3.5 text-pacific-cyan" />
+              </button>
+            </div>
+          </footer>
         </div>
-      </footer>
+
+        {/* Smartphone/tablet Contact footer : Dedicated shared smartphone footer */}
+        <div className="block lg:hidden w-full">
+          <MobileClosingAndFooter
+            content={content}
+            contact={contact}
+            logo={logo}
+            footerCopyright={footerCopyright}
+            currentYear={currentYear}
+          />
+        </div>
+      </>
     );
   }
 
@@ -293,11 +314,12 @@ export default function Footer({
       {/* DESKTOP FOOTER & CLOSING (>=1024px) : 100% FROZEN AT fe6b4ba  */}
       {/* ------------------------------------------------------------- */}
       <div className="hidden lg:block w-full">
-        <footer className="relative z-20 w-full border-t border-white/[0.06] bg-ink-black mt-28 md:mt-36 overflow-x-clip">
+        <footer className={`relative z-20 w-full border-t border-white/[0.06] bg-ink-black ${isBlogListing ? "mt-12 lg:mt-16" : "mt-28 md:mt-36"} overflow-x-clip`}>
           {/* ------------------------------------------------------------- */}
-          {/* SCROLL-DRIVEN CLOSING STORY CONTAINER                         */}
+          {/* SCROLL-DRIVEN CLOSING STORY CONTAINER (Omitted on /blog)      */}
           {/* ------------------------------------------------------------- */}
-          {shouldReduceMotion ? (
+          {!isBlogListing && (
+            shouldReduceMotion ? (
             // Reduced Motion Fallback: Stable, accessible, non-animated layout
             <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 pt-20 pb-16 flex flex-col gap-16">
               <div className="flex flex-col gap-4">
@@ -443,7 +465,7 @@ export default function Footer({
                 </div>
               </div>
             </div>
-          )}
+          ))}
 
           {/* ------------------------------------------------------------- */}
           {/* SIMPLIFIED EDITORIAL BOTTOM NAVIGATION                        */}
