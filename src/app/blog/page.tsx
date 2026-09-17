@@ -267,7 +267,7 @@ export default async function BlogPage() {
     : [];
 
   return (
-    <div className="w-full max-w-5xl mx-auto pt-24 sm:pt-28 pb-10 sm:pb-12 px-4 sm:px-6 flex flex-col gap-10 sm:gap-12 lg:gap-14">
+    <div className="w-full max-w-5xl mx-auto pt-32 sm:pt-36 lg:pt-28 pb-10 sm:pb-12 px-4 sm:px-6 flex flex-col gap-10 sm:gap-12 lg:gap-14">
       {/* ─── PAGE HEADER / EDITORIAL HERO ─── */}
       <section className="flex flex-col gap-3.5 sm:gap-4.5 max-w-3xl">
         {/* Eyebrow badge */}

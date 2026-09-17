@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   if (!post) {
     return {
       title: "Article Not Found | RAWIN 3.0",
-      description: "The requested engineering article does not exist or is not published.",
+      description: "The requested article does not exist or is not published.",
     };
   }
 
@@ -61,7 +61,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   return (
-    <article className="w-full max-w-5xl mx-auto pt-24 sm:pt-28 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8 flex flex-col gap-8 sm:gap-10">
+    <article className="w-full max-w-5xl mx-auto pt-32 sm:pt-36 lg:pt-28 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8 flex flex-col gap-8 sm:gap-10">
 
       {/* ─── Back navigation ─── */}
       <nav aria-label="Return to blog">

@@ -40,7 +40,7 @@ export default async function HomePage() {
       {/* ------------------------------------------------------------- */}
       {/* SECTION 1: HERO                                               */}
       {/* ------------------------------------------------------------- */}
-      <section className="relative flex flex-col items-center text-center pt-8 sm:pt-10 md:pt-16 pb-6 overflow-hidden">
+      <section className="relative flex flex-col items-center text-center pt-8 sm:pt-10 md:pt-4 lg:pt-1 pb-6 overflow-hidden">
         {/* Subtle Background Glow Accent (GPU friendly, zero lag) */}
         <div
           aria-hidden="true"

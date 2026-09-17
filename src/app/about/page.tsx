@@ -134,7 +134,7 @@ export default async function AboutPage() {
       : DEFAULT_FOCUS_AREAS;
 
   return (
-    <div className="w-full max-w-4xl mx-auto pt-28 pb-20 px-4 sm:px-6 flex flex-col gap-14 sm:gap-16 lg:gap-20">
+    <div className="w-full max-w-4xl mx-auto pt-32 sm:pt-36 lg:pt-28 pb-20 px-4 sm:px-6 flex flex-col gap-14 sm:gap-16 lg:gap-20">
       {/* SECTION 1: IDENTITY / INTRODUCTION */}
       <section className="flex flex-col gap-8 sm:gap-10" data-particle-protected>
         {/* Intro Composition: 2-column desktop (Left: ProfileCard, Right: Text), vertical stack on mobile */}

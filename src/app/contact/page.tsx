@@ -5,7 +5,7 @@ import ContactView from "@/components/ContactView";
 export const metadata: Metadata = {
   title: "Contact & Inquiries | Rushan Siddiqui : Full Stack Developer",
   description:
-    "Direct communication channel for Rushan Siddiqui : Full Stack Developer. Open to full-time engineering roles, freelance contracts, and software architecture consultancies.",
+    "Direct communication channel for Rushan Siddiqui : Full Stack Developer. Open to full-time developer roles, freelance contracts, and software architecture consultancies.",
 };
 
 export const revalidate = 0;

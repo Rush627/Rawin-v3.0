@@ -14,7 +14,7 @@ export default async function ProjectsPage() {
   const projects = await getProjects();
 
   return (
-    <div className="w-full max-w-6xl mx-auto pt-24 sm:pt-28 pb-16 px-4 sm:px-6 flex flex-col gap-8 sm:gap-10">
+    <div className="w-full max-w-6xl mx-auto pt-32 sm:pt-36 lg:pt-28 pb-16 px-4 sm:px-6 flex flex-col gap-8 sm:gap-10">
       {/* Page Header */}
       <section className="flex flex-col gap-3 sm:gap-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">

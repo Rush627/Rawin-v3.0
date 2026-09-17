@@ -37,7 +37,7 @@ export default function MobileUsesView({
   exploringItems,
 }: MobileUsesViewProps) {
   return (
-    <div className="w-full max-w-3xl mx-auto pt-24 sm:pt-28 pb-16 px-4 sm:px-6 flex flex-col gap-12 sm:gap-16">
+    <div className="w-full max-w-3xl mx-auto pt-32 sm:pt-36 pb-16 px-4 sm:px-6 flex flex-col gap-12 sm:gap-16">
       
       {/* ─── Section 0: Page Header ─── */}
       <header className="flex flex-col gap-3.5">

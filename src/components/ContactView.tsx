@@ -179,7 +179,7 @@ export default function ContactView({ content, global }: ContactViewProps) {
   ].filter((s) => s.url.trim().length > 0);
 
   return (
-    <div className="w-full max-w-6xl mx-auto pt-28 sm:pt-32 pb-20 px-4 sm:px-6 flex flex-col gap-8 sm:gap-10 overflow-x-hidden">
+    <div className="w-full max-w-6xl mx-auto pt-32 sm:pt-36 lg:pt-32 pb-20 px-4 sm:px-6 flex flex-col gap-8 sm:gap-10 overflow-x-hidden">
       {/* Header */}
       <section className="flex flex-col gap-3 max-w-2xl">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
