@@ -209,20 +209,45 @@ export interface ResumeContent {
   pdf?: ResumePdfMeta | null;
 }
 
+export interface DailyStackItem {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  icon: string;
+  order: number;
+  enabled: boolean;
+}
+
+export interface BuildStepItem {
+  id?: string;
+  step?: string;
+  number?: string;
+  title: string;
+  description: string;
+  order?: number;
+  enabled?: boolean;
+}
+
 export interface DevStackItem {
+  id?: string;
   name: string;
   description: string;
   category?: string;
   icon?: string;
+  group?: string;
   displayOrder: number;
+  enabled?: boolean;
 }
 
 export interface ExploringItem {
+  id?: string;
   name: string;
   description: string;
   category?: string;
   icon?: string;
   displayOrder: number;
+  enabled?: boolean;
 }
 
 export interface SetupItem {
@@ -242,7 +267,10 @@ export interface UsesContent {
   title: string;
   description: string;
   updatedYear: string;
+  updateLabel?: string;
+  dailyStack: DailyStackItem[];
   developmentStack: DevStackItem[];
+  howIBuild: BuildStepItem[];
   currentlyExploring: ExploringItem[];
   mySetup: MySetupContent;
 }
@@ -649,69 +677,195 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     description:
       "The tools, software, and workflows I actually reach for when building, designing, debugging, and shipping.",
     updatedYear: "2026",
+    updateLabel: "UPDATED REGULARLY · 2026",
+    dailyStack: [
+      {
+        id: "daily-vscode",
+        name: "VS Code",
+        category: "Editor",
+        description: "Primary editor for everyday development.",
+        icon: "code",
+        order: 1,
+        enabled: true,
+      },
+      {
+        id: "daily-antigravity",
+        name: "Antigravity",
+        category: "AI & Workspace",
+        description: "AI-assisted development, project exploration, and rapid iteration.",
+        icon: "bot",
+        order: 2,
+        enabled: true,
+      },
+      {
+        id: "daily-terminal",
+        name: "Windows Terminal / PowerShell",
+        category: "Terminal",
+        description: "Git, npm, scripts, system tasks, and project automation.",
+        icon: "terminal",
+        order: 3,
+        enabled: true,
+      },
+      {
+        id: "daily-chrome",
+        name: "Chrome",
+        category: "Browser",
+        description: "Responsive testing, DevTools, debugging, and research.",
+        icon: "globe",
+        order: 4,
+        enabled: true,
+      },
+      {
+        id: "daily-figma",
+        name: "Figma",
+        category: "Design",
+        description: "UI exploration, layouts, visual systems, and prototypes.",
+        icon: "palette",
+        order: 5,
+        enabled: true,
+      },
+      {
+        id: "daily-git",
+        name: "Git / GitHub",
+        category: "Version Control",
+        description: "Version control, project history, and collaboration.",
+        icon: "git",
+        order: 6,
+        enabled: true,
+      },
+    ],
     developmentStack: [
       {
+        id: "dev-1",
         name: "Next.js",
         description: "Application architecture, routing, server rendering, and APIs.",
         category: "Framework",
         icon: "layers",
+        group: "Core Architecture",
         displayOrder: 1,
+        enabled: true,
       },
       {
+        id: "dev-2",
         name: "React",
         description: "Reusable interfaces and interactive components.",
         category: "UI Library",
         icon: "code",
+        group: "Core Architecture",
         displayOrder: 2,
+        enabled: true,
       },
       {
+        id: "dev-3",
         name: "TypeScript",
         description: "Typed application logic and safer component development.",
         category: "Language",
         icon: "cpu",
+        group: "Core Architecture",
         displayOrder: 3,
+        enabled: true,
       },
       {
+        id: "dev-4",
         name: "Tailwind CSS",
         description: "Responsive styling and reusable design patterns.",
         category: "Styling",
         icon: "palette",
+        group: "Core Architecture",
         displayOrder: 4,
+        enabled: true,
       },
       {
+        id: "dev-5",
         name: "MongoDB",
         description: "Portfolio, project, blog, and CMS data.",
         category: "Database",
         icon: "database",
+        group: "Data & Infrastructure",
         displayOrder: 5,
+        enabled: true,
       },
       {
+        id: "dev-6",
         name: "Framer Motion",
         description: "Interface motion and micro-interactions.",
         category: "Animation",
         icon: "zap",
+        group: "Motion & Interaction",
         displayOrder: 6,
+        enabled: true,
       },
       {
+        id: "dev-7",
         name: "Lenis",
         description: "Smooth scrolling and scroll-driven experiences.",
         category: "Scroll",
         icon: "activity",
+        group: "Motion & Interaction",
         displayOrder: 7,
+        enabled: true,
       },
       {
+        id: "dev-8",
         name: "Cloudflare Workers / AI",
         description: "Experiments with edge functions and AI workloads.",
         category: "Edge Compute",
         icon: "compass",
+        group: "Data & Infrastructure",
         displayOrder: 8,
+        enabled: true,
       },
       {
+        id: "dev-9",
         name: "Git / GitHub",
         description: "Version control, project history, and collaboration.",
         category: "Source Control",
         icon: "git",
+        group: "Version Control",
         displayOrder: 9,
+        enabled: true,
+      },
+    ],
+    howIBuild: [
+      {
+        id: "build-01",
+        step: "01",
+        title: "Explore",
+        description: "Break down the problem and research what matters.",
+        order: 1,
+        enabled: true,
+      },
+      {
+        id: "build-02",
+        step: "02",
+        title: "Design",
+        description: "Shape the interface before adding unnecessary complexity.",
+        order: 2,
+        enabled: true,
+      },
+      {
+        id: "build-03",
+        step: "03",
+        title: "Build",
+        description: "Turn the system into reusable, maintainable components.",
+        order: 3,
+        enabled: true,
+      },
+      {
+        id: "build-04",
+        step: "04",
+        title: "Refine",
+        description: "Test interaction, responsiveness, accessibility, and performance.",
+        order: 4,
+        enabled: true,
+      },
+      {
+        id: "build-05",
+        step: "05",
+        title: "Ship",
+        description: "Deploy, observe, iterate, and improve.",
+        order: 5,
+        enabled: true,
       },
     ],
     currentlyExploring: [
@@ -1090,10 +1244,19 @@ export function mergeWithDefaults(doc: any): SiteContent {
       title: doc.uses?.title || DEFAULT_SITE_CONTENT.uses.title,
       description: doc.uses?.description || DEFAULT_SITE_CONTENT.uses.description,
       updatedYear: doc.uses?.updatedYear || DEFAULT_SITE_CONTENT.uses.updatedYear,
+      updateLabel: doc.uses?.updateLabel || DEFAULT_SITE_CONTENT.uses.updateLabel || `UPDATED REGULARLY · ${doc.uses?.updatedYear || DEFAULT_SITE_CONTENT.uses.updatedYear}`,
+      dailyStack:
+        Array.isArray(doc.uses?.dailyStack) && doc.uses.dailyStack.length > 0
+          ? doc.uses.dailyStack
+          : DEFAULT_SITE_CONTENT.uses.dailyStack,
       developmentStack:
         Array.isArray(doc.uses?.developmentStack) && doc.uses.developmentStack.length > 0
           ? doc.uses.developmentStack
           : DEFAULT_SITE_CONTENT.uses.developmentStack,
+      howIBuild:
+        Array.isArray(doc.uses?.howIBuild) && doc.uses.howIBuild.length > 0
+          ? doc.uses.howIBuild
+          : DEFAULT_SITE_CONTENT.uses.howIBuild,
       currentlyExploring:
         Array.isArray(doc.uses?.currentlyExploring) && doc.uses.currentlyExploring.length > 0
           ? doc.uses.currentlyExploring

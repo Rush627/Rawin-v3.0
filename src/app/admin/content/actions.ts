@@ -118,7 +118,10 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "title",
     "description",
     "updatedYear",
+    "updateLabel",
+    "dailyStack",
     "developmentStack",
+    "howIBuild",
     "currentlyExploring",
     "mySetup",
   ],
@@ -157,6 +160,8 @@ const LONG_FIELDS = new Set([
   "successMessage",
   "greetingMessage",
   "developmentStack",
+  "dailyStack",
+  "howIBuild",
   "currentlyExploring",
   "mySetup",
   "contact",
@@ -248,6 +253,39 @@ export async function updateSectionAction(
         continue;
       }
 
+      if (key === "dailyStack") {
+        try {
+          const parsed = JSON.parse(trimmed || "[]");
+          if (!Array.isArray(parsed)) {
+            return { error: "Daily stack must be an array." };
+          }
+          if (parsed.length > 50) {
+            return { error: "Daily stack cannot exceed 50 items." };
+          }
+          const cleanedItems = [];
+          for (let i = 0; i < parsed.length; i++) {
+            const item = parsed[i];
+            if (!item || typeof item !== "object") continue;
+            const name = String(item.name || "").trim();
+            const description = String(item.description || "").trim();
+            const category = String(item.category || "").trim();
+            const icon = String(item.icon || "code").trim().toLowerCase();
+            const id = String(item.id || `daily-${i + 1}`).trim().slice(0, 50);
+            const order = typeof item.order === "number" ? item.order : i + 1;
+            const enabled = item.enabled !== false;
+            if (!name) return { error: `Daily stack item #${i + 1} must have a name.` };
+            if (name.length > 80) return { error: `Item "${name.slice(0, 20)}..." name exceeds 80 characters.` };
+            if (description.length > 400) return { error: `Item "${name}" description exceeds 400 characters.` };
+            if (category.length > 60) return { error: `Item "${name}" category exceeds 60 characters.` };
+            cleanedItems.push({ id, name, description, category, icon, order, enabled });
+          }
+          payload[key] = cleanedItems;
+        } catch {
+          return { error: "Invalid JSON for daily stack." };
+        }
+        continue;
+      }
+
       if (key === "developmentStack") {
         try {
           const parsed = JSON.parse(trimmed || "[]");
@@ -258,7 +296,8 @@ export async function updateSectionAction(
             return { error: "Development stack cannot exceed 30 items." };
           }
           const cleanedItems = [];
-          for (const item of parsed) {
+          for (let i = 0; i < parsed.length; i++) {
+            const item = parsed[i];
             if (!item || typeof item !== "object") continue;
             const name = String(item.name || "").trim();
             const description = String(item.description || "").trim();
@@ -267,16 +306,48 @@ export async function updateSectionAction(
             if (icon && !ALLOWED_ICON_IDS.has(icon)) {
               return { error: `Invalid icon "${icon}" for item "${name}".` };
             }
-            const displayOrder = typeof item.displayOrder === "number" ? item.displayOrder : 999;
+            const group = String(item.group || "Core Architecture").trim().slice(0, 60);
+            const displayOrder = typeof item.displayOrder === "number" ? item.displayOrder : i + 1;
+            const enabled = item.enabled !== false;
+            const id = String(item.id || `dev-${i + 1}`).trim().slice(0, 50);
             if (!name) return { error: "Each development stack item must have a name." };
             if (name.length > 60) return { error: `Item "${name.slice(0, 20)}..." name exceeds 60 characters.` };
             if (description.length > 300) return { error: `Item "${name}" description exceeds 300 characters.` };
             if (category.length > 50) return { error: `Item "${name}" category exceeds 50 characters.` };
-            cleanedItems.push({ name, description, category, icon, displayOrder });
+            cleanedItems.push({ id, name, description, category, icon, group, displayOrder, enabled });
           }
           payload[key] = cleanedItems;
         } catch {
           return { error: "Invalid JSON for development stack." };
+        }
+        continue;
+      }
+
+      if (key === "howIBuild") {
+        try {
+          const parsed = JSON.parse(trimmed || "[]");
+          if (!Array.isArray(parsed)) {
+            return { error: "How I Build must be an array." };
+          }
+          if (parsed.length > 20) {
+            return { error: "How I Build cannot exceed 20 steps." };
+          }
+          const cleanedSteps = [];
+          for (let i = 0; i < parsed.length; i++) {
+            const step = parsed[i];
+            if (!step || typeof step !== "object") continue;
+            const stepNum = String(step.step || step.number || `0${i + 1}`).trim().slice(0, 10);
+            const title = String(step.title || "").trim().slice(0, 80);
+            const description = String(step.description || "").trim().slice(0, 400);
+            const order = typeof step.order === "number" ? step.order : i + 1;
+            const enabled = step.enabled !== false;
+            const id = String(step.id || `build-${i + 1}`).trim().slice(0, 50);
+            if (!title) return { error: `Build step #${i + 1} must have a title.` };
+            cleanedSteps.push({ id, step: stepNum, title, description, order, enabled });
+          }
+          payload[key] = cleanedSteps;
+        } catch {
+          return { error: "Invalid JSON for How I Build." };
         }
         continue;
       }

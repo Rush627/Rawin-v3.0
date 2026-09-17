@@ -58,6 +58,8 @@ import type {
   AssetKey,
   DevStackItem,
   ExploringItem,
+  DailyStackItem,
+  BuildStepItem,
   ResumeSkillGroup,
   ResumeExperienceItem,
   ResumeEducationItem,
@@ -465,6 +467,98 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
     });
   };
 
+  // Uses Daily Stack Handlers
+  const handleAddDailyStackItem = () => {
+    setContent((prev) => {
+      const currentList = prev.uses?.dailyStack || [];
+      const nextOrder =
+        currentList.length > 0
+          ? Math.max(...currentList.map((i) => i.order || 0)) + 1
+          : 1;
+      return {
+        ...prev,
+        uses: {
+          ...prev.uses,
+          dailyStack: [
+            ...currentList,
+            {
+              id: `tool-${Date.now()}`,
+              name: "New Tool",
+              category: "Tool",
+              description: "Primary tool for everyday development.",
+              icon: "terminal",
+              order: nextOrder,
+              enabled: true,
+            },
+          ],
+        },
+      };
+    });
+  };
+
+  const handleUpdateDailyStackItem = (
+    index: number,
+    field: keyof DailyStackItem,
+    val: any
+  ) => {
+    setContent((prev) => {
+      const currentList = [...(prev.uses?.dailyStack || [])];
+      if (!currentList[index]) return prev;
+      currentList[index] = {
+        ...currentList[index],
+        [field]: val,
+      };
+      return {
+        ...prev,
+        uses: {
+          ...prev.uses,
+          dailyStack: currentList,
+        },
+      };
+    });
+  };
+
+  const handleDeleteDailyStackItem = (index: number) => {
+    setContent((prev) => {
+      const currentList = [...(prev.uses?.dailyStack || [])];
+      currentList.splice(index, 1);
+      const reindexed = currentList.map((item, idx) => ({
+        ...item,
+        order: idx + 1,
+      }));
+      return {
+        ...prev,
+        uses: {
+          ...prev.uses,
+          dailyStack: reindexed,
+        },
+      };
+    });
+  };
+
+  const handleMoveDailyStackItem = (index: number, direction: "up" | "down") => {
+    setContent((prev) => {
+      const currentList = [...(prev.uses?.dailyStack || [])];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= currentList.length) return prev;
+      const temp = currentList[index];
+      currentList[index] = currentList[targetIndex];
+      currentList[targetIndex] = temp;
+      const reindexed = currentList.map((item, idx) => ({
+        ...item,
+        order: idx + 1,
+      }));
+      return {
+        ...prev,
+        uses: {
+          ...prev.uses,
+          dailyStack: reindexed,
+        },
+      };
+    });
+  };
+
+  // Uses Development Stack Handlers
   const handleAddDevStackItem = () => {
     setContent((prev) => {
       const currentList = prev.uses?.developmentStack || [];
@@ -479,11 +573,14 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
           developmentStack: [
             ...currentList,
             {
+              id: `tech-${Date.now()}`,
               name: "New Technology",
               description: "Technology role and architecture details.",
               category: "Framework",
+              group: "Core Architecture",
               icon: "layers",
               displayOrder: nextOrder,
+              enabled: true,
             },
           ],
         },
@@ -494,7 +591,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
   const handleUpdateDevStackItem = (
     index: number,
     field: keyof DevStackItem,
-    val: string | number
+    val: any
   ) => {
     setContent((prev) => {
       const currentList = [...(prev.uses?.developmentStack || [])];
@@ -553,6 +650,98 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
     });
   };
 
+  // Uses How I Build Handlers
+  const handleAddBuildStepItem = () => {
+    setContent((prev) => {
+      const currentList = prev.uses?.howIBuild || [];
+      const nextOrder =
+        currentList.length > 0
+          ? Math.max(...currentList.map((i) => i.order || 0)) + 1
+          : 1;
+      const numStr = nextOrder < 10 ? `0${nextOrder}` : `${nextOrder}`;
+      return {
+        ...prev,
+        uses: {
+          ...prev.uses,
+          howIBuild: [
+            ...currentList,
+            {
+              id: `step-${Date.now()}`,
+              step: numStr,
+              number: numStr,
+              title: "New Phase",
+              description: "Phase description and engineering methodology.",
+              order: nextOrder,
+              enabled: true,
+            },
+          ],
+        },
+      };
+    });
+  };
+
+  const handleUpdateBuildStepItem = (
+    index: number,
+    field: keyof BuildStepItem,
+    val: any
+  ) => {
+    setContent((prev) => {
+      const currentList = [...(prev.uses?.howIBuild || [])];
+      if (!currentList[index]) return prev;
+      currentList[index] = {
+        ...currentList[index],
+        [field]: val,
+      };
+      return {
+        ...prev,
+        uses: {
+          ...prev.uses,
+          howIBuild: currentList,
+        },
+      };
+    });
+  };
+
+  const handleDeleteBuildStepItem = (index: number) => {
+    setContent((prev) => {
+      const currentList = [...(prev.uses?.howIBuild || [])];
+      currentList.splice(index, 1);
+      const reindexed = currentList.map((item, idx) => ({
+        ...item,
+        order: idx + 1,
+      }));
+      return {
+        ...prev,
+        uses: {
+          ...prev.uses,
+          howIBuild: reindexed,
+        },
+      };
+    });
+  };
+
+  const handleMoveBuildStepItem = (index: number, direction: "up" | "down") => {
+    setContent((prev) => {
+      const currentList = [...(prev.uses?.howIBuild || [])];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= currentList.length) return prev;
+      const temp = currentList[index];
+      currentList[index] = currentList[targetIndex];
+      currentList[targetIndex] = temp;
+      const reindexed = currentList.map((item, idx) => ({
+        ...item,
+        order: idx + 1,
+      }));
+      return {
+        ...prev,
+        uses: {
+          ...prev.uses,
+          howIBuild: reindexed,
+        },
+      };
+    });
+  };
+
   const handleAddExploringItem = () => {
     setContent((prev) => {
       const currentList = prev.uses?.currentlyExploring || [];
@@ -582,7 +771,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
   const handleUpdateExploringItem = (
     index: number,
     field: keyof ExploringItem,
-    val: string | number
+    val: any
   ) => {
     setContent((prev) => {
       const currentList = [...(prev.uses?.currentlyExploring || [])];
@@ -4324,6 +4513,16 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
             {/* Hidden JSON inputs for complex fields */}
             <input
               type="hidden"
+              name="dailyStack"
+              value={JSON.stringify(content.uses?.dailyStack || [])}
+            />
+            <input
+              type="hidden"
+              name="howIBuild"
+              value={JSON.stringify(content.uses?.howIBuild || [])}
+            />
+            <input
+              type="hidden"
               name="developmentStack"
               value={JSON.stringify(content.uses?.developmentStack || [])}
             />
@@ -4338,48 +4537,42 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               value={JSON.stringify(content.uses?.mySetup || {})}
             />
 
-            {/* Block 1: General Info */}
+            {/* Block 1: Page Header & Metadata */}
             <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
                   <Wrench className="w-4 h-4 text-pacific-cyan" />
                   <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
-                    General Settings
+                    Page Header
                   </h3>
                 </div>
                 <span className="text-[11px] font-mono text-muted/60">
-                  Hero metadata &amp; headings
+                  Header metadata &amp; copy
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">
-                    Updated Year (4 Digits)
-                  </label>
-                  <input
-                    type="text"
-                    name="updatedYear"
-                    pattern="[0-9]{4}"
-                    maxLength={4}
-                    placeholder="2026"
-                    value={content.uses?.updatedYear || "2026"}
-                    onChange={(e) => handleFieldChange("uses", "updatedYear", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors font-mono"
-                  />
-                  <span className="text-[10px] font-mono text-muted/60">
-                    Rendered as: &ldquo;Updated regularly · {content.uses?.updatedYear || "2026"}&rdquo;
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-2">
                   <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
                   <input
                     type="text"
                     name="eyebrow"
+                    placeholder="TOOLS & HARDWARE"
                     value={content.uses?.eyebrow || ""}
                     onChange={(e) => handleFieldChange("uses", "eyebrow", e.target.value)}
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Update Label</label>
+                  <input
+                    type="text"
+                    name="updateLabel"
+                    placeholder="UPDATED REGULARLY · 2026"
+                    value={content.uses?.updateLabel || "UPDATED REGULARLY · 2026"}
+                    onChange={(e) => handleFieldChange("uses", "updateLabel", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors font-mono"
                   />
                 </div>
 
@@ -4388,6 +4581,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                   <input
                     type="text"
                     name="title"
+                    placeholder="What I Use"
                     value={content.uses?.title || ""}
                     onChange={(e) => handleFieldChange("uses", "title", e.target.value)}
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -4395,10 +4589,11 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 </div>
 
                 <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Page Introduction</label>
+                  <label className="text-xs font-mono text-muted uppercase">Page Description</label>
                   <textarea
                     rows={3}
                     name="description"
+                    placeholder="The tools, software, and workflows I actually reach for when building, designing, debugging, and shipping."
                     value={content.uses?.description || ""}
                     onChange={(e) => handleFieldChange("uses", "description", e.target.value)}
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
@@ -4407,7 +4602,417 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               </div>
             </div>
 
-            {/* Block 2: My Setup */}
+            {/* Block 2: Daily Stack (Workbench / Tool Inventory) */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-pacific-cyan" />
+                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
+                    Daily Stack ({(content.uses?.dailyStack || []).length})
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddDailyStackItem}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Tool</span>
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {(content.uses?.dailyStack || []).map((tool, idx) => (
+                  <div
+                    key={tool.id || idx}
+                    className={`p-4 rounded-xl bg-ink-black/50 border ${
+                      tool.enabled === false ? "border-white/[0.03] opacity-60" : "border-white/[0.06]"
+                    } flex flex-col gap-3 hover:border-white/[0.12] transition-colors`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-pacific-cyan bg-pacific-cyan/[0.06] border border-pacific-cyan/15 px-1.5 py-0.5 rounded">
+                          0{idx + 1}
+                        </span>
+                        <span className="text-xs font-bold font-space text-foreground">
+                          {tool.name || "Untitled Tool"}
+                        </span>
+                        {tool.category && (
+                          <span className="text-[10px] font-mono text-muted/80 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded uppercase">
+                            {tool.category}
+                          </span>
+                        )}
+                        {tool.enabled === false && (
+                          <span className="text-[10px] font-mono text-rose-400/80 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                            Disabled
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateDailyStackItem(idx, "enabled", tool.enabled === false ? true : false)}
+                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                            tool.enabled === false
+                              ? "text-muted/40 hover:text-foreground hover:bg-white/[0.06]"
+                              : "text-pacific-cyan hover:bg-pacific-cyan/10"
+                          }`}
+                          title={tool.enabled === false ? "Enable Tool" : "Disable Tool"}
+                        >
+                          {tool.enabled === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMoveDailyStackItem(idx, "up")}
+                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (content.uses?.dailyStack || []).length - 1}
+                          onClick={() => handleMoveDailyStackItem(idx, "down")}
+                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDailyStackItem(idx)}
+                          className="p-1 rounded-md text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          title="Delete Tool"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Name</label>
+                        <input
+                          type="text"
+                          value={tool.name}
+                          onChange={(e) => handleUpdateDailyStackItem(idx, "name", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Category</label>
+                        <input
+                          type="text"
+                          placeholder="Editor / Terminal / Browser"
+                          value={tool.category || ""}
+                          onChange={(e) => handleUpdateDailyStackItem(idx, "category", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Icon</label>
+                        <select
+                          value={tool.icon || "terminal"}
+                          onChange={(e) => handleUpdateDailyStackItem(idx, "icon", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        >
+                          {ICON_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1 sm:col-span-3">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
+                        <input
+                          type="text"
+                          value={tool.description}
+                          onChange={(e) => handleUpdateDailyStackItem(idx, "description", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Block 3: Development Stack (Architecture Map) */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-pacific-cyan" />
+                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
+                    Development Stack ({(content.uses?.developmentStack || []).length})
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddDevStackItem}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Technology</span>
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {(content.uses?.developmentStack || []).map((tech, idx) => (
+                  <div
+                    key={tech.id || idx}
+                    className={`p-4 rounded-xl bg-ink-black/50 border ${
+                      tech.enabled === false ? "border-white/[0.03] opacity-60" : "border-white/[0.06]"
+                    } flex flex-col gap-3 hover:border-white/[0.12] transition-colors`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-muted/60 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
+                          #{idx + 1}
+                        </span>
+                        <span className="text-xs font-bold font-space text-foreground">
+                          {tech.name || "Untitled Item"}
+                        </span>
+                        {tech.group && (
+                          <span className="text-[10px] font-mono text-pacific-cyan/70 bg-pacific-cyan/[0.06] border border-pacific-cyan/15 px-1.5 py-0.5 rounded">
+                            {tech.group}
+                          </span>
+                        )}
+                        {tech.category && (
+                          <span className="text-[10px] font-mono text-muted/70 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded">
+                            {tech.category}
+                          </span>
+                        )}
+                        {tech.enabled === false && (
+                          <span className="text-[10px] font-mono text-rose-400/80 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                            Disabled
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateDevStackItem(idx, "enabled", tech.enabled === false ? true : false)}
+                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                            tech.enabled === false
+                              ? "text-muted/40 hover:text-foreground hover:bg-white/[0.06]"
+                              : "text-pacific-cyan hover:bg-pacific-cyan/10"
+                          }`}
+                          title={tech.enabled === false ? "Enable Item" : "Disable Item"}
+                        >
+                          {tech.enabled === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMoveDevStackItem(idx, "up")}
+                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (content.uses?.developmentStack || []).length - 1}
+                          onClick={() => handleMoveDevStackItem(idx, "down")}
+                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDevStackItem(idx)}
+                          className="p-1 rounded-md text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          title="Delete Item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Name</label>
+                        <input
+                          type="text"
+                          value={tech.name}
+                          onChange={(e) => handleUpdateDevStackItem(idx, "name", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Group</label>
+                        <input
+                          type="text"
+                          placeholder="Core Architecture"
+                          value={tech.group || "Core Architecture"}
+                          onChange={(e) => handleUpdateDevStackItem(idx, "group", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Category</label>
+                        <input
+                          type="text"
+                          value={tech.category || ""}
+                          onChange={(e) => handleUpdateDevStackItem(idx, "category", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Icon</label>
+                        <select
+                          value={tech.icon || "layers"}
+                          onChange={(e) => handleUpdateDevStackItem(idx, "icon", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        >
+                          {ICON_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1 sm:col-span-4">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
+                        <input
+                          type="text"
+                          value={tech.description}
+                          onChange={(e) => handleUpdateDevStackItem(idx, "description", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Block 4: How I Build (Engineering Timeline) */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <Boxes className="w-4 h-4 text-pacific-cyan" />
+                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
+                    How I Build ({(content.uses?.howIBuild || []).length})
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddBuildStepItem}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Step</span>
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {(content.uses?.howIBuild || []).map((step, idx) => (
+                  <div
+                    key={step.id || idx}
+                    className={`p-4 rounded-xl bg-ink-black/50 border ${
+                      step.enabled === false ? "border-white/[0.03] opacity-60" : "border-white/[0.06]"
+                    } flex flex-col gap-3 hover:border-white/[0.12] transition-colors`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-pacific-cyan bg-pacific-cyan/[0.06] border border-pacific-cyan/15 px-1.5 py-0.5 rounded font-bold">
+                          {step.number || step.step || `0${idx + 1}`}
+                        </span>
+                        <span className="text-xs font-bold font-space text-foreground">
+                          {step.title || "Untitled Step"}
+                        </span>
+                        {step.enabled === false && (
+                          <span className="text-[10px] font-mono text-rose-400/80 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                            Disabled
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateBuildStepItem(idx, "enabled", step.enabled === false ? true : false)}
+                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                            step.enabled === false
+                              ? "text-muted/40 hover:text-foreground hover:bg-white/[0.06]"
+                              : "text-pacific-cyan hover:bg-pacific-cyan/10"
+                          }`}
+                          title={step.enabled === false ? "Enable Step" : "Disable Step"}
+                        >
+                          {step.enabled === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMoveBuildStepItem(idx, "up")}
+                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (content.uses?.howIBuild || []).length - 1}
+                          onClick={() => handleMoveBuildStepItem(idx, "down")}
+                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBuildStepItem(idx)}
+                          className="p-1 rounded-md text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          title="Delete Step"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="flex flex-col gap-1 sm:col-span-1">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Number</label>
+                        <input
+                          type="text"
+                          value={step.number || step.step || ""}
+                          placeholder="01"
+                          onChange={(e) => {
+                            handleUpdateBuildStepItem(idx, "number", e.target.value);
+                            handleUpdateBuildStepItem(idx, "step", e.target.value);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1 sm:col-span-3">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Title</label>
+                        <input
+                          type="text"
+                          value={step.title}
+                          placeholder="Explore / Design / Build"
+                          onChange={(e) => handleUpdateBuildStepItem(idx, "title", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1 sm:col-span-4">
+                        <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
+                        <input
+                          type="text"
+                          value={step.description}
+                          onChange={(e) => handleUpdateBuildStepItem(idx, "description", e.target.value)}
+                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Block 5: My Setup */}
             <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
@@ -4529,124 +5134,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               </div>
             </div>
 
-            {/* Block 3: Development Stack */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
-                    Development Stack ({(content.uses?.developmentStack || []).length})
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddDevStackItem}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Technology</span>
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                {(content.uses?.developmentStack || []).map((tech, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-xl bg-ink-black/50 border border-white/[0.06] flex flex-col gap-3 hover:border-white/[0.12] transition-colors"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-muted/60 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
-                          #{idx + 1}
-                        </span>
-                        <span className="text-xs font-bold font-space text-foreground">
-                          {tech.name || "Untitled Item"}
-                        </span>
-                        {tech.category && (
-                          <span className="text-[10px] font-mono text-pacific-cyan/70 bg-pacific-cyan/[0.06] border border-pacific-cyan/15 px-1.5 py-0.5 rounded">
-                            {tech.category}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveDevStackItem(idx, "up")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Up"
-                        >
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === (content.uses?.developmentStack || []).length - 1}
-                          onClick={() => handleMoveDevStackItem(idx, "down")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Down"
-                        >
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteDevStackItem(idx)}
-                          className="p-1 rounded-md text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Delete Item"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Name</label>
-                        <input
-                          type="text"
-                          value={tech.name}
-                          onChange={(e) => handleUpdateDevStackItem(idx, "name", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Category</label>
-                        <input
-                          type="text"
-                          value={tech.category || ""}
-                          onChange={(e) => handleUpdateDevStackItem(idx, "category", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Icon</label>
-                        <select
-                          value={tech.icon || "layers"}
-                          onChange={(e) => handleUpdateDevStackItem(idx, "icon", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        >
-                          {ICON_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="flex flex-col gap-1 sm:col-span-3">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
-                        <input
-                          type="text"
-                          value={tech.description}
-                          onChange={(e) => handleUpdateDevStackItem(idx, "description", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Block 4: Currently Exploring */}
+            {/* Block 6: Currently Exploring (Research Board) */}
             <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
@@ -4668,8 +5156,10 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               <div className="flex flex-col gap-3">
                 {(content.uses?.currentlyExploring || []).map((topic, idx) => (
                   <div
-                    key={idx}
-                    className="p-4 rounded-xl bg-ink-black/50 border border-white/[0.06] flex flex-col gap-3 hover:border-white/[0.12] transition-colors"
+                    key={topic.id || idx}
+                    className={`p-4 rounded-xl bg-ink-black/50 border ${
+                      topic.enabled === false ? "border-white/[0.03] opacity-60" : "border-white/[0.06]"
+                    } flex flex-col gap-3 hover:border-white/[0.12] transition-colors`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
@@ -4684,8 +5174,25 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                             {topic.category}
                           </span>
                         )}
+                        {topic.enabled === false && (
+                          <span className="text-[10px] font-mono text-rose-400/80 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                            Disabled
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateExploringItem(idx, "enabled", topic.enabled === false ? true : false)}
+                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                            topic.enabled === false
+                              ? "text-muted/40 hover:text-foreground hover:bg-white/[0.06]"
+                              : "text-pacific-cyan hover:bg-pacific-cyan/10"
+                          }`}
+                          title={topic.enabled === false ? "Enable Topic" : "Disable Topic"}
+                        >
+                          {topic.enabled === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
                         <button
                           type="button"
                           disabled={idx === 0}
