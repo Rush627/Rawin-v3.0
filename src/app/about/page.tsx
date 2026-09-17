@@ -28,6 +28,11 @@ import RawinEvolution from "@/components/RawinEvolution";
 import ProfileCard from "@/components/ProfileCard";
 import BorderGlow from "@/components/BorderGlow";
 import EngineeringJourneyCircuit from "@/components/EngineeringJourneyCircuit";
+import MobileHowIBuild from "@/components/MobileHowIBuild";
+import MobileAboutExperience from "@/components/MobileAboutExperience";
+import MobileCurrentFocus from "@/components/MobileCurrentFocus";
+import MobileAboutCTA from "@/components/MobileAboutCTA";
+import AboutNarrativePanel from "@/components/AboutNarrativePanel";
 import { TIMELINE } from "@/data/experience";
 import { getSiteContent } from "@/lib/site-content";
 
@@ -129,7 +134,7 @@ export default async function AboutPage() {
       : DEFAULT_FOCUS_AREAS;
 
   return (
-    <div className="w-full max-w-4xl mx-auto pt-28 pb-20 px-4 sm:px-6 flex flex-col gap-20">
+    <div className="w-full max-w-4xl mx-auto pt-28 pb-20 px-4 sm:px-6 flex flex-col gap-14 sm:gap-16 lg:gap-20">
       {/* SECTION 1: IDENTITY / INTRODUCTION */}
       <section className="flex flex-col gap-8 sm:gap-10" data-particle-protected>
         {/* Intro Composition: 2-column desktop (Left: ProfileCard, Right: Text), vertical stack on mobile */}
@@ -152,11 +157,11 @@ export default async function AboutPage() {
 
           {/* Editorial Introduction: Centered on mobile, Left on desktop */}
           <div className="flex flex-col gap-3 sm:gap-4 text-center md:text-left items-center md:items-start">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight font-space leading-[1.15] flex flex-col items-center md:items-start">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight font-space leading-[1.15] flex flex-col items-center md:items-start">
               <span className="text-foreground">About</span>
               <span className="text-pacific-cyan">Rushan Siddiqui</span>
             </h1>
-            <p className="text-base sm:text-lg text-muted/90 font-medium max-w-md">
+            <p className="text-sm sm:text-lg text-muted/90 font-medium max-w-md">
               {aboutContent.subtitle}
             </p>
             <div className="flex items-center justify-center md:justify-start gap-2 text-xs text-muted/70 font-mono mt-1">
@@ -166,17 +171,19 @@ export default async function AboutPage() {
           </div>
         </div>
 
-        {/* Concise Narrative */}
-        <BorderGlow borderRadius={16} className="w-full">
-          <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-white/[0.06] flex flex-col gap-4 text-muted font-sans text-base sm:text-lg leading-relaxed">
-            <p className="text-foreground font-medium">
-              {aboutContent.leadText}
-            </p>
-            <p className="text-muted/90 text-sm sm:text-base">
-              {aboutContent.narrativeText}
-            </p>
-          </div>
-        </BorderGlow>
+        {/* Narrative Panel: Build Philosophy / Engineering Mindset */}
+        <AboutNarrativePanel
+          eyebrow={aboutContent.narrativeEyebrow}
+          leadText={aboutContent.leadText}
+          narrativeText={aboutContent.narrativeText}
+          progressionItem1={aboutContent.progressionItem1}
+          progressionItem2={aboutContent.progressionItem2}
+          progressionItem3={aboutContent.progressionItem3}
+          metadataItem1={aboutContent.metadataItem1}
+          metadataItem2={aboutContent.metadataItem2}
+          metadataItem3={aboutContent.metadataItem3}
+          metadataItem4={aboutContent.metadataItem4}
+        />
       </section>
 
       {/* SECTION 2: RAWIN EVOLUTION */}
@@ -189,23 +196,24 @@ export default async function AboutPage() {
       />
 
       {/* SECTION 3: HOW I BUILD */}
-      <section className="flex flex-col gap-8 w-full" data-particle-protected>
+      <section className="flex flex-col gap-6 sm:gap-8 w-full" data-particle-protected>
         <div className="flex flex-col gap-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
             <Layers className="w-3.5 h-3.5" />
             <span>{aboutContent.principlesEyebrow || "HOW I BUILD"}</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
+          <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground font-space">
             {aboutContent.principlesHeading || "A few principles I keep close."}
           </h2>
           {aboutContent.principlesDescription && (
-            <p className="text-sm sm:text-base text-muted max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm lg:text-base text-muted max-w-2xl leading-relaxed">
               {aboutContent.principlesDescription}
             </p>
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        {/* Desktop 4-card grid (>=1024px) */}
+        <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {principlesList.map((principle, idx) => {
             const Icon = resolveIcon(principle.icon, Layers);
             return (
@@ -235,42 +243,56 @@ export default async function AboutPage() {
             );
           })}
         </div>
+
+        {/* Mobile & Tablet Engineering Principles Rail (<1024px) */}
+        <div className="block lg:hidden w-full">
+          <MobileHowIBuild principles={principlesList} />
+        </div>
       </section>
 
       {/* SECTION 4: ENGINEERING JOURNEY */}
-      <section className="flex flex-col gap-8 w-full" data-particle-protected>
+      <section className="flex flex-col gap-6 sm:gap-8 w-full" data-particle-protected>
         <div className="flex flex-col gap-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
             <Briefcase className="w-3.5 h-3.5" />
             <span>{aboutContent.journeyEyebrow || "ENGINEERING JOURNEY"}</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
+          <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground font-space">
             {aboutContent.journeyHeading || "ENGINEERING JOURNEY"}
           </h2>
-          <p className="text-sm sm:text-base text-muted max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm lg:text-base text-muted max-w-2xl leading-relaxed">
             {aboutContent.journeyDescription}
           </p>
         </div>
 
-        <EngineeringJourneyCircuit items={TIMELINE} />
+        {/* Desktop Continuous Horizontal Stream (>=1024px) */}
+        <div className="hidden lg:block w-full">
+          <EngineeringJourneyCircuit items={TIMELINE} />
+        </div>
+
+        {/* Mobile & Tablet Dedicated Vertical Timeline (<1024px) */}
+        <div className="block lg:hidden w-full">
+          <MobileAboutExperience items={TIMELINE} />
+        </div>
       </section>
 
       {/* SECTION 5: CURRENT FOCUS */}
-      <section className="flex flex-col gap-8 w-full" data-particle-protected>
+      <section className="flex flex-col gap-6 sm:gap-8 w-full" data-particle-protected>
         <div className="flex flex-col gap-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
             <Target className="w-3.5 h-3.5" />
             <span>{aboutContent.focusEyebrow || "CURRENT FOCUS"}</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
+          <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground font-space">
             {aboutContent.focusHeading || "What I'm building toward."}
           </h2>
-          <p className="text-sm sm:text-base text-muted max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm lg:text-base text-muted max-w-2xl leading-relaxed">
             {aboutContent.focusDescription || "Exploring where thoughtful interface design and modern engineering can meet."}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        {/* Desktop Grid (>=1024px) */}
+        <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {focusList.map((focus, idx) => {
             const Icon = resolveIcon(focus.icon, Terminal);
             return (
@@ -292,44 +314,63 @@ export default async function AboutPage() {
             );
           })}
         </div>
+
+        {/* Mobile & Tablet Compact Focus Modules (<1024px) */}
+        <div className="block lg:hidden w-full">
+          <MobileCurrentFocus focusAreas={focusList} />
+        </div>
       </section>
 
       {/* SECTION 6: CTA */}
-      <BorderGlow borderRadius={16} className="w-full">
-        <section
-          className="glass-card rounded-2xl p-8 sm:p-10 border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
-          data-particle-protected
-        >
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-mono font-semibold tracking-wider text-pacific-cyan uppercase">
-              {aboutContent.ctaEyebrow || "LET'S BUILD TOGETHER"}
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground font-space">
-              {aboutContent.ctaHeading || "Have something worth building?"}
-            </h2>
-            <p className="text-sm text-muted">
-              {aboutContent.ctaDescription || "Open to full-time roles, freelance projects, and collaborations."}
-            </p>
-          </div>
+      {/* Desktop CTA (>=1024px) */}
+      <div className="hidden lg:block w-full">
+        <BorderGlow borderRadius={16} className="w-full">
+          <section
+            className="glass-card rounded-2xl p-8 sm:p-10 border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+            data-particle-protected
+          >
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-mono font-semibold tracking-wider text-pacific-cyan uppercase">
+                {aboutContent.ctaEyebrow || "LET'S BUILD TOGETHER"}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground font-space">
+                {aboutContent.ctaHeading || "Have something worth building?"}
+              </h2>
+              <p className="text-sm text-muted">
+                {aboutContent.ctaDescription || "Open to full-time roles, freelance projects, and collaborations."}
+              </p>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <Link
-              href="/resume"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-sm hover:bg-pacific-cyan/90 transition-all shadow-[0_0_20px_rgba(24,155,173,0.3)]"
-            >
-              <Download className="w-4 h-4" />
-              <span>{aboutContent.ctaResumeText || "View Resume"}</span>
-            </Link>
-            <Link
-              href="/contact"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-card text-foreground font-medium text-sm hover:border-pacific-cyan/40 transition-colors"
-            >
-              <Send className="w-4 h-4 text-pacific-cyan" />
-              <span>{aboutContent.ctaContactText || "Get in Touch"}</span>
-            </Link>
-          </div>
-        </section>
-      </BorderGlow>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <Link
+                href="/resume"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-sm hover:bg-pacific-cyan/90 transition-all shadow-[0_0_20px_rgba(24,155,173,0.3)]"
+              >
+                <Download className="w-4 h-4" />
+                <span>{aboutContent.ctaResumeText || "View Resume"}</span>
+              </Link>
+              <Link
+                href="/contact"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-card text-foreground font-medium text-sm hover:border-pacific-cyan/40 transition-colors"
+              >
+                <Send className="w-4 h-4 text-pacific-cyan" />
+                <span>{aboutContent.ctaContactText || "Get in Touch"}</span>
+              </Link>
+            </div>
+          </section>
+        </BorderGlow>
+      </div>
+
+      {/* Mobile & Tablet Editorial Closing CTA (<1024px) */}
+      <div className="block lg:hidden w-full">
+        <MobileAboutCTA
+          eyebrow={aboutContent.ctaEyebrow}
+          heading={aboutContent.ctaHeading}
+          description={aboutContent.ctaDescription}
+          resumeText={aboutContent.ctaResumeText}
+          contactText={aboutContent.ctaContactText}
+        />
+      </div>
 
       {/* Section link to projects */}
       <div className="flex justify-center -mt-6">

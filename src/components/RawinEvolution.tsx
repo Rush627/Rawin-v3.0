@@ -88,10 +88,10 @@ export default function RawinEvolution({
           <History className="w-3.5 h-3.5" />
           <span>{eyebrow}</span>
         </div>
-        <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
+        <h2 className="text-xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground font-space">
           {heading}
         </h2>
-        <p className="text-sm sm:text-base text-muted max-w-2xl leading-relaxed">
+        <p className="text-xs sm:text-sm md:text-base text-muted max-w-2xl leading-relaxed">
           {description}
         </p>
       </div>

@@ -76,8 +76,16 @@ export interface AboutContent {
   eyebrow?: string;
   title: string;
   subtitle: string;
+  narrativeEyebrow?: string;
   leadText: string;
   narrativeText: string;
+  progressionItem1?: string;
+  progressionItem2?: string;
+  progressionItem3?: string;
+  metadataItem1?: string;
+  metadataItem2?: string;
+  metadataItem3?: string;
+  metadataItem4?: string;
   evolutionEyebrow?: string;
   evolutionHeading?: string;
   evolutionDescription?: string;
@@ -343,10 +351,18 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     eyebrow: "ABOUT",
     title: "About Rushan Siddiqui",
     subtitle: "Full Stack Developer & Digital Craftsman",
+    narrativeEyebrow: "HOW I THINK",
     leadText:
       "I build for the web, starting with interfaces and gradually moving deeper into the systems behind them.",
+    progressionItem1: "INTERFACE",
+    progressionItem2: "PERFORMANCE",
+    progressionItem3: "SYSTEMS",
     narrativeText:
       "What began as an early curiosity with layouts and styling has grown into a disciplined focus on the entire web stack: from accessible, fluid interface design and frontend performance to type-safe APIs and modern application architecture.",
+    metadataItem1: "UI",
+    metadataItem2: "FRONTEND",
+    metadataItem3: "BACKEND",
+    metadataItem4: "ARCHITECTURE",
     evolutionEyebrow: "A RECORD OF THE BUILD",
     evolutionHeading: "From a first HTML page to a full engineering platform.",
     evolutionDescription: "RAWIN has evolved alongside the way I build for the web.",
@@ -900,8 +916,40 @@ export function mergeWithDefaults(doc: any): SiteContent {
           : DEFAULT_SITE_CONTENT.about.eyebrow,
       title: doc.about?.title || DEFAULT_SITE_CONTENT.about.title,
       subtitle: doc.about?.subtitle || DEFAULT_SITE_CONTENT.about.subtitle,
+      narrativeEyebrow:
+        typeof doc.about?.narrativeEyebrow === "string" && doc.about.narrativeEyebrow.trim()
+          ? doc.about.narrativeEyebrow.trim()
+          : DEFAULT_SITE_CONTENT.about.narrativeEyebrow,
       leadText: doc.about?.leadText || DEFAULT_SITE_CONTENT.about.leadText,
       narrativeText: doc.about?.narrativeText || DEFAULT_SITE_CONTENT.about.narrativeText,
+      progressionItem1:
+        typeof doc.about?.progressionItem1 === "string" && doc.about.progressionItem1.trim()
+          ? doc.about.progressionItem1.trim()
+          : DEFAULT_SITE_CONTENT.about.progressionItem1,
+      progressionItem2:
+        typeof doc.about?.progressionItem2 === "string" && doc.about.progressionItem2.trim()
+          ? doc.about.progressionItem2.trim()
+          : DEFAULT_SITE_CONTENT.about.progressionItem2,
+      progressionItem3:
+        typeof doc.about?.progressionItem3 === "string" && doc.about.progressionItem3.trim()
+          ? doc.about.progressionItem3.trim()
+          : DEFAULT_SITE_CONTENT.about.progressionItem3,
+      metadataItem1:
+        typeof doc.about?.metadataItem1 === "string" && doc.about.metadataItem1.trim()
+          ? doc.about.metadataItem1.trim()
+          : DEFAULT_SITE_CONTENT.about.metadataItem1,
+      metadataItem2:
+        typeof doc.about?.metadataItem2 === "string" && doc.about.metadataItem2.trim()
+          ? doc.about.metadataItem2.trim()
+          : DEFAULT_SITE_CONTENT.about.metadataItem2,
+      metadataItem3:
+        typeof doc.about?.metadataItem3 === "string" && doc.about.metadataItem3.trim()
+          ? doc.about.metadataItem3.trim()
+          : DEFAULT_SITE_CONTENT.about.metadataItem3,
+      metadataItem4:
+        typeof doc.about?.metadataItem4 === "string" && doc.about.metadataItem4.trim()
+          ? doc.about.metadataItem4.trim()
+          : DEFAULT_SITE_CONTENT.about.metadataItem4,
       evolutionEyebrow: doc.about?.evolutionEyebrow || DEFAULT_SITE_CONTENT.about.evolutionEyebrow,
       evolutionHeading: doc.about?.evolutionHeading || DEFAULT_SITE_CONTENT.about.evolutionHeading,
       evolutionDescription: doc.about?.evolutionDescription || DEFAULT_SITE_CONTENT.about.evolutionDescription,

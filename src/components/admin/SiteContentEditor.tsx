@@ -2278,7 +2278,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-pacific-cyan" />
                 <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Introduction & Narrative
+                  Introduction
                 </h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
@@ -2314,9 +2314,32 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* 2. ABOUT NARRATIVE */}
+            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <Compass className="w-4 h-4 text-pacific-cyan" />
+                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
+                  About Narrative
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Eyebrow</label>
+                  <input
+                    type="text"
+                    name="narrativeEyebrow"
+                    value={content.about.narrativeEyebrow || ""}
+                    onChange={(e) => handleFieldChange("about", "narrativeEyebrow", e.target.value)}
+                    placeholder="HOW I THINK"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
 
                 <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Lead Introduction</label>
+                  <label className="text-xs font-mono text-muted uppercase">Primary Statement</label>
                   <textarea
                     rows={2}
                     name="leadText"
@@ -2327,13 +2350,97 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 </div>
 
                 <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Narrative Text</label>
+                  <label className="text-xs font-mono text-muted uppercase">Supporting Narrative</label>
                   <textarea
                     rows={4}
                     name="narrativeText"
                     value={content.about.narrativeText}
                     onChange={(e) => handleFieldChange("about", "narrativeText", e.target.value)}
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Progression Item 1</label>
+                  <input
+                    type="text"
+                    name="progressionItem1"
+                    value={content.about.progressionItem1 || ""}
+                    onChange={(e) => handleFieldChange("about", "progressionItem1", e.target.value)}
+                    placeholder="INTERFACE"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Progression Item 2</label>
+                  <input
+                    type="text"
+                    name="progressionItem2"
+                    value={content.about.progressionItem2 || ""}
+                    onChange={(e) => handleFieldChange("about", "progressionItem2", e.target.value)}
+                    placeholder="PERFORMANCE"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Progression Item 3</label>
+                  <input
+                    type="text"
+                    name="progressionItem3"
+                    value={content.about.progressionItem3 || ""}
+                    onChange={(e) => handleFieldChange("about", "progressionItem3", e.target.value)}
+                    placeholder="SYSTEMS"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Metadata Item 1</label>
+                  <input
+                    type="text"
+                    name="metadataItem1"
+                    value={content.about.metadataItem1 || ""}
+                    onChange={(e) => handleFieldChange("about", "metadataItem1", e.target.value)}
+                    placeholder="UI"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Metadata Item 2</label>
+                  <input
+                    type="text"
+                    name="metadataItem2"
+                    value={content.about.metadataItem2 || ""}
+                    onChange={(e) => handleFieldChange("about", "metadataItem2", e.target.value)}
+                    placeholder="FRONTEND"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Metadata Item 3</label>
+                  <input
+                    type="text"
+                    name="metadataItem3"
+                    value={content.about.metadataItem3 || ""}
+                    onChange={(e) => handleFieldChange("about", "metadataItem3", e.target.value)}
+                    placeholder="BACKEND"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Metadata Item 4</label>
+                  <input
+                    type="text"
+                    name="metadataItem4"
+                    value={content.about.metadataItem4 || ""}
+                    onChange={(e) => handleFieldChange("about", "metadataItem4", e.target.value)}
+                    placeholder="ARCHITECTURE"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
                   />
                 </div>
               </div>
