@@ -47,6 +47,14 @@ import {
   Lock,
   EyeOff,
   BookOpen,
+  Code,
+  Palette,
+  Database,
+  Zap,
+  Activity,
+  GitBranch,
+  Terminal,
+  Workflow,
 } from "lucide-react";
 import RawinSelect, { type RawinSelectOption } from "./RawinSelect";
 import NeoToggle from "@/components/NeoToggle";
@@ -78,31 +86,33 @@ import {
   type ContentActionState,
 } from "@/app/admin/content/actions";
 
-const ICON_OPTIONS = [
-  { value: "layers", label: "Layers" },
-  { value: "code", label: "Code" },
-  { value: "cpu", label: "CPU" },
-  { value: "palette", label: "Palette" },
-  { value: "database", label: "Database" },
-  { value: "zap", label: "Zap" },
-  { value: "activity", label: "Activity" },
-  { value: "compass", label: "Compass" },
-  { value: "git", label: "Git" },
-  { value: "terminal", label: "Terminal" },
-  { value: "bot", label: "Bot" },
-  { value: "globe", label: "Globe" },
-  { value: "sparkles", label: "Sparkles" },
-  { value: "radio", label: "Radio" },
-  { value: "flame", label: "Flame" },
-  { value: "laptop", label: "Laptop" },
-  { value: "workflow", label: "Workflow" },
-  { value: "eye", label: "Eye" },
-  { value: "boxes", label: "Boxes" },
-  { value: "target", label: "Target" },
-  { value: "send", label: "Send" },
-  { value: "download", label: "Download" },
-  { value: "history", label: "History" },
+const ICON_SELECT_OPTIONS: RawinSelectOption[] = [
+  { value: "layers", label: "Layers", icon: <Layers className="w-3.5 h-3.5" /> },
+  { value: "code", label: "Code", icon: <Code className="w-3.5 h-3.5" /> },
+  { value: "cpu", label: "CPU", icon: <Cpu className="w-3.5 h-3.5" /> },
+  { value: "palette", label: "Palette", icon: <Palette className="w-3.5 h-3.5" /> },
+  { value: "database", label: "Database", icon: <Database className="w-3.5 h-3.5" /> },
+  { value: "zap", label: "Zap", icon: <Zap className="w-3.5 h-3.5" /> },
+  { value: "activity", label: "Activity", icon: <Activity className="w-3.5 h-3.5" /> },
+  { value: "compass", label: "Compass", icon: <Compass className="w-3.5 h-3.5" /> },
+  { value: "git", label: "Git", icon: <GitBranch className="w-3.5 h-3.5" /> },
+  { value: "terminal", label: "Terminal", icon: <Terminal className="w-3.5 h-3.5" /> },
+  { value: "bot", label: "Bot", icon: <Bot className="w-3.5 h-3.5" /> },
+  { value: "globe", label: "Globe", icon: <Globe className="w-3.5 h-3.5" /> },
+  { value: "sparkles", label: "Sparkles", icon: <Sparkles className="w-3.5 h-3.5" /> },
+  { value: "radio", label: "Radio", icon: <Radio className="w-3.5 h-3.5" /> },
+  { value: "flame", label: "Flame", icon: <Flame className="w-3.5 h-3.5" /> },
+  { value: "laptop", label: "Laptop", icon: <Laptop className="w-3.5 h-3.5" /> },
+  { value: "workflow", label: "Workflow", icon: <Workflow className="w-3.5 h-3.5" /> },
+  { value: "eye", label: "Eye", icon: <Eye className="w-3.5 h-3.5" /> },
+  { value: "boxes", label: "Boxes", icon: <Boxes className="w-3.5 h-3.5" /> },
+  { value: "target", label: "Target", icon: <Target className="w-3.5 h-3.5" /> },
+  { value: "send", label: "Send", icon: <Send className="w-3.5 h-3.5" /> },
+  { value: "download", label: "Download", icon: <Download className="w-3.5 h-3.5" /> },
+  { value: "history", label: "History", icon: <History className="w-3.5 h-3.5" /> },
 ];
+
+const ICON_OPTIONS = ICON_SELECT_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }));
 
 const STATUS_INDICATOR_OPTIONS: RawinSelectOption[] = [
   { value: "green", label: "Green (Available for hire)" },
@@ -3096,17 +3106,13 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-mono text-muted uppercase">Icon</label>
-                        <select
+                        <RawinSelect
+                          name={`principle-icon-${idx}`}
                           value={p.icon || "zap"}
-                          onChange={(e) => handleUpdatePrinciple(idx, "icon", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        >
-                          {ICON_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => handleUpdatePrinciple(idx, "icon", val)}
+                          options={ICON_SELECT_OPTIONS}
+                          size="xs"
+                        />
                       </div>
                       <div className="flex flex-col gap-1 sm:col-span-4">
                         <label className="text-[10px] font-mono text-muted uppercase">Statement / Detail</label>
@@ -3278,17 +3284,13 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-mono text-muted uppercase">Icon</label>
-                        <select
+                        <RawinSelect
+                          name={`focus-icon-${idx}`}
                           value={f.icon || "terminal"}
-                          onChange={(e) => handleUpdateFocusArea(idx, "icon", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        >
-                          {ICON_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => handleUpdateFocusArea(idx, "icon", val)}
+                          options={ICON_SELECT_OPTIONS}
+                          size="xs"
+                        />
                       </div>
                       <div className="flex flex-col gap-1 sm:col-span-4">
                         <label className="text-[10px] font-mono text-muted uppercase">Description</label>
@@ -4712,17 +4714,13 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-mono text-muted/80 uppercase">Icon</label>
-                        <select
+                        <RawinSelect
+                          name={`daily-stack-icon-${idx}`}
                           value={tool.icon || "terminal"}
-                          onChange={(e) => handleUpdateDailyStackItem(idx, "icon", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        >
-                          {ICON_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => handleUpdateDailyStackItem(idx, "icon", val)}
+                          options={ICON_SELECT_OPTIONS}
+                          size="xs"
+                        />
                       </div>
                       <div className="flex flex-col gap-1 sm:col-span-3">
                         <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
@@ -4863,17 +4861,13 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-mono text-muted/80 uppercase">Icon</label>
-                        <select
+                        <RawinSelect
+                          name={`dev-stack-icon-${idx}`}
                           value={tech.icon || "layers"}
-                          onChange={(e) => handleUpdateDevStackItem(idx, "icon", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        >
-                          {ICON_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => handleUpdateDevStackItem(idx, "icon", val)}
+                          options={ICON_SELECT_OPTIONS}
+                          size="xs"
+                        />
                       </div>
                       <div className="flex flex-col gap-1 sm:col-span-4">
                         <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
@@ -5243,17 +5237,13 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-mono text-muted/80 uppercase">Icon</label>
-                        <select
+                        <RawinSelect
+                          name={`exploring-icon-${idx}`}
                           value={topic.icon || "compass"}
-                          onChange={(e) => handleUpdateExploringItem(idx, "icon", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        >
-                          {ICON_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value} className="bg-ink-black text-foreground">
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => handleUpdateExploringItem(idx, "icon", val)}
+                          options={ICON_SELECT_OPTIONS}
+                          size="xs"
+                        />
                       </div>
                       <div className="flex flex-col gap-1 sm:col-span-3">
                         <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>

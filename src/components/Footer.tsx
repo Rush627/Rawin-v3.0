@@ -350,7 +350,7 @@ export default function Footer({
               <Link
                 href="/contact"
                 aria-label="Start a conversation: Navigate to Contact page"
-                className="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl bg-surface/60 border border-white/10 hover:border-pacific-cyan/40 hover:bg-surface/90 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.36)] block overflow-hidden cursor-pointer"
+                className="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-full bg-surface/60 border border-white/10 hover:border-pacific-cyan/40 hover:bg-surface/90 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.36)] block overflow-hidden cursor-pointer"
               >
                 <div className="flex flex-col gap-1.5 sm:gap-2">
                   <span className="text-xs font-mono uppercase tracking-widest text-muted/70 group-hover:text-pacific-cyan transition-colors">
@@ -440,7 +440,7 @@ export default function Footer({
                     <Link
                       href="/contact"
                       aria-label="Start a conversation: Navigate to Contact page"
-                      className="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl bg-surface/60 border border-white/10 hover:border-pacific-cyan/40 hover:bg-surface/90 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.36)] hover:shadow-[0_12px_40px_rgba(24,155,173,0.14)] block overflow-hidden cursor-pointer"
+                      className="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl md:rounded-full bg-surface/60 border border-white/10 hover:border-pacific-cyan/40 hover:bg-surface/90 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.36)] hover:shadow-[0_12px_40px_rgba(24,155,173,0.14)] block overflow-hidden cursor-pointer"
                     >
                       {/* Subtle accent hover aura */}
                       <div

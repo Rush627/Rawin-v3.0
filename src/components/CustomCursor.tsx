@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 export default function CustomCursor() {
   const cursorRef = useRef<HTMLDivElement | null>(null);
+  const pathname = usePathname();
+  const isAdmin = Boolean(pathname?.startsWith("/admin"));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    if (isAdmin) {
+      document.documentElement.classList.remove("custom-cursor-active");
+      return;
+    }
 
     // Desktop only: require fine pointer and hover capability; respect reduced motion preference
     const finePointerQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -144,7 +152,11 @@ export default function CustomCursor() {
         cancelAnimationFrame(rafId);
       }
     };
-  }, []);
+  }, [isAdmin]);
+
+  if (isAdmin) {
+    return null;
+  }
 
   return (
     <div

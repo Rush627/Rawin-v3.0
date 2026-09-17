@@ -10,7 +10,7 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 import SmoothScroll from "@/components/SmoothScroll";
-import CustomCursor from "@/components/CustomCursor";
+import PublicCustomCursor from "@/components/PublicCustomCursor";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TorchSpotlight from "@/components/TorchSpotlight";
@@ -105,7 +105,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} dark`}
       >
         <body className="min-h-screen bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans">
-          <CustomCursor />
+          <PublicCustomCursor />
           <AvailabilityWatcher
             initialStatus={isMaintenanceMessage ? "maintenance" : "offline"}
             isServerFallback={true}
@@ -142,7 +142,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} dark`}
     >
       <body className="min-h-screen bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative">
-        <CustomCursor />
+        <PublicCustomCursor />
         <OfflineDetector />
         <AvailabilityWatcher />
         <SmoothScroll>

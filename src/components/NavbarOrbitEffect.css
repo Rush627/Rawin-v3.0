@@ -22,6 +22,10 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  line-height: 1;
+  font-size: 12px;
+  vertical-align: middle;
+  overflow: visible;
 }
 
 /* 1. Robot Icon Bounce (periodic subtle 2-3s movement) */
@@ -77,6 +81,11 @@
   position: absolute;
   top: var(--orbit-bubble-top, -12px);
   left: var(--orbit-bubble-left, 2px);
+  display: block;
+  line-height: 1;
+  font-size: 0;
+  width: max-content;
+  height: max-content;
   pointer-events: none;
   user-select: none;
   opacity: 0;
@@ -111,11 +120,13 @@
 }
 
 .rawin-orbit-bubble-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 1.5px;
   padding: 1.5px 3.5px;
+  line-height: 1;
   background: rgba(20, 20, 34, 0.92);
   border: 1px solid rgba(24, 155, 173, 0.45);
   border-radius: 9999px;

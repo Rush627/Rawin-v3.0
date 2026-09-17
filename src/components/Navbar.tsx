@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { Menu, X, ArrowUpRight } from "lucide-react";
+import { X, ArrowUpRight } from "lucide-react";
 import NavbarOrbitIcon from "@/components/NavbarOrbitIcon";
 import "./NavbarOrbitEffect.css";
 
@@ -66,16 +66,8 @@ export default function Navbar({ logo }: NavbarProps = {}) {
               : "bg-surface/50 backdrop-blur-md border border-white/5"
           }`}
         >
-          {/* Logo Background Glow Track (sits below cursor at z-50) */}
-          <div className="relative flex items-center py-1 px-1.5 rounded-xl shrink-0">
-            {/* Subtle Ambient Radial Back-Glow */}
-            <div
-              className="absolute inset-0 rounded-xl bg-pacific-cyan/20 blur-lg opacity-40 transition-all duration-500 pointer-events-none -z-10"
-            />
-            {/* Soft inner core aura */}
-            <div
-              className="absolute inset-1 rounded-lg bg-gradient-to-r from-pacific-cyan/15 via-apricot-cream/10 to-pacific-cyan/15 blur-sm opacity-50 transition-opacity duration-300 pointer-events-none -z-10"
-            />
+          {/* Logo Sizing Anchor (sits below cursor at z-50) */}
+          <div className="relative flex items-center py-1 px-1.5 shrink-0">
             {/* Sizing anchor */}
             <div className="invisible h-7 sm:h-8 w-[115px]" />
           </div>
@@ -106,7 +98,7 @@ export default function Navbar({ logo }: NavbarProps = {}) {
         <nav
           className="w-full max-w-6xl flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl transition-all duration-300 pointer-events-auto relative"
         >
-        {/* Brand Logo with Unified Atmospheric Glow */}
+        {/* Brand Logo with Subtle Contour Glow */}
         <Link
           href="/"
           className="relative flex items-center group py-1 px-1.5 rounded-xl transition-all duration-300 shrink-0"
@@ -120,7 +112,7 @@ export default function Navbar({ logo }: NavbarProps = {}) {
             priority
             unoptimized
             style={{ mixBlendMode: "screen" }}
-            className="relative h-7 sm:h-8 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(24,155,173,0.35)] group-hover:drop-shadow-[0_0_14px_rgba(24,155,173,0.6)] group-hover:scale-105 transition-all duration-300 mix-blend-screen"
+            className="relative h-7 sm:h-8 w-auto object-contain filter drop-shadow-[0_0_3.5px_rgba(24,155,173,0.35)] group-hover:drop-shadow-[0_0_6px_rgba(24,155,173,0.5)] group-hover:scale-105 transition-all duration-300 mix-blend-screen"
           />
         </Link>
 
@@ -178,7 +170,23 @@ export default function Navbar({ logo }: NavbarProps = {}) {
             className="lg:hidden flex items-center justify-center min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg glass-card text-muted hover:text-foreground active:scale-95 transition-transform touch-manipulation cursor-pointer shrink-0"
             style={{ touchAction: "manipulation" }}
           >
-            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <div className="w-5 h-5 relative flex items-center justify-center pointer-events-none">
+              <span
+                className={`absolute h-0.5 w-4 bg-current rounded-full transition-all duration-300 ease-out ${
+                  isOpen ? "rotate-45 translate-y-0" : "-translate-y-1.5"
+                }`}
+              />
+              <span
+                className={`absolute h-0.5 w-4 bg-current rounded-full transition-all duration-200 ease-out ${
+                  isOpen ? "opacity-0 scale-x-0" : "opacity-100 scale-x-100"
+                }`}
+              />
+              <span
+                className={`absolute h-0.5 w-4 bg-current rounded-full transition-all duration-300 ease-out ${
+                  isOpen ? "-rotate-45 translate-y-0" : "translate-y-1.5"
+                }`}
+              />
+            </div>
           </button>
         </div>
       </nav>
@@ -206,9 +214,20 @@ export default function Navbar({ logo }: NavbarProps = {}) {
               className="fixed inset-x-4 top-[max(4.75rem,calc(env(safe-area-inset-top)+3.75rem))] z-40 lg:hidden glass-panel rounded-2xl p-6 shadow-2xl border border-white/10 pointer-events-auto"
             >
               <div className="flex flex-col gap-2">
-                <span className="text-xs uppercase tracking-wider text-muted/60 font-mono px-3 mb-1">
-                  Navigation
-                </span>
+                <div className="flex items-center justify-between pb-3 mb-1 border-b border-white/5">
+                  <span className="text-xs uppercase tracking-wider text-muted/60 font-mono">
+                    Navigation
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    aria-label="Close menu"
+                    className="flex items-center justify-center min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg glass-card text-muted hover:text-foreground active:scale-95 transition-transform touch-manipulation cursor-pointer shrink-0"
+                    style={{ touchAction: "manipulation" }}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
                 {NAV_ITEMS.map((item) => {
                   const isActive = pathname === item.href;
                   return (
@@ -235,7 +254,7 @@ export default function Navbar({ logo }: NavbarProps = {}) {
                     className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 text-pacific-cyan text-base font-medium active:bg-pacific-cyan/20"
                   >
                     <div className="flex items-center gap-2">
-                      <NavbarOrbitIcon className="w-4 h-4 text-pacific-cyan shrink-0" />
+                      <NavbarOrbitIcon className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-pacific-cyan shrink-0" />
                       <span>Orbit</span>
                     </div>
                     <ArrowUpRight className="w-4 h-4" />
