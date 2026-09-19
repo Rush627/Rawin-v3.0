@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Sparkles,
   ExternalLink,
-  Code2,
   Terminal,
   Cpu,
   Layers,
@@ -138,10 +137,6 @@ export default async function HomePage() {
       <section className="flex flex-col gap-10">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/[0.06] pb-6">
           <div>
-            <div className="flex items-center gap-2 text-pacific-cyan font-mono text-xs uppercase tracking-wider mb-2">
-              <Code2 className="w-4 h-4" />
-              <span>{homeContent.featuredDescription}</span>
-            </div>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
               {homeContent.featuredHeading}
             </h2>
@@ -157,10 +152,10 @@ export default async function HomePage() {
 
         {/* Project Case Studies: Desktop Deck (>=1024px) vs Mobile/Tablet Flow (<1024px) */}
         <div className="hidden lg:block w-full">
-          <SelectedProjectsDeck projects={featuredProjects} />
+          <SelectedProjectsDeck projects={featuredProjects ?? []} />
         </div>
         <div className="block lg:hidden w-full">
-          <MobileSelectedProjects projects={featuredProjects} />
+          <MobileSelectedProjects projects={featuredProjects ?? []} />
         </div>
       </section>
 

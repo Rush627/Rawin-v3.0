@@ -15,7 +15,7 @@ const DELETE_DELAY = 200;     // Pause before typing next role
 
 export default function HeroRoleTyping() {
   const [roleIndex, setRoleIndex] = useState(0);
-  const [currentText, setCurrentText] = useState("");
+  const [currentText, setCurrentText] = useState(ROLES[0]);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -50,12 +50,15 @@ export default function HeroRoleTyping() {
 
   return (
     <div
-      className="inline-flex items-center justify-center min-h-[2.5rem] sm:min-h-[3rem]"
+      className="inline-flex items-center justify-center min-h-[2.5rem] sm:min-h-[3rem] select-none"
       aria-live="polite"
       aria-label={`Role: ${ROLES[roleIndex]}`}
     >
-      <span className="text-lg sm:text-2xl md:text-3xl font-medium text-muted/90 font-space tracking-tight">
-        {currentText || "\u00A0"}
+      <span
+        suppressHydrationWarning
+        className="text-lg sm:text-2xl md:text-3xl font-medium text-muted/90 font-space tracking-tight leading-tight"
+      >
+        {currentText || ROLES[0]}
       </span>
       <span
         className="inline-block w-[2px] sm:w-[2.5px] h-5 sm:h-7 ml-1 bg-pacific-cyan animate-pulse rounded-full"

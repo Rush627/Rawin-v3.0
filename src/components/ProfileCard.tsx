@@ -116,8 +116,10 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
         "--rotate-y": `${round(centerY / 4)}deg`,
       };
 
-      for (const [k, v] of Object.entries(properties)) {
-        wrap.style.setProperty(k, v);
+      if (properties && typeof properties === "object") {
+        for (const [k, v] of Object.entries(properties)) {
+          wrap.style.setProperty(k, v);
+        }
       }
     };
 

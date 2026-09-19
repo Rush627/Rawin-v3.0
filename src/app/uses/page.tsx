@@ -347,9 +347,11 @@ function groupDevStack(items: DevStackItem[]) {
     }
   }
 
-  for (const [label, itemsList] of Object.entries(groupsMap)) {
-    if (itemsList.length > 0) {
-      ordered.push({ label, items: itemsList });
+  if (groupsMap && typeof groupsMap === "object") {
+    for (const [label, itemsList] of Object.entries(groupsMap)) {
+      if (itemsList && itemsList.length > 0) {
+        ordered.push({ label, items: itemsList });
+      }
     }
   }
 
@@ -432,7 +434,7 @@ export default async function UsesPage() {
   };
 
   return (
-    <div className="relative w-full min-h-screen">
+    <div className="relative w-full min-h-screen min-h-dvh">
       {/* Top ambient backdrop for smooth navbar pass-through */}
       <div
         aria-hidden="true"

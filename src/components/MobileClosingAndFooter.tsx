@@ -53,7 +53,8 @@ export default function MobileClosingAndFooter({
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      const totalScroll = rect.height - window.innerHeight;
+      const viewportH = window.innerHeight || document.documentElement.clientHeight || 800;
+      const totalScroll = rect.height - viewportH;
       if (totalScroll <= 0) return;
 
       const currentScroll = -rect.top;
@@ -263,8 +264,8 @@ export default function MobileClosingAndFooter({
         </div>
       ) : (
         // Cinematic Scroll-Driven Viewport Scene
-        <div ref={scrollContainerRef} className="relative h-[220svh] w-full">
-          <div className="sticky top-0 h-svh w-full flex flex-col justify-center px-4 sm:px-6 overflow-hidden">
+        <div ref={scrollContainerRef} className="relative h-story-mobile w-full">
+          <div className="sticky top-0 h-stage-full w-full flex flex-col justify-center px-4 sm:px-6 overflow-hidden">
             {/* Ambient Background Shift */}
             <div
               aria-hidden="true"

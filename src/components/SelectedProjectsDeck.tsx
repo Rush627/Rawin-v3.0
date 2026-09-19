@@ -1,133 +1,137 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import Image from "next/image";
 import { ExternalLink } from "lucide-react";
 import { GithubIcon } from "@/components/SocialIcons";
+import { StatusBadge } from "@/components/EngineeringDossierCard";
 import type { Project } from "@/lib/projects";
 
 interface SelectedProjectsDeckProps {
   projects: Project[];
 }
 
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCard({
+  project,
+  priority = false,
+}: {
+  project: Project;
+  priority?: boolean;
+}) {
   return (
     <article
       data-particle-protected
-      className="rawin-deck-card rounded-2xl p-6 sm:p-8 md:p-10 border border-white/[0.08] flex flex-col gap-6 w-full shadow-[0_24px_60px_-12px_rgba(0,0,0,0.85),0_0_1px_1px_rgba(255,255,255,0.05)]"
-      style={{
-        background: "linear-gradient(180deg, rgba(22, 22, 34, 0.98) 0%, rgba(16, 16, 25, 0.97) 100%)",
-        transition: "none",
-      }}
+      className="relative w-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-[#161626]/98 via-[#131322]/95 to-[#101019]/98 p-6 sm:p-7 md:p-8 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.85),0_0_1px_1px_rgba(255,255,255,0.05)] flex flex-col gap-4 sm:gap-5 overflow-hidden transition-colors hover:border-pacific-cyan/25"
     >
-      {/* Header row */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1 rounded-md text-xs font-mono font-medium bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/20">
-            {project.category}
-          </span>
-          <span className="text-xs font-mono text-muted/60">{project.year}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          {project.githubUrl && (
-            <a
-              href={project.githubUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-white/5 transition-colors"
-              aria-label="View Source Code"
-            >
-              <GithubIcon className="w-4 h-4" />
-            </a>
-          )}
-          {project.liveUrl && (
-            <a
-              href={project.liveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-pacific-cyan/10 text-pacific-cyan hover:bg-pacific-cyan/20 transition-colors"
-            >
-              <span>Live Preview</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          )}
-        </div>
-      </div>
+      {/* Subtle ambient radial highlight matching Projects page */}
+      <div
+        className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,rgba(24,155,173,0.06)_0%,transparent_60%)]"
+        aria-hidden="true"
+      />
 
-      {/* Title and description */}
-      <div>
-        <h3 className="text-2xl sm:text-3xl font-bold text-foreground font-space">
-          {project.title}
-        </h3>
-        {project.tagline && (
-          <p className="text-base text-apricot-cream/90 font-medium mt-1">
-            {project.tagline}
-          </p>
-        )}
-        <p className="text-sm sm:text-base text-muted leading-relaxed mt-3 max-w-3xl">
-          {project.description}
-        </p>
-      </div>
+      {/* Subtle technical corner markers matching Projects page */}
+      <div
+        className="absolute top-2.5 left-2.5 w-2 h-2 border-t border-l border-pacific-cyan/35 pointer-events-none"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute top-2.5 right-2.5 w-2 h-2 border-t border-r border-pacific-cyan/35 pointer-events-none"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute bottom-2.5 left-2.5 w-2 h-2 border-b border-l border-pacific-cyan/35 pointer-events-none"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute bottom-2.5 right-2.5 w-2 h-2 border-b border-r border-pacific-cyan/35 pointer-events-none"
+        aria-hidden="true"
+      />
 
-      {/* Preview Image: reliable direct image render without proxy failure */}
-      {project.previewImage && project.previewImage !== "/images/profile.png" && (
-        <div className="relative w-full aspect-[21/9] sm:aspect-[2.4/1] max-h-64 sm:max-h-72 rounded-xl overflow-hidden border border-white/[0.08] bg-ink-black/60">
-          <img
-            src={project.previewImage}
-            alt={project.title}
-            loading="eager"
-            decoding="async"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.7)] via-transparent to-transparent pointer-events-none" />
-        </div>
-      )}
-
-      {/* Problem vs Solution breakdown */}
-      {(project.problem || project.solution) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          {project.problem && (
-            <div className="p-4 rounded-xl bg-ink-black/60 border border-white/5">
-              <span className="text-xs font-mono uppercase text-red-400/90 tracking-wider">The Challenge</span>
-              <p className="text-xs sm:text-sm text-muted/90 mt-1.5 leading-relaxed">{project.problem}</p>
-            </div>
-          )}
-          {project.solution && (
-            <div className="p-4 rounded-xl bg-ink-black/60 border border-white/5">
-              <span className="text-xs font-mono uppercase text-emerald-400/90 tracking-wider">The Architecture</span>
-              <p className="text-xs sm:text-sm text-muted/90 mt-1.5 leading-relaxed">{project.solution}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Outcome and Engineering Focus Row */}
-      <div className="pt-4 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-2">
-          {project.technologies.map((tech) => (
-            <span
-              key={tech}
-              className="px-2.5 py-1 rounded-md text-xs font-mono text-muted/80 bg-white/[0.04] border border-white/[0.06]"
-            >
-              {tech}
+      <div className="relative z-10 flex flex-col gap-4">
+        {/* Zone 1: Metadata Row (Category / Status / Year) */}
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/[0.06] flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="px-2.5 py-0.5 rounded-md text-xs font-mono font-medium bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/25 uppercase tracking-wider shrink-0">
+              {project.category}
             </span>
-          ))}
-        </div>
-
-        {project.engineeringFocus && project.engineeringFocus.length > 0 && (
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <span className="text-[10px] font-mono uppercase text-muted/50 tracking-wider">
-              Engineering Focus:
-            </span>
-            {project.engineeringFocus.map((focus) => (
-              <span
-                key={focus}
-                className="px-2.5 py-0.5 rounded-full text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/20"
-              >
-                {focus}
-              </span>
-            ))}
+            <StatusBadge status={project.status} />
           </div>
-        )}
+          {project.year && (
+            <span className="text-xs font-mono text-muted/60 tracking-wider ml-auto shrink-0">
+              {project.year}
+            </span>
+          )}
+        </div>
+
+        {/* Technical dossier body with subtle connecting guide line */}
+        <div className="border-l border-pacific-cyan/20 pl-4 sm:pl-5 ml-0.5 flex flex-col gap-3.5">
+          {/* Zone 2: Title & Tagline */}
+          <div className="flex flex-col gap-1">
+            <h3 className="text-2xl sm:text-3xl font-bold text-foreground font-space tracking-tight leading-snug">
+              {project.title}
+            </h3>
+            {project.tagline && (
+              <p className="text-sm sm:text-base text-apricot-cream/90 font-medium leading-snug">
+                {project.tagline}
+              </p>
+            )}
+          </div>
+
+          {/* Zone 3: Project Preview Window Image */}
+          {project.previewImage && project.previewImage !== "/images/profile.png" && (
+            <div className="relative w-full aspect-[16/9] max-h-[280px] md:max-h-[320px] rounded-xl overflow-hidden border border-white/[0.08] bg-ink-black/60 my-0.5 group">
+              <Image
+                src={project.previewImage}
+                alt={project.title}
+                fill
+                unoptimized
+                priority={priority}
+                loading={priority ? undefined : "lazy"}
+                className="object-cover transition-transform duration-500 group-hover:scale-[1.01]"
+                sizes="(max-width: 1280px) 90vw, 1000px"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.65)] via-transparent to-transparent pointer-events-none" />
+            </div>
+          )}
+
+          {/* Zone 4: Description */}
+          <p className="text-sm sm:text-base text-muted/90 leading-relaxed font-sans max-w-3xl">
+            {project.description}
+          </p>
+
+          {/* Zone 5: Action Buttons */}
+          {(project.githubUrl || project.liveUrl) && (
+            <div className="flex items-center justify-between gap-4 pt-1">
+              {project.githubUrl ? (
+                <a
+                  href={project.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl glass-card text-xs font-mono text-muted hover:text-foreground hover:border-pacific-cyan/30 transition-colors"
+                  aria-label={`View ${project.title} source code on GitHub`}
+                >
+                  <GithubIcon className="w-4 h-4" />
+                  <span>GitHub ↗</span>
+                </a>
+              ) : (
+                <div />
+              )}
+
+              {project.liveUrl && (
+                <a
+                  href={project.liveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-medium bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 transition-all shadow-[0_0_15px_rgba(24,155,173,0.35)] ml-auto"
+                  aria-label={`Open live preview for ${project.title}`}
+                >
+                  <span>Live Preview ↗</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -137,10 +141,14 @@ export default function SelectedProjectsDeck({ projects }: SelectedProjectsDeckP
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  useEffect(() => {
-    if (projects.length <= 1) return;
+  const safeProjects = Array.isArray(projects) ? projects : [];
 
+  useEffect(() => {
+    if (safeProjects.length <= 1) return;
+
+    // Strict desktop check: only activate on desktop viewports (>= 1024px)
     const checkDesktop = () => {
+      if (typeof window === "undefined") return false;
       const isWide = window.innerWidth >= 1024;
       const canHover = window.matchMedia("(hover: hover)").matches;
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -153,9 +161,9 @@ export default function SelectedProjectsDeck({ projects }: SelectedProjectsDeckP
     if (!container) return;
 
     const STICKY_TOP = 96; // 6rem (top-24)
-    const BUFFER = 160;
-    const CARD_STEP = 750;
-    const TOTAL_ANIM_RANGE = (projects.length - 1) * CARD_STEP;
+    const BUFFER = 120;
+    const CARD_STEP = 650;
+    const TOTAL_ANIM_RANGE = (safeProjects.length - 1) * CARD_STEP;
 
     let rafId: number | null = null;
 
@@ -175,11 +183,11 @@ export default function SelectedProjectsDeck({ projects }: SelectedProjectsDeckP
         progress = (scrolledIn - BUFFER) / TOTAL_ANIM_RANGE;
       }
 
-      const step = progress * (projects.length - 1);
-      const activeIdx = Math.floor(step);
+      const step = progress * (safeProjects.length - 1);
+      const activeIdx = Math.min(Math.floor(step), safeProjects.length - 2);
       const fraction = step - activeIdx;
 
-      for (let i = 0; i < projects.length; i++) {
+      for (let i = 0; i < safeProjects.length; i++) {
         const el = cardRefs.current[i];
         if (!el) continue;
 
@@ -228,7 +236,7 @@ export default function SelectedProjectsDeck({ projects }: SelectedProjectsDeckP
 
     const onResize = () => {
       if (!checkDesktop()) {
-        for (let i = 0; i < projects.length; i++) {
+        for (let i = 0; i < safeProjects.length; i++) {
           const el = cardRefs.current[i];
           if (el) {
             el.style.transform = "";
@@ -252,25 +260,28 @@ export default function SelectedProjectsDeck({ projects }: SelectedProjectsDeckP
         cancelAnimationFrame(rafId);
       }
     };
-  }, [projects.length]);
+  }, [safeProjects.length]);
 
   // If single project or empty, render standard flow
-  if (projects.length <= 1) {
+  if (safeProjects.length <= 1) {
     return (
       <div className="flex flex-col gap-12">
-        {projects.map((project) => (
-          <ProjectCard key={project._id || project.slug} project={project} />
+        {safeProjects.map((project, idx) => (
+          <ProjectCard key={project._id || project.slug} project={project} priority={idx === 0} />
         ))}
       </div>
     );
   }
 
-  // Calculate total height: buffer at start (160px) + buffer at end (160px) + 750px per card transition + 100vh
-  const totalScrollHeight = 320 + (projects.length - 1) * 750 + 900;
+  // Calculate total height: buffer at start (120px) + buffer at end (120px) + 650px per card transition + 800px
+  const totalScrollHeight = 240 + (safeProjects.length - 1) * 650 + 800;
 
   return (
     <>
       <style>{`
+        .rawin-deck-card-wrapper {
+          will-change: transform;
+        }
         @media (max-width: 1023px) {
           .rawin-deck-container {
             height: auto !important;
@@ -326,7 +337,7 @@ export default function SelectedProjectsDeck({ projects }: SelectedProjectsDeckP
               gridTemplateColumns: "1fr",
             }}
           >
-            {projects.map((project, idx) => (
+            {safeProjects.map((project, idx) => (
               <div
                 key={project._id || project.slug}
                 ref={(el) => {
@@ -346,7 +357,7 @@ export default function SelectedProjectsDeck({ projects }: SelectedProjectsDeckP
                 }}
                 className="rawin-deck-card-wrapper w-full"
               >
-                <ProjectCard project={project} />
+                <ProjectCard project={project} priority={idx === 0} />
               </div>
             ))}
           </div>

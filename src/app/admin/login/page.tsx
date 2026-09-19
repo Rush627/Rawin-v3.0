@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
   );
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center px-4 py-12 bg-ink-black relative overflow-hidden">
+    <div className="min-h-screen min-h-dvh w-full flex items-center justify-center px-4 py-12 bg-ink-black relative overflow-hidden">
       {/* Ambient background glow */}
       <div
         aria-hidden="true"

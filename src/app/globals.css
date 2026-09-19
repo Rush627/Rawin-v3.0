@@ -26,13 +26,14 @@ html {
   color: #F5F7FA;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   overflow-x: clip;
+  min-height: 100dvh;
 }
 
 body {
   background-color: #101019;
   color: #F5F7FA;
   overflow-x: clip;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 ::selection {
@@ -94,6 +95,59 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  [data-mobile-projects-stack],
+  [data-mobile-tech-stack] {
+    min-height: auto !important;
+  }
+
+  [data-mobile-projects-stack] > div,
+  [data-mobile-tech-stack] > div {
+    position: static !important;
+    min-height: auto !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  [data-mobile-projects-stack] [data-card-item],
+  [data-mobile-tech-stack] [data-card-item] {
+    position: relative !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Universal dvh-first viewport height classes with standard vh fallback */
+.h-story-mobile {
+  height: 220vh;
+  height: 220dvh;
+}
+.h-story-desktop {
+  height: 220vh;
+  height: 220dvh;
+}
+.h-stage-full {
+  height: 100vh;
+  height: 100dvh;
+}
+.h-laptop-showcase {
+  height: 140vh;
+  height: 140dvh;
+}
+@media (min-width: 640px) {
+  .h-laptop-showcase {
+    height: 160vh;
+    height: 160dvh;
+  }
+}
+@media (min-width: 768px) {
+  .h-laptop-showcase {
+    height: 185vh;
+    height: 185dvh;
   }
 }
 

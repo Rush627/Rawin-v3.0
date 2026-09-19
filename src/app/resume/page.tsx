@@ -76,7 +76,7 @@ export default async function ResumePage() {
       : "bg-emerald-400";
 
   return (
-    <div className="relative w-full min-h-screen">
+    <div className="relative w-full min-h-screen min-h-dvh">
       {/* Top ambient backdrop prevents content from colliding behind floating navbar */}
       <div
         aria-hidden="true"

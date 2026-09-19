@@ -83,7 +83,7 @@ export default function RawinErrorView({
   return (
     <main
       role="main"
-      className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-ink-black text-foreground overflow-hidden selection:bg-pacific-cyan/30"
+      className="relative w-full min-h-screen min-h-dvh flex flex-col items-center justify-center px-4 py-12 bg-ink-black text-foreground overflow-hidden selection:bg-pacific-cyan/30"
     >
       {/* Subtle Atmospheric Radial Accent */}
       <div

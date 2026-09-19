@@ -31,7 +31,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen w-full bg-ink-black text-foreground flex flex-col">
+    <div className="min-h-screen min-h-dvh w-full bg-ink-black text-foreground flex flex-col">
       {/* Top Admin Navigation Header */}
       <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-ink-black/80 backdrop-blur-xl px-4 sm:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">

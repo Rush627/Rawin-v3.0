@@ -18,21 +18,25 @@ import ParticleField from "@/components/ParticleField";
 import RawinErrorView from "@/components/RawinErrorView";
 import OfflineDetector from "@/components/OfflineDetector";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
+import VConsole from "@/components/VConsole";
 import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -102,9 +106,21 @@ export default async function RootLayout({
     return (
       <html
         lang="en"
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} dark`}
       >
-        <body className="min-h-screen bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans">
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `if (typeof window !== "undefined") { if ("scrollRestoration" in window.history) { window.history.scrollRestoration = "manual"; } window.scrollTo(0, 0); }`,
+            }}
+          />
+        </head>
+        <body
+          suppressHydrationWarning
+          className="min-h-screen min-h-dvh bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans"
+        >
+          <VConsole />
           <PublicCustomCursor />
           <AvailabilityWatcher
             initialStatus={isMaintenanceMessage ? "maintenance" : "offline"}
@@ -139,9 +155,21 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} dark`}
     >
-      <body className="min-h-screen bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if (typeof window !== "undefined") { if ("scrollRestoration" in window.history) { window.history.scrollRestoration = "manual"; } window.scrollTo(0, 0); }`,
+          }}
+        />
+      </head>
+      <body
+        suppressHydrationWarning
+        className="min-h-screen min-h-dvh bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative"
+      >
+        <VConsole />
         <PublicCustomCursor />
         <OfflineDetector />
         <AvailabilityWatcher />

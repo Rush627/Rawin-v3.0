@@ -367,8 +367,8 @@ export default function Footer({
             </div>
           ) : (
             // Standard Scroll-Driven Closing Scene (Pinned / Sticky viewport)
-            <div ref={scrollContainerRef} className="relative h-[220vh] w-full">
-              <div className="sticky top-0 h-screen w-full flex flex-col justify-center px-4 sm:px-6 md:px-8 overflow-hidden">
+            <div ref={scrollContainerRef} className="relative h-story-desktop w-full">
+              <div className="sticky top-0 h-stage-full w-full flex flex-col justify-center px-4 sm:px-6 md:px-8 overflow-hidden">
                 {/* Ambient Background Shift */}
                 <div
                   ref={glowRef}

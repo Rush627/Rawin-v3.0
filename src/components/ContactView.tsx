@@ -193,7 +193,7 @@ export default function ContactView({ content, global }: ContactViewProps) {
   };
 
   return (
-    <div className="relative w-full min-h-screen">
+    <div className="relative w-full min-h-screen min-h-dvh">
       {/* Top ambient backdrop for smooth floating navbar pass-through */}
       <div
         aria-hidden="true"

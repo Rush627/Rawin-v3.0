@@ -5,10 +5,21 @@ import Lenis from "lenis";
 
 export default function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
-    // Disable Lenis on touch-only mobile devices where native momentum scrolling is superior
-    // and where Lenis touch listeners intercept physical touch clicks
-    const isTouchOnly = window.matchMedia("(pointer: coarse) and (hover: none)").matches;
-    if (isTouchOnly) {
+    if (typeof window !== "undefined") {
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = "manual";
+      }
+      window.scrollTo(0, 0);
+    }
+
+    // Disable Lenis on iOS WebKit, Android, and touch-first devices where native momentum
+    // scrolling and native scroll restoration are superior
+    const isTouch =
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(hover: none)").matches ||
+      /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) ||
+      (typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 0);
+    if (isTouch) {
       return;
     }
 

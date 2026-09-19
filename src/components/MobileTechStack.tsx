@@ -62,51 +62,25 @@ function TechCategoryCardContent({ category }: { category: TechCategory }) {
 
 export default function MobileTechStack({ categories }: MobileTechStackProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [cardMaxHeight, setCardMaxHeight] = useState<number | null>(null);
-  const [isReducedMotion, setIsReducedMotion] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setIsReducedMotion(reduced);
-  }, []);
-
-  // Measure card heights on mount and resize to ensure stage fits all categories cleanly
-  useEffect(() => {
-    if (isReducedMotion || categories.length <= 1) return;
-
-    const measure = () => {
-      let maxH = 0;
-      for (let i = 0; i < cardRefs.current.length; i++) {
-        const el = cardRefs.current[i];
-        if (el) {
-          maxH = Math.max(maxH, el.offsetHeight);
-        }
-      }
-      if (maxH > 0) {
-        setCardMaxHeight(maxH);
-      }
-    };
-
-    measure();
-    const timer = setTimeout(measure, 150);
-
-    window.addEventListener("resize", measure, { passive: true });
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", measure);
-    };
-  }, [categories, isReducedMotion]);
 
   // High-performance scroll tracking loop: directly updates DOM styles via rAF with zero React re-renders
   useEffect(() => {
-    if (isReducedMotion || categories.length <= 1) return;
+    // Strictly isolate to mobile/tablet (< 1024px). Never execute on desktop.
+    if (typeof window === "undefined" || window.innerWidth >= 1024) return;
+    if (categories.length <= 1) return;
+
+    const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (isReducedMotion) return;
 
     const container = containerRef.current;
     if (!container) return;
 
+    let cachedContainerTop = 0;
+    let cachedStickyTop = window.innerWidth < 640 ? 72 : 80;
     let rafId: number | null = null;
+
     const SCROLL_STEP = 380;
     const totalTravel = (categories.length - 1) * SCROLL_STEP;
 
@@ -115,8 +89,9 @@ export default function MobileTechStack({ categories }: MobileTechStackProps) {
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      const STICKY_TOP = window.innerWidth < 640 ? 72 : 80;
-      const scrolledIn = STICKY_TOP - rect.top;
+      const stickyTop = window.innerWidth < 640 ? 72 : 80;
+      const tabOffset = window.innerWidth < 640 ? 18 : 22;
+      const scrolledIn = stickyTop - rect.top;
 
       let progress = 0;
       if (scrolledIn <= 0) {
@@ -131,8 +106,6 @@ export default function MobileTechStack({ categories }: MobileTechStackProps) {
       const activeIdx = Math.min(Math.floor(step), categories.length - 2);
       const fraction = step - activeIdx;
 
-      const TAB_OFFSET = window.innerWidth < 640 ? 18 : 22;
-
       for (let i = 0; i < categories.length; i++) {
         const el = cardRefs.current[i];
         if (!el) continue;
@@ -140,7 +113,7 @@ export default function MobileTechStack({ categories }: MobileTechStackProps) {
         if (i < activeIdx) {
           // Resting in stacked deck behind: shows visible top tab
           const depth = activeIdx - i;
-          const translateY = -depth * TAB_OFFSET;
+          const translateY = -depth * tabOffset;
           const scale = Math.max(0.90, 1 - depth * 0.025);
           el.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
           el.style.opacity = `${Math.max(0.55, 1 - depth * 0.15)}`;
@@ -148,7 +121,7 @@ export default function MobileTechStack({ categories }: MobileTechStackProps) {
           el.style.pointerEvents = "none";
         } else if (i === activeIdx) {
           // Active card: shifts slightly to tab position as incoming card covers it
-          const translateY = -fraction * TAB_OFFSET;
+          const translateY = -fraction * tabOffset;
           const scale = 1 - fraction * 0.025;
           el.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
           el.style.opacity = "1";
@@ -189,18 +162,17 @@ export default function MobileTechStack({ categories }: MobileTechStackProps) {
         cancelAnimationFrame(rafId);
       }
     };
-  }, [categories, isReducedMotion]);
+  }, [categories]);
 
   if (!categories || categories.length === 0) {
     return null;
   }
 
-  // Reduced motion fallback: standard vertical flow without stacking transforms
-  if (isReducedMotion || categories.length === 1) {
+  if (categories.length === 1) {
     return (
       <div className="flex flex-col gap-5 w-full">
         {categories.map((category) => (
-          <div key={category.title} className="w-full">
+          <div key={category.title} className="w-full" data-card-item>
             <TechCategoryCardContent category={category} />
           </div>
         ))}
@@ -210,8 +182,7 @@ export default function MobileTechStack({ categories }: MobileTechStackProps) {
 
   const SCROLL_STEP = 380;
   const totalTravel = (categories.length - 1) * SCROLL_STEP;
-  const estimatedCardHeight = cardMaxHeight || 440;
-  const totalContainerHeight = estimatedCardHeight + totalTravel + 60;
+  const totalContainerHeight = 500 + totalTravel + 60;
 
   return (
     <div
@@ -222,8 +193,9 @@ export default function MobileTechStack({ categories }: MobileTechStackProps) {
     >
       {/* Sticky Stack Stage: stays in visual view while scrolling through section */}
       <div
+        ref={stageRef}
         className="sticky top-[72px] sm:top-[80px] w-full pt-6 sm:pt-8 pb-4"
-        style={{ minHeight: cardMaxHeight ? `${cardMaxHeight + 50}px` : undefined }}
+        style={{ minHeight: "500px" }}
       >
         <div className="relative w-full">
           {categories.map((category, index) => {
@@ -235,6 +207,7 @@ export default function MobileTechStack({ categories }: MobileTechStackProps) {
                 ref={(el) => {
                   cardRefs.current[index] = el;
                 }}
+                data-card-item
                 className={`w-full will-change-transform ${
                   isFirst
                     ? "relative"
@@ -243,10 +216,10 @@ export default function MobileTechStack({ categories }: MobileTechStackProps) {
                 style={{
                   zIndex: 10 + index,
                   transform: isFirst
-                    ? "translate3d(0, 0, 0) scale(1)"
-                    : "translate3d(0, 110%, 0) scale(1)",
-                  opacity: isFirst ? 1 : 0,
-                  visibility: isFirst ? "visible" : "hidden",
+                    ? "none"
+                    : "translate3d(0, 105%, 0)",
+                  opacity: 1,
+                  visibility: "visible",
                   pointerEvents: isFirst ? "auto" : "none",
                 }}
               >

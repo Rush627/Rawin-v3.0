@@ -50,7 +50,7 @@ export default function LaptopShowcase() {
   return (
     <section
       ref={containerRef}
-      className="relative w-full h-[140vh] sm:h-[160vh] md:h-[185vh] flex flex-col items-center"
+      className="relative w-full h-laptop-showcase flex flex-col items-center"
     >
       <div
         className="sticky top-20 sm:top-24 md:top-28 w-full max-w-5xl flex flex-col items-center px-4 sm:px-6"

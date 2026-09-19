@@ -105,7 +105,7 @@ export default function OrbitGalaxyBackground() {
 
   return (
     <div
-      className="fixed inset-0 w-full h-[100lvh] min-h-screen pointer-events-none z-0 overflow-hidden select-none bg-[#101019]"
+      className="fixed inset-0 w-full h-[100dvh] min-h-screen min-h-dvh pointer-events-none z-0 overflow-hidden select-none bg-[#101019]"
       aria-hidden="true"
     >
       {/* Base RAWIN Ink Black (#101019) backdrop */}

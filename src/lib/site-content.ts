@@ -1453,6 +1453,10 @@ export async function updateSiteSection<K extends ContentSectionKey>(
       updatedAt: now,
     };
 
+    if (!data || typeof data !== "object") {
+      return false;
+    }
+
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === "string") {
         updateFields[`${section}.${key}`] = value.trim();
