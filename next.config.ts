@@ -3,11 +3,12 @@ import dns from "dns";
 
 try {
   dns.setServers(["8.8.8.8", "1.1.1.1"]);
-} catch {}
+} catch { }
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["mongodb"],
   experimental: {
+    cpus: 1,
     serverActions: {
       bodySizeLimit: "12mb",
     },
@@ -35,11 +36,11 @@ const nextConfig: NextConfig = {
           },
           ...(process.env.NODE_ENV === "production"
             ? [
-                {
-                  key: "Strict-Transport-Security",
-                  value: "max-age=63072000; includeSubDomains; preload",
-                },
-              ]
+              {
+                key: "Strict-Transport-Security",
+                value: "max-age=63072000; includeSubDomains; preload",
+              },
+            ]
             : []),
         ],
       },

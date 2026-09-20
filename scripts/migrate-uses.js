@@ -215,7 +215,7 @@ async function migrate() {
       }
     }
 
-    if (Object.keys(updates).length > 0) {
+    if (updates !== null && updates !== undefined && typeof updates === "object" && Object.keys(updates).length > 0) {
       await db.collection("site_content").updateOne({ key: "main" }, { $set: updates });
       console.log("Migration applied successfully!");
     } else {

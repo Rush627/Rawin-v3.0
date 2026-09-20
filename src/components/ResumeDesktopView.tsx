@@ -72,7 +72,7 @@ export default function ResumeDesktopView({
       <header className="flex flex-col gap-6 pb-8 border-b border-white/[0.08]">
         <div className="flex items-center justify-between gap-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-xs font-mono font-medium text-pacific-cyan bg-pacific-cyan/[0.08] border border-pacific-cyan/20">
-            <span>RESUME / PROFILE · 2026</span>
+            <span>{resume.eyebrow || "RESUME / PROFILE · 2026"}</span>
           </div>
 
           {/* Live Status */}

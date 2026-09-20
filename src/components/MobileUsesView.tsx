@@ -173,26 +173,37 @@ export default function MobileUsesView({
           </div>
         </div>
 
-        <div className="relative flex flex-col gap-3 pl-5 border-l-2 border-pacific-cyan/25 ml-2 py-1">
+        <div className="relative flex flex-col gap-3 py-1">
+          {/* Vertical timeline rail */}
+          <div
+            className="absolute top-2 bottom-2 left-3.5 w-[2px] -translate-x-1/2 bg-pacific-cyan/25 pointer-events-none"
+            aria-hidden="true"
+          />
+
           {buildSteps.map((step, idx) => (
             <div
               key={step.id || step.number || step.step || idx}
-              className="relative rounded-xl p-3.5 sm:p-4 bg-ink-black/50 border border-white/[0.07] flex flex-col gap-1.5"
+              className="relative pl-8 sm:pl-9"
             >
-              {/* Timeline dot */}
-              <div className="absolute -left-[27px] top-4 w-2 h-2 rounded-full bg-ink-black border-2 border-pacific-cyan" />
+              {/* Timeline dot geometrically centered on the rail axis */}
+              <div
+                className="absolute left-3.5 top-6 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-ink-black border-2 border-pacific-cyan z-10"
+                aria-hidden="true"
+              />
 
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold text-pacific-cyan px-1.5 py-0.5 rounded bg-pacific-cyan/10 border border-pacific-cyan/20">
-                  {step.number || step.step || `0${idx + 1}`}
-                </span>
-                <h3 className="text-[14px] sm:text-[15px] font-bold font-space text-foreground">
-                  {step.title}
-                </h3>
+              <div className="rounded-xl p-3.5 sm:p-4 bg-ink-black/50 border border-white/[0.07] flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold text-pacific-cyan px-1.5 py-0.5 rounded bg-pacific-cyan/10 border border-pacific-cyan/20">
+                    {step.number || step.step || `0${idx + 1}`}
+                  </span>
+                  <h3 className="text-[14px] sm:text-[15px] font-bold font-space text-foreground">
+                    {step.title}
+                  </h3>
+                </div>
+                <p className="text-[12px] sm:text-[12.5px] text-muted/80 leading-relaxed font-sans">
+                  {step.description}
+                </p>
               </div>
-              <p className="text-[12px] sm:text-[12.5px] text-muted/80 leading-relaxed font-sans">
-                {step.description}
-              </p>
             </div>
           ))}
         </div>

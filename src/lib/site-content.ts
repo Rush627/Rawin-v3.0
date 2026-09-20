@@ -567,7 +567,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       "Thank you for reaching out! Your message has been sent. I will review it and get back to you shortly.",
   },
   resume: {
-    eyebrow: "Curriculum Vitae",
+    eyebrow: "RESUME / PROFILE · 2026",
     title: "Rushan Siddiqui",
     subtitle: "Full Stack Developer · Web Craftsman",
     summary:
@@ -1453,7 +1453,7 @@ export async function updateSiteSection<K extends ContentSectionKey>(
       updatedAt: now,
     };
 
-    if (!data || typeof data !== "object") {
+    if (data === null || data === undefined || typeof data !== "object") {
       return false;
     }
 

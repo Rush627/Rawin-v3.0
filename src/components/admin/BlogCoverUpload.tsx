@@ -153,12 +153,12 @@ export default function BlogCoverUpload({
   return (
     <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.08]">
       {/* Label and status */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
         <label className="text-xs font-mono text-muted uppercase tracking-wider flex items-center gap-1.5">
           <ImageIcon className="w-3.5 h-3.5 text-pacific-cyan" />
           Article Cover Image
         </label>
-        <span className="text-[11px] font-mono text-muted/60">Optional · PNG, JPG, WebP (Max 5 MB)</span>
+        <span className="text-[10px] sm:text-[11px] font-mono text-muted/60">Optional · PNG, JPG, WebP · Max 5 MB</span>
       </div>
 
       {/* Hidden file input */}

@@ -874,9 +874,12 @@ export async function updateSectionAction(
           if (!milestone03) return { error: "Milestone 03 Label cannot be empty." };
           if (!currentEra) return { error: "Current Era Label cannot be empty." };
 
-          for (const [name, val] of Object.entries({ milestone01, milestone02, milestone03, currentEra })) {
-            if (/[\u2014\u2013]/.test(val)) {
-              return { error: `Label "${name}" contains an em dash.` };
+          const milestoneObj = { milestone01, milestone02, milestone03, currentEra };
+          if (milestoneObj !== null && milestoneObj !== undefined && typeof milestoneObj === "object") {
+            for (const [name, val] of Object.entries(milestoneObj)) {
+              if (/[\u2014\u2013]/.test(val)) {
+                return { error: `Label "${name}" contains an em dash.` };
+              }
             }
           }
 

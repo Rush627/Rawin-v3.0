@@ -79,10 +79,21 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLElement>(null);
 
-  // Adaptive visual viewport and mobile keyboard positioning without React render loops
+  // Adaptive visual viewport and mobile keyboard positioning without layout shifts
   useEffect(() => {
     const mainEl = containerRef.current;
     if (!mainEl) return;
+
+    // Lock document scroll on Orbit to prevent iOS WebKit from scrolling window behind the interface
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+    const prevBodyOverscroll = document.body.style.overscrollBehavior;
+
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overscrollBehavior = "none";
+    document.body.style.overscrollBehavior = "none";
 
     let rafId: number | null = null;
 
@@ -105,14 +116,16 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
         const isKeyboardOpen = vv ? window.innerHeight - vv.height > 80 : false;
         if (isKeyboardOpen) {
           mainEl.style.setProperty("--orbit-composer-pb", "0.5rem");
-          if (window.scrollY !== 0) {
-            window.scrollTo(0, 0);
-          }
         } else {
           mainEl.style.setProperty(
             "--orbit-composer-pb",
             "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.75rem))"
           );
+        }
+
+        if (window.scrollY !== 0 || window.scrollX !== 0) {
+          window.scrollTo(0, 0);
+          document.body.scrollTop = 0;
         }
       });
     };
@@ -135,6 +148,12 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
       }
       window.removeEventListener("resize", updateViewportMetrics);
       window.removeEventListener("orientationchange", updateViewportMetrics);
+
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overscrollBehavior = prevHtmlOverscroll;
+      document.body.style.overscrollBehavior = prevBodyOverscroll;
+
       mainEl.style.removeProperty("--orbit-viewport-height");
       mainEl.style.removeProperty("--orbit-composer-pb");
     };
@@ -411,7 +430,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
   return (
     <main
       ref={containerRef}
-      className="relative w-full h-[var(--orbit-viewport-height,100dvh)] max-h-[var(--orbit-viewport-height,100dvh)] flex flex-col bg-transparent text-foreground overflow-hidden select-text"
+      className="fixed inset-0 w-full h-[var(--orbit-viewport-height,100dvh)] max-h-[var(--orbit-viewport-height,100dvh)] flex flex-col bg-[#101019] text-foreground overflow-hidden select-text z-40"
       aria-label="Rawin Orbit AI Interface"
     >
       {/* 
@@ -753,15 +772,20 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               onChange={handleTextareaInput}
               onKeyDown={handleKeyDown}
               onFocus={() => {
+                if (typeof window !== "undefined") {
+                  window.scrollTo(0, 0);
+                  document.body.scrollTop = 0;
+                }
                 if (window.innerWidth < 1024 && containerRef.current) {
                   containerRef.current.style.setProperty("--orbit-composer-pb", "0.5rem");
-                  setTimeout(() => {
-                    if (window.scrollY !== 0) window.scrollTo(0, 0);
-                  }, 50);
                 }
               }}
               onBlur={() => {
                 setTimeout(() => {
+                  if (typeof window !== "undefined") {
+                    window.scrollTo(0, 0);
+                    document.body.scrollTop = 0;
+                  }
                   const vv = window.visualViewport;
                   const isStillOpen = vv ? window.innerHeight - vv.height > 80 : false;
                   if (!isStillOpen && containerRef.current) {
@@ -770,7 +794,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                       "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.75rem))"
                     );
                   }
-                }, 150);
+                }, 100);
               }}
               placeholder={activePlaceholder}
               className="flex-1 bg-transparent text-[16px] sm:text-sm lg:text-[15px] text-foreground placeholder:text-muted/45 focus:outline-none resize-none leading-normal py-1 sm:py-1.5 font-sans block border-0 shadow-none ring-0 focus:ring-0 overflow-y-auto max-h-[110px] sm:max-h-[130px] my-auto"

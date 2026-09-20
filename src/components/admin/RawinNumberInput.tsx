@@ -80,7 +80,7 @@ export default function RawinNumberInput({
         max={max}
         step={step}
         onChange={handleChange}
-        className="w-full pl-4 pr-10 py-2.5 bg-transparent text-sm text-foreground font-mono outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        className="w-full pl-4 pr-10 py-2.5 bg-transparent text-[16px] sm:text-sm text-foreground font-mono outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         {...props}
       />
       <div className="absolute right-1.5 inset-y-1.5 flex flex-col justify-center gap-0.5 pr-0.5">

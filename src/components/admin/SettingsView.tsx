@@ -20,6 +20,7 @@ import {
   Wrench,
   Clock,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import NeoToggle from "@/components/NeoToggle";
 import {
@@ -236,8 +237,27 @@ export default function SettingsView({
     null
   );
 
+  // Smartphone Accordion States (Closed by default)
+  const [isMobileAvailabilityOpen, setIsMobileAvailabilityOpen] = useState(false);
+  const [isMobilePasswordOpen, setIsMobilePasswordOpen] = useState(false);
+
+  // Auto-expand mobile accordion on validation or submission error/success
+  useEffect(() => {
+    if (state?.error || state?.success) {
+      setIsMobilePasswordOpen(true);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    if (feedback?.type === "error") {
+      setIsMobileAvailabilityOpen(true);
+    }
+  }, [feedback]);
+
   return (
-    <div className="flex flex-col gap-10">
+    <>
+      {/* Desktop Presentation (sm and up) -- Preserved 100% intact */}
+      <div className="hidden sm:flex flex-col gap-10">
       {/* 0. Website Availability & Maintenance Controls */}
       <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-6">
         {/* Header + Status Badge */}
@@ -766,5 +786,640 @@ export default function SettingsView({
         </div>
       </div>
     </div>
+
+      {/* Smartphone Presentation (< sm) -- Purpose-built, compact, premium control panel */}
+      <div className="flex sm:hidden flex-col gap-3.5">
+        {/* 1. Website Availability Accordion */}
+        <div className="glass-card rounded-xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+          <button
+            type="button"
+            onClick={() => setIsMobileAvailabilityOpen(!isMobileAvailabilityOpen)}
+            aria-expanded={isMobileAvailabilityOpen}
+            aria-controls="mobile-availability-panel"
+            className="w-full p-3.5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                <Globe className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                  Website Availability
+                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      availabilityMode === "offline"
+                        ? "bg-amber-400"
+                        : availabilityMode === "maintenance"
+                        ? "bg-pacific-cyan animate-pulse"
+                        : "bg-emerald-400 animate-pulse"
+                    }`}
+                  />
+                  <span
+                    className={`text-[10px] font-mono font-medium ${
+                      availabilityMode === "offline"
+                        ? "text-amber-400"
+                        : availabilityMode === "maintenance"
+                        ? "text-pacific-cyan"
+                        : "text-emerald-400"
+                    }`}
+                  >
+                    {availabilityMode === "offline"
+                      ? "Site Offline"
+                      : availabilityMode === "maintenance"
+                      ? "Maintenance Active"
+                      : "Site Live"}
+                  </span>
+                  {isSaving && (
+                    <span className="flex items-center gap-1 text-[10px] text-pacific-cyan font-mono ml-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Saving</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <ChevronDown
+                className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                  isMobileAvailabilityOpen ? "rotate-180 text-pacific-cyan" : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          {/* Expanded Availability Content */}
+          <div
+            id="mobile-availability-panel"
+            role="region"
+            aria-label="Website Availability Controls"
+            className={isMobileAvailabilityOpen ? "p-4 pt-2 border-t border-white/[0.06] flex flex-col gap-3.5" : "hidden"}
+          >
+            {/* Inline Feedback Toast */}
+            {feedback && (
+              <div
+                className={`flex items-center gap-2 p-3 rounded-xl text-xs font-mono font-medium transition-all ${
+                  feedback.type === "success"
+                    ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                    : "bg-red-500/10 border border-red-500/20 text-red-400"
+                }`}
+              >
+                {feedback.type === "success" ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                )}
+                <span className="break-words">{feedback.text}</span>
+              </div>
+            )}
+
+            {/* Toggle Rows */}
+            <div className="flex flex-col gap-2.5">
+              {/* Row 1: Site Offline */}
+              <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                    <Power className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-semibold font-space text-foreground truncate">
+                      Site Offline
+                    </span>
+                    <span className="text-[10px] font-mono text-muted/60">
+                      Takes site offline
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={availabilityMode === "offline"}
+                    aria-label="Toggle site offline mode"
+                    disabled={isSaving}
+                    onClick={() => handleToggleOffline(availabilityMode !== "offline")}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 disabled:opacity-50 ${
+                      availabilityMode === "offline"
+                        ? "bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.35)]"
+                        : "bg-white/[0.12]"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-ink-black shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        availabilityMode === "offline" ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span
+                    className={`text-[9px] font-mono font-semibold tracking-wider ${
+                      availabilityMode === "offline" ? "text-amber-400" : "text-muted/50"
+                    }`}
+                  >
+                    {availabilityMode === "offline" ? "ACTIVE" : "STANDBY"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Row 2: Maintenance Mode */}
+              <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                    <Wrench className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-semibold font-space text-foreground truncate">
+                      Maintenance Mode
+                    </span>
+                    <span className="text-[10px] font-mono text-muted/60">
+                      Shows maintenance notice
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={availabilityMode === "maintenance"}
+                    aria-label="Toggle scheduled maintenance mode"
+                    disabled={isSaving}
+                    onClick={() => handleToggleMaintenance(availabilityMode !== "maintenance")}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/50 disabled:opacity-50 ${
+                      availabilityMode === "maintenance"
+                        ? "bg-pacific-cyan shadow-[0_0_12px_rgba(24,155,173,0.35)]"
+                        : "bg-white/[0.12]"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-ink-black shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        availabilityMode === "maintenance" ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span
+                    className={`text-[9px] font-mono font-semibold tracking-wider ${
+                      availabilityMode === "maintenance" ? "text-pacific-cyan" : "text-muted/50"
+                    }`}
+                  >
+                    {availabilityMode === "maintenance" ? "ACTIVE" : "STANDBY"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Maintenance Message */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="mobile-maintenance-message"
+                  className="text-[11px] font-mono font-medium text-muted uppercase tracking-wider"
+                >
+                  Maintenance Message
+                </label>
+                <span className="text-[10px] font-mono text-muted/60">
+                  {mMessage.length} / 300
+                </span>
+              </div>
+              <textarea
+                id="mobile-maintenance-message"
+                value={mMessage}
+                onChange={(e) => setMMessage(e.target.value.slice(0, 300))}
+                onBlur={handleMessageBlur}
+                placeholder="e.g. We'll be back shortly."
+                rows={3}
+                className="w-full rounded-xl bg-ink-black/60 border border-white/[0.1] px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted/40 font-mono focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 transition-all resize-none"
+              />
+            </div>
+
+            {/* Maintenance Duration (Hidden when offline) */}
+            {availabilityMode !== "offline" && (
+              <div className="flex flex-col gap-2 pt-1 border-t border-white/[0.06]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-medium text-muted uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-pacific-cyan" />
+                    Duration
+                  </span>
+                  <span className="text-xs font-mono text-pacific-cyan font-semibold">
+                    {DURATION_OPTIONS[durationIndex].label}
+                  </span>
+                </div>
+
+                <input
+                  type="range"
+                  min={0}
+                  max={DURATION_OPTIONS.length - 1}
+                  value={durationIndex}
+                  onChange={(e) => handleDurationChange(parseInt(e.target.value, 10))}
+                  className="w-full accent-pacific-cyan cursor-pointer h-1.5 bg-white/[0.08] rounded-lg"
+                />
+
+                <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  {DURATION_OPTIONS.map((opt, idx) => {
+                    const isSelected = durationIndex === idx;
+                    return (
+                      <button
+                        key={`m-opt-${opt.label}`}
+                        type="button"
+                        onClick={() => handleDurationChange(idx)}
+                        className={`py-1.5 rounded-lg text-[11px] font-mono transition-all text-center cursor-pointer ${
+                          isSelected
+                            ? "bg-pacific-cyan text-ink-black font-semibold shadow-[0_0_10px_rgba(24,155,173,0.4)]"
+                            : "bg-white/[0.04] text-muted hover:text-foreground border border-white/[0.06]"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Live Countdown Info */}
+                {availabilityMode === "maintenance" && endsAt && (
+                  <div className="mt-1 p-2.5 rounded-xl bg-pacific-cyan/[0.06] border border-pacific-cyan/20 flex flex-col gap-1 text-xs font-mono">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted text-[10px]">Ends at:</span>
+                      <span className="text-foreground font-medium text-[10px]">
+                        {formatEndsAt(endsAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted text-[10px]">Remaining:</span>
+                      <span className="text-pacific-cyan font-semibold text-[10px]">
+                        {adminRemaining || "Calculating..."}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Reset to Live Button */}
+            <div className="pt-2 border-t border-white/[0.06]">
+              <button
+                type="button"
+                onClick={handleResetToLive}
+                disabled={isSaving || availabilityMode === "off"}
+                className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold font-mono tracking-wide transition-all flex items-center justify-center gap-2 min-h-[38px] ${
+                  availabilityMode === "off"
+                    ? "bg-white/[0.03] text-muted/40 border border-white/[0.06] cursor-not-allowed"
+                    : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 active:scale-[0.98] cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Reset to Live Public Site</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Password Accordion */}
+        <div className="glass-card rounded-xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+          <button
+            type="button"
+            onClick={() => setIsMobilePasswordOpen(!isMobilePasswordOpen)}
+            aria-expanded={isMobilePasswordOpen}
+            aria-controls="mobile-password-panel"
+            className="w-full p-3.5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                <KeyRound className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                  Password
+                </span>
+                <span className="text-[10px] font-mono text-muted/60 truncate max-w-[200px]">
+                  {adminEmail}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <ChevronDown
+                className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                  isMobilePasswordOpen ? "rotate-180 text-pacific-cyan" : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          {/* Expanded Password Content */}
+          <div
+            id="mobile-password-panel"
+            role="region"
+            aria-label="Admin Password Controls"
+            className={isMobilePasswordOpen ? "p-4 pt-2 border-t border-white/[0.06] flex flex-col gap-3.5" : "hidden"}
+          >
+            {state?.error && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <div className="flex-1 break-words">{state.error}</div>
+              </div>
+            )}
+
+            {state?.success && (
+              <div className="flex flex-col gap-2.5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <div className="flex items-center gap-2 font-mono text-xs font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>{state.message}</span>
+                </div>
+                <p className="text-[11px] text-muted">
+                  Session cookie cleared. Please log in with updated credentials.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/admin/login")}
+                  className="mt-1 w-full py-2 rounded-lg bg-pacific-cyan text-ink-black text-xs font-mono font-semibold hover:bg-pacific-cyan/90 transition-all cursor-pointer text-center"
+                >
+                  Proceed to Sign In
+                </button>
+              </div>
+            )}
+
+            {!state?.success && (
+              <form action={formAction} className="flex flex-col gap-3.5">
+                {/* Current Password */}
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="mobile-currentPassword"
+                    className="text-[11px] font-mono font-medium text-muted uppercase tracking-wider"
+                  >
+                    Current Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="mobile-currentPassword"
+                      name="currentPassword"
+                      type={showCurrent ? "text" : "password"}
+                      required
+                      autoComplete="current-password"
+                      placeholder="Enter existing password"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-foreground placeholder:text-muted/40 focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 font-mono transition-all pr-10 min-h-[38px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrent(!showCurrent)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors p-1"
+                      tabIndex={-1}
+                      aria-label={showCurrent ? "Hide password" : "Show password"}
+                    >
+                      {showCurrent ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New Password */}
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="mobile-newPassword"
+                    className="text-[11px] font-mono font-medium text-muted uppercase tracking-wider"
+                  >
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="mobile-newPassword"
+                      name="newPassword"
+                      type={showNew ? "text" : "password"}
+                      required
+                      minLength={8}
+                      autoComplete="new-password"
+                      placeholder="Minimum 8 characters"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-foreground placeholder:text-muted/40 focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 font-mono transition-all pr-10 min-h-[38px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNew(!showNew)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors p-1"
+                      tabIndex={-1}
+                      aria-label={showNew ? "Hide password" : "Show password"}
+                    >
+                      {showNew ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm New Password */}
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="mobile-confirmPassword"
+                    className="text-[11px] font-mono font-medium text-muted uppercase tracking-wider"
+                  >
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="mobile-confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirm ? "text" : "password"}
+                      required
+                      minLength={8}
+                      autoComplete="new-password"
+                      placeholder="Re-enter new password"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-foreground placeholder:text-muted/40 focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 font-mono transition-all pr-10 min-h-[38px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors p-1"
+                      tabIndex={-1}
+                      aria-label={showConfirm ? "Hide password" : "Show password"}
+                    >
+                      {showConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-xs font-mono hover:bg-pacific-cyan/90 transition-all shadow-[0_0_15px_rgba(24,155,173,0.3)] disabled:opacity-50 cursor-pointer min-h-[38px]"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>{isPending ? "Updating..." : "Update Password"}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* 3. Session Security (Compact Info Card) */}
+        <div className="glass-card rounded-xl border border-white/[0.08] p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground">
+                Session Security
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              Encrypted
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2 text-xs font-mono">
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">Cookie Name</span>
+              <span className="text-foreground text-[11px] font-medium break-all">{sessionSecurity.cookieName}</span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">HttpOnly</span>
+              <span className="text-emerald-400 text-[11px] flex items-center gap-1 font-medium">
+                <CheckCircle2 className="w-3 h-3" /> Active
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">SameSite</span>
+              <span className="text-foreground text-[11px]">{sessionSecurity.sameSite}</span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">Secure Flag</span>
+              <span className="text-foreground text-[11px] text-right">
+                {sessionSecurity.secure ? "Production Enforced" : "Development Local"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <span className="text-muted text-[11px]">Lifetime</span>
+              <span className="text-foreground text-[11px]">{sessionSecurity.maxAgeDays} Days Rolling</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Database & Storage (Compact Info Card) */}
+        <div className="glass-card rounded-xl border border-white/[0.08] p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2">
+              <Database className="w-4 h-4 text-pacific-cyan" />
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground">
+                Database & Storage
+              </span>
+            </div>
+            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+              isDbConnected
+                ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                : "text-amber-400 bg-amber-500/10 border-amber-500/20"
+            }`}>
+              {isDbConnected ? "Operational" : "Offline"}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2 text-xs font-mono">
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">MongoDB Status</span>
+              <span className={`text-[11px] font-medium flex items-center gap-1 ${
+                isDbConnected ? "text-emerald-400" : "text-amber-400"
+              }`}>
+                {isDbConnected ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Connected
+                  </>
+                ) : (
+                  "Disconnected"
+                )}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">Database</span>
+              <span className="text-foreground text-[11px]">{isDbConnected ? dbName : "fallback"}</span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">GridFS Bucket</span>
+              <span className={`text-[11px] flex items-center gap-1 ${
+                isGridFsReady ? "text-emerald-400" : "text-amber-400"
+              }`}>
+                <HardDrive className="w-3 h-3" />
+                site_assets
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <span className="text-muted text-[11px]">Storage Driver</span>
+              <span className="text-foreground text-[11px] text-right">Native GridFS Streams</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Security Configuration (Compact Info Card) */}
+        <div className="glass-card rounded-xl border border-white/[0.08] p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2">
+              <Server className="w-4 h-4 text-apricot-cream" />
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground">
+                Security Configuration
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/20 px-2 py-0.5 rounded-full uppercase">
+              {securityConfig.nodeEnv}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2 text-xs font-mono">
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">SESSION_SECRET</span>
+              <span className={`text-[11px] font-medium ${
+                securityConfig.hasSessionSecret ? "text-emerald-400" : "text-amber-400"
+              }`}>
+                {securityConfig.hasSessionSecret ? "Configured (256-bit)" : "Dev Temporary"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">ADMIN_PASSWORD_HASH</span>
+              <span className={`text-[11px] font-medium ${
+                securityConfig.hasPasswordHash ? "text-emerald-400" : "text-amber-400"
+              }`}>
+                {securityConfig.hasPasswordHash ? "Configured (bcrypt)" : "MongoDB Stored"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+              <span className="text-muted text-[11px]">Security Headers</span>
+              <span className="text-emerald-400 text-[11px] flex items-center gap-1 font-medium">
+                <FileCheck className="w-3 h-3" /> Active
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <span className="text-muted text-[11px]">Runtime Environment</span>
+              <span className="text-foreground text-[11px] uppercase">{securityConfig.nodeEnv}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 6. Enforced HTTP Security Headers (Compact Info Card) */}
+        <div className="glass-card rounded-xl border border-white/[0.08] p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-2 pb-2.5 border-b border-white/[0.06]">
+            <Layers className="w-4 h-4 text-pacific-cyan" />
+            <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground">
+              Enforced HTTP Security Headers
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2 text-xs font-mono">
+            <div className="flex flex-col gap-0.5 pb-2 border-b border-white/[0.04]">
+              <span className="text-muted/60 text-[10px] uppercase tracking-wider">X-Content-Type-Options</span>
+              <span className="text-emerald-400 font-semibold text-xs">nosniff</span>
+            </div>
+            <div className="flex flex-col gap-0.5 pb-2 border-b border-white/[0.04]">
+              <span className="text-muted/60 text-[10px] uppercase tracking-wider">X-Frame-Options</span>
+              <span className="text-emerald-400 font-semibold text-xs">DENY</span>
+            </div>
+            <div className="flex flex-col gap-0.5 pb-2 border-b border-white/[0.04]">
+              <span className="text-muted/60 text-[10px] uppercase tracking-wider">Referrer-Policy</span>
+              <span className="text-emerald-400 font-semibold text-xs break-all">strict-origin-when-cross-origin</span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-muted/60 text-[10px] uppercase tracking-wider">Permissions-Policy</span>
+              <span className="text-emerald-400 font-semibold text-xs break-all">restricted (camera, mic, geo)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

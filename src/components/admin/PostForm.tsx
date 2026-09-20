@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Save,
@@ -11,10 +11,9 @@ import {
   Eye,
   Edit3,
   Calendar,
-  Clock,
   Tag,
-  CheckCircle2,
-  Sparkles,
+  ChevronDown,
+  ChevronsUpDown,
   Check,
 } from "lucide-react";
 import type { BlogPost, BlogPostStatus } from "@/lib/blog";
@@ -25,9 +24,9 @@ import BlogCoverUpload from "./BlogCoverUpload";
 import { toKolkataDateTimeInput } from "@/lib/dateUtils";
 
 const BLOG_STATUS_OPTIONS = [
-  { value: "draft", label: "Draft (Private, not public)" },
-  { value: "published", label: "Published (Live to readers)" },
-  { value: "archived", label: "Archived (Unlisted)" },
+  { value: "draft", label: "Draft" },
+  { value: "published", label: "Published" },
+  { value: "archived", label: "Archived" },
 ];
 
 interface PostFormProps {
@@ -36,14 +35,55 @@ interface PostFormProps {
   isEditing?: boolean;
 }
 
+const SECTION_KEYS = ["details", "markdown", "publishing", "tags"] as const;
+type SectionKey = (typeof SECTION_KEYS)[number];
+
 export default function PostForm({ initialData, action, isEditing = false }: PostFormProps) {
   const [state, formAction, isPending] = useActionState(action, {});
+
+  // Collapsible accordion sections closed by default
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   // Local state for interactive editing and live Markdown preview
   const [previewContent, setPreviewContent] = useState(initialData?.content || "");
   const [status, setStatus] = useState<BlogPostStatus>(initialData?.status || "draft");
   const [featured, setFeatured] = useState<boolean>(initialData?.featured ?? false);
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
+
+  // Auto-expand relevant section if server action returns an error
+  useEffect(() => {
+    if (state?.error) {
+      const err = state.error.toLowerCase();
+      if (err.includes("title") || err.includes("slug") || err.includes("excerpt") || err.includes("readtime")) {
+        setOpenSections((prev) => ({ ...prev, details: true }));
+      } else if (err.includes("content") || err.includes("markdown")) {
+        setOpenSections((prev) => ({ ...prev, markdown: true }));
+      } else if (err.includes("status") || err.includes("publishedat") || err.includes("date") || err.includes("feature")) {
+        setOpenSections((prev) => ({ ...prev, publishing: true }));
+      } else if (err.includes("tag") || err.includes("cover")) {
+        setOpenSections((prev) => ({ ...prev, tags: true }));
+      } else {
+        setOpenSections((prev) => ({ ...prev, details: true }));
+      }
+    }
+  }, [state?.error]);
+
+  const toggleSection = (key: SectionKey) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const allOpen = SECTION_KEYS.every((k) => openSections[k]);
+  const toggleAll = () => {
+    const nextState = !allOpen;
+    const updated: Record<string, boolean> = {};
+    SECTION_KEYS.forEach((k) => {
+      updated[k] = nextState;
+    });
+    setOpenSections(updated);
+  };
 
   const handleTabSwitch = (tab: "write" | "preview") => {
     if (tab === "preview") {
@@ -56,15 +96,6 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
     setActiveTab(tab);
   };
 
-  function slugify(text: string): string {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-  }
-
   // Format date for date-time input in Asia/Kolkata timezone (IST, UTC+05:30)
   const getDefaultDateInput = () => {
     if (initialData?.publishedAt) {
@@ -74,36 +105,37 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
   };
 
   return (
-    <form id="post-form" action={formAction} className="flex flex-col gap-8">
+    <form id="post-form" action={formAction} className="flex flex-col gap-6 sm:gap-8 max-w-5xl mx-auto w-full min-w-0">
       {/* Top action bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 pb-5 border-b border-white/[0.08] sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        {/* Back + Title */}
+        <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/admin/blog"
-            className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all"
+            className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center shrink-0"
             title="Return to Blog Posts List"
+            aria-label="Return to Blog Posts List"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-space">
+          <div className="flex flex-col min-w-0">
+            <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-foreground font-space truncate">
               {isEditing ? `Edit: ${initialData?.title}` : "Write New Article"}
             </h1>
+            <span className="text-[11px] font-mono text-muted/60">
+              {isEditing ? "Update article content and publication settings" : "Draft and publish a new article"}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-end sm:self-auto">
-          <Link
-            href="/admin/blog"
-            className="inline-flex items-center justify-center h-10 px-5 rounded-xl text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer select-none whitespace-nowrap"
-          >
-            Cancel
-          </Link>
+        {/* Action buttons: Save (primary, leftmost), Cancel, Expand All (rightmost) */}
+        <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0">
+          {/* Save Changes -- primary action, leftmost on mobile via mr-auto */}
           <button
             id="post-submit-btn"
             type="submit"
             disabled={isPending}
-            className="inline-flex items-center justify-center gap-2 h-10 px-6 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_20px_rgba(24,155,173,0.35)] disabled:opacity-50 cursor-pointer select-none whitespace-nowrap shrink-0"
+            className="mr-auto sm:mr-0 inline-flex items-center justify-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-4 sm:px-6 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_20px_rgba(24,155,173,0.35)] disabled:opacity-50 cursor-pointer select-none whitespace-nowrap shrink-0 min-h-[38px]"
           >
             {isPending ? (
               <>
@@ -117,6 +149,26 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
               </>
             )}
           </button>
+
+          {/* Cancel */}
+          <Link
+            href="/admin/blog"
+            className="inline-flex items-center justify-center h-9 sm:h-10 px-3.5 sm:px-5 rounded-xl text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer select-none whitespace-nowrap min-h-[38px]"
+          >
+            Cancel
+          </Link>
+
+          {/* Expand All -- icon-only on mobile, text on desktop */}
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-mono text-muted hover:text-foreground bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-colors cursor-pointer min-h-[38px]"
+            title={allOpen ? "Collapse all sections" : "Expand all sections"}
+            aria-label={allOpen ? "Collapse all sections" : "Expand all sections"}
+          >
+            <ChevronsUpDown className="w-3.5 h-3.5 text-pacific-cyan" />
+            <span className="hidden sm:inline">{allOpen ? "Collapse All" : "Expand All"}</span>
+          </button>
         </div>
       </div>
 
@@ -128,19 +180,51 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
         </div>
       )}
 
-      {/* Form sections grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left 2 Columns: Title, Excerpt, and Markdown Editor */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Identity Card */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-5">
-            <h2 className="text-sm font-mono uppercase tracking-wider text-pacific-cyan flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              <span>Article Details</span>
-            </h2>
+      {/* Primary Accordion Stack */}
+      <div className="flex flex-col gap-3 sm:gap-4">
+        {/* Accordion 1: Article Details */}
+        <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+          <button
+            type="button"
+            onClick={() => toggleSection("details")}
+            aria-expanded={Boolean(openSections.details)}
+            aria-controls="section-details"
+            className="w-full p-3.5 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 text-pacific-cyan" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                  Article Details
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                  Title, URL slug, read time, and excerpt
+                </span>
+              </div>
+            </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                {openSections.details ? "Collapse" : "Expand"}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                  openSections.details ? "rotate-180 text-pacific-cyan" : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          <div
+            id="section-details"
+            role="region"
+            aria-label="Article Details"
+            className={openSections.details ? "flex flex-col gap-4 p-4 sm:p-6 pt-2 sm:pt-2 border-t border-white/[0.06]" : "hidden"}
+          >
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] sm:text-xs font-mono text-muted uppercase">
                 Article Title <span className="text-red-400">*</span>
               </label>
               <input
@@ -148,60 +232,100 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
                 name="title"
                 required
                 defaultValue={initialData?.title || ""}
-                placeholder="e.g. Building Fast Web Applications with Next.js and TypeScript"
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
+                placeholder="e.g. Modern Web Architecture Patterns"
+                className="px-3.5 sm:px-4 py-2 sm:py-2.5 min-h-[42px] sm:min-h-[40px] rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-[16px] sm:text-sm text-foreground outline-none transition-colors w-full"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-mono text-muted uppercase">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] sm:text-xs font-mono text-muted uppercase">
                   URL Slug <span className="text-muted/50">(Unique key)</span>
                 </label>
                 <input
                   type="text"
                   name="slug"
                   defaultValue={initialData?.slug || ""}
-                  placeholder="e.g. building-fast-web-applications"
-                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground font-mono outline-none transition-colors"
+                  placeholder="e.g. modern-web-architecture-patterns"
+                  className="px-3.5 sm:px-4 py-2 sm:py-2.5 min-h-[42px] sm:min-h-[40px] rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-[16px] sm:text-sm text-foreground font-mono outline-none transition-colors w-full"
                 />
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-mono text-muted uppercase">Read Time</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] sm:text-xs font-mono text-muted uppercase">Read Time</label>
                 <input
                   type="text"
                   name="readTime"
                   defaultValue={initialData?.readTime || "5 min read"}
                   placeholder="e.g. 5 min read"
-                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
+                  className="px-3.5 sm:px-4 py-2 sm:py-2.5 min-h-[42px] sm:min-h-[40px] rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-[16px] sm:text-sm text-foreground outline-none transition-colors w-full"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">
-                Excerpt / Summary <span className="text-muted/50">(Shown in listings & SEO)</span>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] sm:text-xs font-mono text-muted uppercase">
+                Excerpt <span className="text-muted/50">(Shown in listings and meta)</span>
               </label>
               <textarea
                 name="excerpt"
                 rows={3}
                 defaultValue={initialData?.excerpt || ""}
                 placeholder="Brief summary of the article..."
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors resize-y"
+                className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-[16px] sm:text-sm text-foreground outline-none transition-colors resize-y min-h-[80px] w-full"
               />
             </div>
           </div>
+        </div>
 
-          {/* Markdown Content Editor Card */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-4">
+        {/* Accordion 2: Markdown Content */}
+        <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+          <button
+            type="button"
+            onClick={() => toggleSection("markdown")}
+            aria-expanded={Boolean(openSections.markdown)}
+            aria-controls="section-markdown"
+            className="w-full p-3.5 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
+                <Edit3 className="w-4 h-4 text-pacific-cyan" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                  Markdown Content
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                  Write and preview the article body
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                {openSections.markdown ? "Collapse" : "Expand"}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                  openSections.markdown ? "rotate-180 text-pacific-cyan" : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          <div
+            id="section-markdown"
+            role="region"
+            aria-label="Markdown Content"
+            className={openSections.markdown ? "flex flex-col gap-4 p-4 sm:p-6 pt-2 sm:pt-2 border-t border-white/[0.06]" : "hidden"}
+          >
+            {/* Write / Preview toggle */}
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono uppercase tracking-wider text-pacific-cyan">Markdown Content</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Editor</span>
                 <span className="text-red-400 text-xs">*</span>
               </div>
 
-              {/* Write vs Preview tab toggle */}
               <div className="flex items-center gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
                 <button
                   type="button"
@@ -234,58 +358,92 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
               <textarea
                 name="content"
                 required
-                rows={18}
+                rows={16}
                 defaultValue={initialData?.content || ""}
-                placeholder="# Article Title&#10;&#10;Write your technical thoughts in Markdown here...&#10;&#10;## Section Header&#10;&#10;Code blocks, lists, and quotes are supported."
-                className="w-full px-4 py-3 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground font-mono leading-relaxed outline-none transition-colors resize-y min-h-[380px]"
+                placeholder={"# Article Title\n\nWrite your thoughts in Markdown here...\n\n## Section Header\n\nCode blocks, lists, and quotes are supported."}
+                className="w-full px-3.5 sm:px-4 py-3 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan text-[16px] sm:text-sm text-foreground font-mono leading-relaxed outline-none transition-colors resize-y min-h-[340px]"
               />
-              <span className="text-[11px] font-mono text-muted/60">
-                Full GitHub-Flavored Markdown supported: headers (#), bold (**), lists (-), code blocks (```), blockquotes (&gt;), tables.
-              </span>
             </div>
 
-            <div className={activeTab === "preview" ? "p-6 rounded-xl bg-ink-black/40 border border-white/[0.06] min-h-[380px] overflow-y-auto max-h-[600px]" : "hidden"}>
+            <div className={activeTab === "preview" ? "p-4 sm:p-6 rounded-xl bg-ink-black/40 border border-white/[0.06] min-h-[340px] overflow-y-auto max-h-[600px]" : "hidden"}>
               {previewContent.trim() ? (
                 <MarkdownRenderer content={previewContent} />
               ) : (
-                <p className="text-muted/50 font-mono text-xs italic">Nothing to preview yet. Switch to the Write tab to start drafting.</p>
+                <p className="text-muted/50 font-mono text-xs italic">Nothing to preview. Switch to Write tab to draft content.</p>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right 1 Column: Publishing, Meta, Image, Tags */}
-        <div className="flex flex-col gap-6">
-          {/* Card 3: Status & Visibility */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-5">
-            <h2 className="text-sm font-mono uppercase tracking-wider text-pacific-cyan">Publishing Controls</h2>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Publication Status</label>
-              <RawinSelect
-                name="status"
-                value={status}
-                onChange={(val) => setStatus(val as BlogPostStatus)}
-                options={BLOG_STATUS_OPTIONS}
-                fontMono
-              />
+        {/* Accordion 3: Publishing Controls */}
+        <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+          <button
+            type="button"
+            onClick={() => toggleSection("publishing")}
+            aria-expanded={Boolean(openSections.publishing)}
+            aria-controls="section-publishing"
+            className="w-full p-3.5 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
+                <Calendar className="w-4 h-4 text-pacific-cyan" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                  Publishing Controls
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                  Status, publish date, and featured placement
+                </span>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">
-                Published Date &amp; Time <span className="text-pacific-cyan text-[10px] ml-1 font-normal">IST (UTC+05:30)</span>
-              </label>
-              <RawinDateTimeInput
-                name="publishedAt"
-                defaultValue={getDefaultDateInput()}
-              />
-              <span className="text-[11px] font-mono text-muted/60">
-                Asia/Kolkata timezone. Defaults to current IST time for new articles.
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                {openSections.publishing ? "Collapse" : "Expand"}
               </span>
+              <ChevronDown
+                className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                  openSections.publishing ? "rotate-180 text-pacific-cyan" : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          <div
+            id="section-publishing"
+            role="region"
+            aria-label="Publishing Controls"
+            className={openSections.publishing ? "flex flex-col gap-4 p-4 sm:p-6 pt-2 sm:pt-2 border-t border-white/[0.06]" : "hidden"}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] sm:text-xs font-mono text-muted uppercase">Publication Status</label>
+                <RawinSelect
+                  name="status"
+                  value={status}
+                  onChange={(val) => setStatus(val as BlogPostStatus)}
+                  options={BLOG_STATUS_OPTIONS}
+                  fontMono
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] sm:text-xs font-mono text-muted uppercase">
+                  Published Date &amp; Time
+                </label>
+                <RawinDateTimeInput
+                  name="publishedAt"
+                  defaultValue={getDefaultDateInput()}
+                />
+                <span className="text-[10px] sm:text-[11px] font-mono text-muted/60">
+                  IST (Asia/Kolkata, UTC+05:30)
+                </span>
+              </div>
             </div>
 
-            <div className="pt-3 border-t border-white/[0.08] flex flex-col gap-3">
-              <label className="flex items-center gap-3 cursor-pointer group select-none">
+            <div className="pt-3 border-t border-white/[0.08]">
+              <label className="flex items-center gap-3 cursor-pointer group select-none py-1">
                 <div className="relative flex items-center justify-center">
                   <input
                     type="checkbox"
@@ -314,19 +472,57 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
               </label>
             </div>
           </div>
+        </div>
 
-          {/* Card 4: Tags & Classification */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-4">
-            <h2 className="text-sm font-mono uppercase tracking-wider text-pacific-cyan">Tags</h2>
+        {/* Accordion 4: Tags & Cover Image */}
+        <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+          <button
+            type="button"
+            onClick={() => toggleSection("tags")}
+            aria-expanded={Boolean(openSections.tags)}
+            aria-controls="section-tags"
+            className="w-full p-3.5 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
+                <Tag className="w-4 h-4 text-pacific-cyan" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                  Tags &amp; Cover Image
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                  Tags, cover image, replacement, and removal
+                </span>
+              </div>
+            </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Tags (comma separated)</label>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                {openSections.tags ? "Collapse" : "Expand"}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                  openSections.tags ? "rotate-180 text-pacific-cyan" : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          <div
+            id="section-tags"
+            role="region"
+            aria-label="Tags and Cover Image"
+            className={openSections.tags ? "flex flex-col gap-4 p-4 sm:p-6 pt-2 sm:pt-2 border-t border-white/[0.06]" : "hidden"}
+          >
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] sm:text-xs font-mono text-muted uppercase">Tags (comma separated)</label>
               <input
                 type="text"
                 name="tags"
                 defaultValue={initialData?.tags.join(", ") || ""}
                 placeholder="Next.js, TypeScript, Architecture"
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
+                className="px-3.5 sm:px-4 py-2 sm:py-2.5 min-h-[42px] sm:min-h-[40px] rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-[16px] sm:text-sm text-foreground outline-none transition-colors w-full"
               />
             </div>
 

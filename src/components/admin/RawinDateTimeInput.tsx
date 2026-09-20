@@ -45,7 +45,7 @@ export default function RawinDateTimeInput({
         type="datetime-local"
         name={name}
         defaultValue={defaultValue}
-        className="w-full pl-2.5 pr-4 py-2.5 bg-transparent text-sm text-foreground font-mono outline-none transition-colors cursor-pointer [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 hover:[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:transition-opacity"
+        className="w-full pl-2.5 pr-4 py-2.5 bg-transparent text-[16px] sm:text-sm text-foreground font-mono outline-none transition-colors cursor-pointer [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 hover:[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:transition-opacity"
         {...props}
       />
     </div>

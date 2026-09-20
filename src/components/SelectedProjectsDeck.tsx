@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import { ExternalLink } from "lucide-react";
 import { GithubIcon } from "@/components/SocialIcons";
@@ -21,7 +21,7 @@ function ProjectCard({
   return (
     <article
       data-particle-protected
-      className="relative w-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-[#161626]/98 via-[#131322]/95 to-[#101019]/98 p-6 sm:p-7 md:p-8 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.85),0_0_1px_1px_rgba(255,255,255,0.05)] flex flex-col gap-4 sm:gap-5 overflow-hidden transition-colors hover:border-pacific-cyan/25"
+      className="relative w-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-[#161626]/98 via-[#131322]/95 to-[#101019]/98 p-6 sm:p-7 md:p-8 shadow-[0_-6px_25px_rgba(0,0,0,0.7),0_24px_60px_-12px_rgba(0,0,0,0.85),0_0_1px_1px_rgba(255,255,255,0.06)] flex flex-col gap-4 sm:gap-5 overflow-hidden transition-colors hover:border-pacific-cyan/25"
     >
       {/* Subtle ambient radial highlight matching Projects page */}
       <div
@@ -138,231 +138,45 @@ function ProjectCard({
 }
 
 export default function SelectedProjectsDeck({ projects }: SelectedProjectsDeckProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-
   const safeProjects = Array.isArray(projects) ? projects : [];
 
-  useEffect(() => {
-    if (safeProjects.length <= 1) return;
+  if (safeProjects.length === 0) {
+    return null;
+  }
 
-    // Strict desktop check: only activate on desktop viewports (>= 1024px)
-    const checkDesktop = () => {
-      if (typeof window === "undefined") return false;
-      const isWide = window.innerWidth >= 1024;
-      const canHover = window.matchMedia("(hover: hover)").matches;
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      return isWide && canHover && !reducedMotion;
-    };
-
-    if (!checkDesktop()) return;
-
-    const container = containerRef.current;
-    if (!container) return;
-
-    const STICKY_TOP = 96; // 6rem (top-24)
-    const BUFFER = 120;
-    const CARD_STEP = 650;
-    const TOTAL_ANIM_RANGE = (safeProjects.length - 1) * CARD_STEP;
-
-    let rafId: number | null = null;
-
-    const updateDeck = () => {
-      rafId = null;
-      if (!container) return;
-
-      const rect = container.getBoundingClientRect();
-      const scrolledIn = STICKY_TOP - rect.top;
-
-      let progress = 0;
-      if (scrolledIn <= BUFFER) {
-        progress = 0;
-      } else if (scrolledIn >= BUFFER + TOTAL_ANIM_RANGE) {
-        progress = 1;
-      } else {
-        progress = (scrolledIn - BUFFER) / TOTAL_ANIM_RANGE;
-      }
-
-      const step = progress * (safeProjects.length - 1);
-      const activeIdx = Math.min(Math.floor(step), safeProjects.length - 2);
-      const fraction = step - activeIdx;
-
-      for (let i = 0; i < safeProjects.length; i++) {
-        const el = cardRefs.current[i];
-        if (!el) continue;
-
-        if (i < activeIdx) {
-          // Stable resting card in the stacked deck behind
-          const depth = activeIdx - i;
-          const scale = Math.max(0.88, 1 - depth * 0.04);
-          const translateY = -depth * 20;
-          el.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
-          el.style.opacity = `${Math.max(0.4, 1 - depth * 0.2)}`;
-          el.style.visibility = "visible";
-          el.style.pointerEvents = "none";
-        } else if (i === activeIdx) {
-          // Active front card: gently scales down as the incoming card slides over
-          const scale = 1 - fraction * 0.04;
-          const translateY = -fraction * 20;
-          el.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
-          el.style.opacity = "1";
-          el.style.visibility = "visible";
-          el.style.pointerEvents = fraction < 0.3 ? "auto" : "none";
-        } else if (i === activeIdx + 1) {
-          // Incoming card: smooth cubic ease-out moving up from below
-          const ease = 1 - Math.pow(1 - fraction, 2.5);
-          const translateY = (1 - ease) * 110;
-          el.style.transform = `translate3d(0, ${translateY}%, 0) scale(1)`;
-          el.style.opacity = "1";
-          el.style.visibility = "visible";
-          el.style.pointerEvents = fraction > 0.8 ? "auto" : "none";
-        } else {
-          // Waiting below viewport
-          el.style.transform = "translate3d(0, 115%, 0) scale(1)";
-          el.style.opacity = "0";
-          el.style.visibility = "hidden";
-          el.style.pointerEvents = "none";
-        }
-      }
-    };
-
-    updateDeck();
-
-    const onScroll = () => {
-      if (rafId === null) {
-        rafId = requestAnimationFrame(updateDeck);
-      }
-    };
-
-    const onResize = () => {
-      if (!checkDesktop()) {
-        for (let i = 0; i < safeProjects.length; i++) {
-          const el = cardRefs.current[i];
-          if (el) {
-            el.style.transform = "";
-            el.style.opacity = "";
-            el.style.visibility = "";
-            el.style.pointerEvents = "";
-          }
-        }
-        return;
-      }
-      updateDeck();
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-    };
-  }, [safeProjects.length]);
-
-  // If single project or empty, render standard flow
-  if (safeProjects.length <= 1) {
+  // Single project presentation
+  if (safeProjects.length === 1) {
     return (
-      <div className="flex flex-col gap-12">
-        {safeProjects.map((project, idx) => (
-          <ProjectCard key={project._id || project.slug} project={project} priority={idx === 0} />
-        ))}
+      <div className="w-full">
+        <ProjectCard project={safeProjects[0]} priority={true} />
       </div>
     );
   }
 
-  // Calculate total height: buffer at start (120px) + buffer at end (120px) + 650px per card transition + 800px
-  const totalScrollHeight = 240 + (safeProjects.length - 1) * 650 + 800;
-
   return (
-    <>
-      <style>{`
-        .rawin-deck-card-wrapper {
-          will-change: transform;
-        }
-        @media (max-width: 1023px) {
-          .rawin-deck-container {
-            height: auto !important;
-          }
-          .rawin-deck-sticky {
-            position: static !important;
-          }
-          .rawin-deck-grid {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 3rem !important;
-          }
-          .rawin-deck-card-wrapper {
-            position: relative !important;
-            transform: none !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            pointer-events: auto !important;
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .rawin-deck-container {
-            height: auto !important;
-          }
-          .rawin-deck-sticky {
-            position: static !important;
-          }
-          .rawin-deck-grid {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 3rem !important;
-          }
-          .rawin-deck-card-wrapper {
-            position: relative !important;
-            transform: none !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            pointer-events: auto !important;
-          }
-        }
-      `}</style>
+    <div className="relative w-full flex flex-col">
+      {safeProjects.map((project, idx) => {
+        const isLast = idx === safeProjects.length - 1;
+        // Native CSS transform and sticky stacking: staggered top position preserves card tabs
+        const stickyTop = `calc(5.5rem + ${idx * 1.5}rem)`;
+        const zIndex = 10 + idx;
 
-      <div
-        ref={containerRef}
-        className="rawin-deck-container relative w-full"
-        style={{ height: `${totalScrollHeight}px` }}
-      >
-        <div className="rawin-deck-sticky sticky top-24 w-full">
+        return (
           <div
-            className="rawin-deck-grid relative w-full max-w-5xl mx-auto"
+            key={project._id || project.slug || idx}
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr",
+              top: stickyTop,
+              zIndex: zIndex,
+              transform: "translate3d(0, 0, 0)",
             }}
+            className={`sticky w-full will-change-transform ${
+              isLast ? "mb-0" : "mb-16 lg:mb-20"
+            }`}
           >
-            {safeProjects.map((project, idx) => (
-              <div
-                key={project._id || project.slug}
-                ref={(el) => {
-                  cardRefs.current[idx] = el;
-                }}
-                style={{
-                  gridArea: "1 / 1 / 2 / 2",
-                  zIndex: 10 + idx * 10,
-                  transformOrigin: "center top",
-                  transform:
-                    idx === 0
-                      ? "translate3d(0, 0, 0) scale(1)"
-                      : "translate3d(0, 115%, 0) scale(1)",
-                  opacity: idx === 0 ? 1 : 0,
-                  visibility: idx === 0 ? "visible" : "hidden",
-                  transition: "none",
-                }}
-                className="rawin-deck-card-wrapper w-full"
-              >
-                <ProjectCard project={project} priority={idx === 0} />
-              </div>
-            ))}
+            <ProjectCard project={project} priority={idx === 0} />
           </div>
-        </div>
-      </div>
-    </>
+        );
+      })}
+    </div>
   );
 }

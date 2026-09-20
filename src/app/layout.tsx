@@ -18,7 +18,6 @@ import ParticleField from "@/components/ParticleField";
 import RawinErrorView from "@/components/RawinErrorView";
 import OfflineDetector from "@/components/OfflineDetector";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
-import VConsole from "@/components/VConsole";
 import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 
 const geistSans = Geist({
@@ -120,7 +119,6 @@ export default async function RootLayout({
           suppressHydrationWarning
           className="min-h-screen min-h-dvh bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans"
         >
-          <VConsole />
           <PublicCustomCursor />
           <AvailabilityWatcher
             initialStatus={isMaintenanceMessage ? "maintenance" : "offline"}
@@ -169,7 +167,6 @@ export default async function RootLayout({
         suppressHydrationWarning
         className="min-h-screen min-h-dvh bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative"
       >
-        <VConsole />
         <PublicCustomCursor />
         <OfflineDetector />
         <AvailabilityWatcher />

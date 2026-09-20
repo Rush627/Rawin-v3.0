@@ -58,23 +58,23 @@ export default async function AdminSettingsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6 sm:gap-8">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 sm:pb-6 border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
           <Link
             href="/admin"
-            className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer"
+            className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
             title="Return to Main Admin Dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div className="flex flex-col gap-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
-              <Settings className="w-3.5 h-3.5" />
+          <div className="flex flex-col gap-0.5 sm:gap-1">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
+              <Settings className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
               <span>SYSTEM CONFIGURATION</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
               Admin <span className="text-pacific-cyan">Settings</span>
             </h1>
           </div>
