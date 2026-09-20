@@ -163,10 +163,10 @@ const SECTIONS: SectionConfig[] = [
     description: "Personal introduction, RAWIN evolution milestones, core principles, journey, and focus areas.",
   },
   {
-    key: "contact",
-    label: "Contact & Social",
-    icon: Mail,
-    description: "Centralized contact details, social links, form placeholders, and page copy.",
+    key: "uses",
+    label: "Uses",
+    icon: Wrench,
+    description: "Tools, setup, and hardware showcase overview.",
   },
   {
     key: "resume",
@@ -175,10 +175,10 @@ const SECTIONS: SectionConfig[] = [
     description: "Curriculum vitae subtitles, executive summary, and action labels.",
   },
   {
-    key: "uses",
-    label: "Uses",
-    icon: Wrench,
-    description: "Tools, setup, and hardware showcase overview.",
+    key: "contact",
+    label: "Contact & Social",
+    icon: Mail,
+    description: "Centralized contact details, social links, form placeholders, and page copy.",
   },
   {
     key: "ai",
