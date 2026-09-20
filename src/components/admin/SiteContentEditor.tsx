@@ -194,6 +194,150 @@ const SECTIONS: SectionConfig[] = [
   },
 ];
 
+interface UsesItemHeaderProps {
+  index: number;
+  totalCount: number;
+  title: string;
+  badge?: string;
+  metaBadge?: string;
+  enabled?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  onToggleVisibility: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onDelete: () => void;
+  itemTypeLabel: string;
+  ariaControlsId: string;
+}
+
+function UsesItemHeader({
+  index,
+  totalCount,
+  title,
+  badge,
+  metaBadge,
+  enabled = true,
+  isOpen,
+  onToggle,
+  onToggleVisibility,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+  itemTypeLabel,
+  ariaControlsId,
+}: UsesItemHeaderProps) {
+  return (
+    <div
+      data-item-header="true"
+      className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white/[0.01]"
+    >
+      {/* Clickable Header Trigger */}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-controls={ariaControlsId}
+        className="flex items-center gap-2.5 text-left min-w-0 flex-1 cursor-pointer select-none group"
+      >
+        <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center shrink-0">
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+              isOpen ? "rotate-180 text-pacific-cyan" : "text-muted"
+            }`}
+          />
+        </div>
+
+        {badge && (
+          <span className="text-[10px] font-mono text-pacific-cyan bg-pacific-cyan/[0.08] border border-pacific-cyan/20 px-1.5 py-0.5 rounded shrink-0 font-medium">
+            {badge}
+          </span>
+        )}
+
+        <span className="text-xs sm:text-sm font-bold font-space text-foreground truncate group-hover:text-pacific-cyan transition-colors">
+          {title || `Untitled ${itemTypeLabel}`}
+        </span>
+
+        {metaBadge && (
+          <span className="text-[10px] font-mono text-muted/70 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded uppercase shrink-0 hidden sm:inline-block truncate max-w-[130px]">
+            {metaBadge}
+          </span>
+        )}
+
+        {!enabled && (
+          <span className="text-[10px] font-mono text-rose-400/90 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded shrink-0">
+            Disabled
+          </span>
+        )}
+      </button>
+
+      {/* Action Buttons Row */}
+      <div className="flex items-center justify-between sm:justify-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/[0.05]">
+        {/* Mobile-only status and metadata indicators */}
+        <div className="flex items-center gap-2 sm:hidden min-w-0 flex-1">
+          {metaBadge && (
+            <span className="text-[10px] font-mono text-muted/70 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded uppercase truncate max-w-[110px]">
+              {metaBadge}
+            </span>
+          )}
+          <span className={`text-[10px] font-mono shrink-0 ${!enabled ? "text-rose-400" : "text-emerald-400"}`}>
+            ● {!enabled ? "Hidden" : "Live"}
+          </span>
+        </div>
+
+        {/* Control Actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={onToggleVisibility}
+            aria-label={!enabled ? `Show ${itemTypeLabel}` : `Hide ${itemTypeLabel}`}
+            title={!enabled ? `Show ${itemTypeLabel}` : `Hide ${itemTypeLabel}`}
+            className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+              !enabled
+                ? "text-muted/50 border-white/[0.05] hover:text-foreground hover:bg-white/[0.06]"
+                : "text-pacific-cyan border-pacific-cyan/20 bg-pacific-cyan/[0.06] hover:bg-pacific-cyan/15"
+            }`}
+          >
+            {!enabled ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          </button>
+
+          <button
+            type="button"
+            disabled={index === 0}
+            onClick={onMoveUp}
+            aria-label={`Move ${itemTypeLabel} up`}
+            title={`Move ${itemTypeLabel} up`}
+            className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer transition-colors"
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            disabled={index === totalCount - 1}
+            onClick={onMoveDown}
+            aria-label={`Move ${itemTypeLabel} down`}
+            title={`Move ${itemTypeLabel} down`}
+            className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer transition-colors"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={`Delete ${itemTypeLabel}`}
+            title={`Delete ${itemTypeLabel}`}
+            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/30 transition-colors cursor-pointer ml-0.5"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SiteContentEditor({ initialContent, initialKnowledge = [] }: SiteContentEditorProps) {
   const [activeTab, setActiveTab] = useState<AdminTabKey>("global");
   const [content, setContent] = useState<SiteContent>(initialContent);
@@ -391,6 +535,48 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
     setContactOpenSections(updated);
   };
 
+  // Resume Content Top-Level Accordion States (All Collapsed by default)
+  const [resumeOpenSections, setResumeOpenSections] = useState<Record<string, boolean>>({
+    hero: false,
+    contact: false,
+    status: false,
+    pdf: false,
+    skills: false,
+    experience: false,
+    education: false,
+  });
+
+  const toggleResumeSection = (key: string) => {
+    setResumeOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleAllResumeSections = () => {
+    const keys = ["hero", "contact", "status", "pdf", "skills", "experience", "education"];
+    const allOpen = keys.every((k) => resumeOpenSections[k]);
+    const nextState = !allOpen;
+    const updated: Record<string, boolean> = {};
+    keys.forEach((k) => {
+      updated[k] = nextState;
+    });
+    setResumeOpenSections(updated);
+  };
+
+  // Resume Nested Accordion States (All Collapsed by default)
+  const [openSkillGroups, setOpenSkillGroups] = useState<Record<string, boolean>>({});
+  const toggleSkillGroup = (id: string) => {
+    setOpenSkillGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const [openExperienceRecords, setOpenExperienceRecords] = useState<Record<string, boolean>>({});
+  const toggleExperienceRecord = (id: string) => {
+    setOpenExperienceRecords((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const [openEducationRecords, setOpenEducationRecords] = useState<Record<string, boolean>>({});
+  const toggleEducationRecord = (id: string) => {
+    setOpenEducationRecords((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   // Nested Accordions for Repeatable Items (Milestones, Principles, Focus Areas)
   const [openMilestones, setOpenMilestones] = useState<Record<string, boolean>>({});
   const toggleMilestone = (key: string) => {
@@ -405,6 +591,83 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
   const [openFocusAreas, setOpenFocusAreas] = useState<Record<string, boolean>>({});
   const toggleFocusArea = (key: string) => {
     setOpenFocusAreas((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Uses Content Top-Level Accordion States (All Collapsed by default)
+  const [usesOpenSections, setUsesOpenSections] = useState<Record<string, boolean>>({
+    header: false,
+    dailyStack: false,
+    developmentStack: false,
+    howIBuild: false,
+    mySetup: false,
+    currentlyExploring: false,
+  });
+
+  const toggleUsesSection = (key: string) => {
+    setUsesOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleAllUsesSections = () => {
+    const keys = ["header", "dailyStack", "developmentStack", "howIBuild", "mySetup", "currentlyExploring"];
+    const allOpen = keys.every((k) => usesOpenSections[k]);
+    const nextState = !allOpen;
+    const updated: Record<string, boolean> = {};
+    keys.forEach((k) => {
+      updated[k] = nextState;
+    });
+    setUsesOpenSections(updated);
+  };
+
+  // Uses Nested Item Accordion States (All Collapsed by default)
+  const [openDailyStackItems, setOpenDailyStackItems] = useState<Record<string, boolean>>({});
+  const toggleDailyStackItem = (id: string) => {
+    setOpenDailyStackItems((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const [openDevStackItems, setOpenDevStackItems] = useState<Record<string, boolean>>({});
+  const toggleDevStackItem = (id: string) => {
+    setOpenDevStackItems((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const [openBuildStepItems, setOpenBuildStepItems] = useState<Record<string, boolean>>({});
+  const toggleBuildStepItem = (id: string) => {
+    setOpenBuildStepItems((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const [openMySetupItems, setOpenMySetupItems] = useState<Record<string, boolean>>({
+    mainMachine: false,
+    fuel: false,
+    currentStatus: false,
+  });
+  const toggleMySetupItem = (key: string) => {
+    setOpenMySetupItems((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const [openExploringItems, setOpenExploringItems] = useState<Record<string, boolean>>({});
+  const toggleExploringItem = (id: string) => {
+    setOpenExploringItems((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Rawin Orbit Content Top-Level Accordion States (All Collapsed by default)
+  const [orbitOpenSections, setOrbitOpenSections] = useState<Record<string, boolean>>({
+    interface: false,
+    prompts: false,
+    verification: false,
+  });
+
+  const toggleOrbitSection = (key: string) => {
+    setOrbitOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleAllOrbitSections = () => {
+    const keys = ["interface", "prompts", "verification"];
+    const allOpen = keys.every((k) => orbitOpenSections[k]);
+    const nextState = !allOpen;
+    const updated: Record<string, boolean> = {};
+    keys.forEach((k) => {
+      updated[k] = nextState;
+    });
+    setOrbitOpenSections(updated);
   };
 
   // Resume PDF & complex states
@@ -588,6 +851,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
 
   // Uses Daily Stack Handlers
   const handleAddDailyStackItem = () => {
+    const newId = `tool-${Date.now()}`;
     setContent((prev) => {
       const currentList = prev.uses?.dailyStack || [];
       const nextOrder =
@@ -601,7 +865,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
           dailyStack: [
             ...currentList,
             {
-              id: `tool-${Date.now()}`,
+              id: newId,
               name: "New Tool",
               category: "Tool",
               description: "Primary tool for everyday development.",
@@ -613,6 +877,8 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
         },
       };
     });
+    setUsesOpenSections((prev) => ({ ...prev, dailyStack: true }));
+    setOpenDailyStackItems((prev) => ({ ...prev, [newId]: true }));
   };
 
   const handleUpdateDailyStackItem = (
@@ -679,6 +945,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
 
   // Uses Development Stack Handlers
   const handleAddDevStackItem = () => {
+    const newId = `tech-${Date.now()}`;
     setContent((prev) => {
       const currentList = prev.uses?.developmentStack || [];
       const nextOrder =
@@ -692,7 +959,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
           developmentStack: [
             ...currentList,
             {
-              id: `tech-${Date.now()}`,
+              id: newId,
               name: "New Technology",
               description: "Technology role and architecture details.",
               category: "Framework",
@@ -705,6 +972,8 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
         },
       };
     });
+    setUsesOpenSections((prev) => ({ ...prev, developmentStack: true }));
+    setOpenDevStackItems((prev) => ({ ...prev, [newId]: true }));
   };
 
   const handleUpdateDevStackItem = (
@@ -771,6 +1040,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
 
   // Uses How I Build Handlers
   const handleAddBuildStepItem = () => {
+    const newId = `step-${Date.now()}`;
     setContent((prev) => {
       const currentList = prev.uses?.howIBuild || [];
       const nextOrder =
@@ -785,11 +1055,11 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
           howIBuild: [
             ...currentList,
             {
-              id: `step-${Date.now()}`,
+              id: newId,
               step: numStr,
               number: numStr,
               title: "New Phase",
-              description: "Phase description and engineering methodology.",
+              description: "Phase description and development methodology.",
               order: nextOrder,
               enabled: true,
             },
@@ -797,6 +1067,8 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
         },
       };
     });
+    setUsesOpenSections((prev) => ({ ...prev, howIBuild: true }));
+    setOpenBuildStepItems((prev) => ({ ...prev, [newId]: true }));
   };
 
   const handleUpdateBuildStepItem = (
@@ -862,6 +1134,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
   };
 
   const handleAddExploringItem = () => {
+    const newId = `exp-${Date.now()}`;
     setContent((prev) => {
       const currentList = prev.uses?.currentlyExploring || [];
       const nextOrder =
@@ -875,16 +1148,20 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
           currentlyExploring: [
             ...currentList,
             {
+              id: newId,
               name: "New Topic",
               description: "Research notes and exploration objectives.",
               category: "Architecture",
               icon: "compass",
               displayOrder: nextOrder,
+              enabled: true,
             },
           ],
         },
       };
     });
+    setUsesOpenSections((prev) => ({ ...prev, currentlyExploring: true }));
+    setOpenExploringItems((prev) => ({ ...prev, [newId]: true }));
   };
 
   const handleUpdateExploringItem = (
@@ -1295,6 +1572,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
         },
       };
     });
+    setOrbitOpenSections((prev) => ({ ...prev, prompts: true }));
   };
 
   const handleUpdatePrompt = (index: number, value: string) => {
@@ -1590,7 +1868,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
       const current = prev.resume?.experience || [];
       const newItem: ResumeExperienceItem = {
         id: "exp-" + Date.now(),
-        role: "Software Engineer",
+        role: "Full Stack Developer",
         organization: "Company or Project",
         startDate: "2024",
         endDate: "",
@@ -2409,7 +2687,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
           className={
             activeTab === "global" || activeTab === "home"
               ? "flex flex-col sm:glass-card sm:rounded-2xl sm:p-8 sm:border sm:border-white/[0.08] gap-4 sm:gap-6"
-              : activeTab === "about" || activeTab === "contact"
+              : activeTab === "about" || activeTab === "contact" || activeTab === "resume" || activeTab === "uses" || activeTab === "ai"
               ? "glass-card rounded-xl sm:rounded-2xl p-3.5 sm:p-6 lg:p-8 border border-white/[0.08] flex flex-col gap-4 sm:gap-6"
               : "glass-card rounded-2xl p-5 sm:p-8 border border-white/[0.08] flex flex-col gap-6"
           }
@@ -2434,7 +2712,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
             <button
               type="submit"
               disabled={isPending}
-              className="inline-flex items-center justify-center gap-2 h-9 sm:h-10 px-4 sm:px-6 rounded-xl text-[11px] sm:text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_16px_rgba(24,155,173,0.3)] disabled:opacity-50 cursor-pointer select-none whitespace-nowrap self-start sm:self-auto"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[40px] h-10 px-4 sm:px-6 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_16px_rgba(24,155,173,0.3)] disabled:opacity-50 cursor-pointer select-none whitespace-nowrap"
             >
               {isPending ? (
                 <>
@@ -5156,839 +5434,1367 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               value={JSON.stringify(content.resume?.cta || { heading: "", description: "", buttonText: "" })}
             />
 
-            {/* 1. Header & Hero Settings */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
+            {/* Top Toolbar: Section summary and Expand/Collapse All */}
+            <div className="flex items-center justify-between px-1 pb-1 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">Hero Information</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
-                  <input
-                    type="text"
-                    name="eyebrow"
-                    value={content.resume.eyebrow}
-                    onChange={(e) => handleFieldChange("resume", "eyebrow", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Resume Header Name</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={content.resume.title}
-                    onChange={(e) => handleFieldChange("resume", "title", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Professional Subtitle</label>
-                  <input
-                    type="text"
-                    name="subtitle"
-                    value={content.resume.subtitle}
-                    onChange={(e) => handleFieldChange("resume", "subtitle", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Primary CTA Button Text</label>
-                  <input
-                    type="text"
-                    name="ctaText"
-                    value={content.resume.ctaText}
-                    onChange={(e) => handleFieldChange("resume", "ctaText", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Contact Information */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">Contact Information</h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("contact")}
-                  className="text-xs font-mono text-pacific-cyan hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
-                >
-                  <span>Manage in Contact &amp; Social</span>
-                  <ExternalLink className="w-3 h-3" />
-                </button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Location</label>
-                  <div className="px-4 py-2.5 rounded-xl bg-ink-black/40 border border-white/[0.06] text-sm text-foreground/80 font-mono">
-                    {content.contact?.location || content.global?.location || "Not configured"}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Email Address</label>
-                  <div className="px-4 py-2.5 rounded-xl bg-ink-black/40 border border-white/[0.06] text-sm text-foreground/80 font-mono truncate">
-                    {content.contact?.email || content.global?.contactEmail || "Not configured"}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Website URL</label>
-                  <input
-                    type="url"
-                    value={content.resume.contact?.website || ""}
-                    onChange={(e) => handleResumeContact("website", e.target.value)}
-                    placeholder="https://rawin.dev"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground font-mono outline-none transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Working Status */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <Radio className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">Working Status</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Status Text</label>
-                  <input
-                    type="text"
-                    value={content.resume.status?.text || ""}
-                    onChange={(e) => handleResumeStatus("text", e.target.value)}
-                    placeholder="Available for hire"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Semantic Indicator Color</label>
-                  <RawinSelect
-                    name="statusIndicator"
-                    value={content.resume.status?.indicator || "green"}
-                    onChange={(val) => handleResumeStatus("indicator", val)}
-                    options={STATUS_INDICATOR_OPTIONS}
-                    fontMono
-                  />
-                </div>
-              </div>
-
-              {/* Status Preview */}
-              <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-ink-black/40 border border-white/[0.04] text-xs font-mono">
-                <span className="text-muted">Public Preview:</span>
-                <span
-                  className={`inline-block w-2.5 h-2.5 rounded-full ${
-                    (content.resume.status?.indicator || "green") === "green"
-                      ? "bg-emerald-400"
-                      : (content.resume.status?.indicator || "green") === "orange"
-                      ? "bg-amber-400"
-                      : (content.resume.status?.indicator || "green") === "cyan"
-                      ? "bg-pacific-cyan"
-                      : "bg-zinc-400"
-                  }`}
-                />
-                <span className="text-foreground font-sans font-medium text-sm">
-                  {content.resume.status?.text || "Available for hire"}
+                <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                  Resume Sections
+                </span>
+                <span className="text-[10px] font-mono text-muted/60">
+                  (7 sections)
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={toggleAllResumeSections}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-foreground bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-colors cursor-pointer select-none"
+                title={
+                  ["hero", "contact", "status", "pdf", "skills", "experience", "education"].every(
+                    (k) => resumeOpenSections[k]
+                  )
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+                aria-label={
+                  ["hero", "contact", "status", "pdf", "skills", "experience", "education"].every(
+                    (k) => resumeOpenSections[k]
+                  )
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+              >
+                <ChevronsUpDown className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
+                <span className="hidden sm:inline">
+                  {["hero", "contact", "status", "pdf", "skills", "experience", "education"].every(
+                    (k) => resumeOpenSections[k]
+                  )
+                    ? "Collapse All"
+                    : "Expand All"}
+                </span>
+              </button>
             </div>
 
-            {/* 4. Executive Summary */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
-              <label className="text-xs font-mono text-muted uppercase">Executive Summary</label>
-              <textarea
-                rows={4}
-                name="summary"
-                value={content.resume.summary}
-                onChange={(e) => handleFieldChange("resume", "summary", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                placeholder="Concise overview of engineering focus and principles..."
-              />
-            </div>
-
-            {/* 5. Resume PDF Management (GridFS) */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileDown className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">Resume PDF Asset (GridFS)</h3>
-                </div>
-                <span className="text-xs font-mono text-muted">Max size: 10MB (PDF only)</span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-ink-black/60 border border-white/[0.08] flex flex-col gap-4">
-                {content.resume?.pdf ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-foreground">{content.resume.pdf.filename}</span>
-                          <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Active
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs font-mono text-muted">
-                          {content.resume.pdf.size && (
-                            <span>{(content.resume.pdf.size / (1024 * 1024)).toFixed(2)} MB</span>
-                          )}
-                          {content.resume.pdf.updatedAt && (
-                            <span>Updated {new Date(content.resume.pdf.updatedAt).toLocaleDateString()}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
-                      <a
-                        href="/api/resume/download"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-mono text-foreground inline-flex items-center gap-1.5 transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-pacific-cyan" />
-                        Open PDF
-                      </a>
-
-                      <label
-                        htmlFor="resume-pdf-replace"
-                        className="px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center gap-1.5 cursor-pointer transition-colors"
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        Replace PDF
-                      </label>
-                      <input
-                        id="resume-pdf-replace"
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        className="hidden"
-                        onChange={handlePdfSelect}
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => setShowPdfRemoveConfirm(true)}
-                        className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-mono text-rose-400 inline-flex items-center gap-1.5 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8 rounded-xl border border-dashed border-white/[0.12] bg-white/[0.01] text-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-muted">
-                      <FileDown className="w-6 h-6 text-pacific-cyan/60" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium text-foreground">No resume PDF uploaded</p>
-                      <p className="text-xs text-muted">Upload a PDF to activate the public download button on /resume.</p>
-                    </div>
-                    <label
-                      htmlFor="resume-pdf-upload"
-                      className="mt-2 px-4 py-2 rounded-xl bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center gap-2 cursor-pointer transition-colors"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Upload Resume PDF
-                    </label>
-                    <input
-                      id="resume-pdf-upload"
-                      type="file"
-                      accept=".pdf,application/pdf"
-                      className="hidden"
-                      onChange={handlePdfSelect}
-                    />
-                  </div>
-                )}
-
-                {/* Staged PDF file ready to upload */}
-                {selectedPdfFile && (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-pacific-cyan/[0.06] border border-pacific-cyan/30">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-pacific-cyan shrink-0" />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-foreground">{selectedPdfFile.name}</span>
-                        <span className="text-xs font-mono text-muted">{(selectedPdfFile.size / (1024 * 1024)).toFixed(2)} MB (staged)</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleUploadResumePdf}
-                        disabled={resumePdfLoading === "upload"}
-                        className="px-4 py-1.5 rounded-lg bg-pacific-cyan text-ink-black font-medium text-xs inline-flex items-center gap-1.5 hover:bg-pacific-cyan/90 transition-colors disabled:opacity-50"
-                      >
-                        {resumePdfLoading === "upload" ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-3.5 h-3.5" />
-                            Confirm & Upload PDF
-                          </>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPdfFile(null)}
-                        disabled={resumePdfLoading === "upload"}
-                        className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-xs font-mono text-muted hover:text-foreground transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Removal Confirmation Dialog */}
-                {showPdfRemoveConfirm && (
-                  <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 text-xs text-rose-300">
-                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                      <span>Remove active Resume PDF? The public download button on /resume will be hidden immediately.</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleRemoveResumePdf}
-                        disabled={resumePdfLoading === "remove"}
-                        className="px-3 py-1.5 rounded-lg bg-rose-500 text-white text-xs font-medium inline-flex items-center gap-1 hover:bg-rose-600 transition-colors disabled:opacity-50"
-                      >
-                        {resumePdfLoading === "remove" ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            Removing...
-                          </>
-                        ) : (
-                          "Confirm Remove"
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowPdfRemoveConfirm(false)}
-                        className="px-3 py-1.5 rounded-lg bg-white/[0.06] text-xs font-mono text-foreground hover:bg-white/[0.1] transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 6. Technical Skills Groups */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">Technical Skills Groups</h3>
-                </div>
+            {/* Top-Level Accordion Stack */}
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {/* 1. HERO INFORMATION */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
                 <button
                   type="button"
-                  onClick={addSkillGroup}
-                  className="px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center gap-1.5 transition-colors"
+                  onClick={() => toggleResumeSection("hero")}
+                  aria-expanded={Boolean(resumeOpenSections.hero)}
+                  aria-controls="resume-section-hero"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Skill Group
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Hero Information
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {[
+                          content.resume?.eyebrow || "Eyebrow",
+                          content.resume?.title || "Name",
+                          content.resume?.subtitle ? "Subtitle" : "",
+                          content.resume?.ctaText || "CTA",
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {resumeOpenSections.hero ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          resumeOpenSections.hero ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
                 </button>
-              </div>
 
-              <div className="flex flex-col gap-4">
-                {(content.resume?.skills || []).map((group, groupIdx) => (
-                  <div
-                    key={group.id || groupIdx}
-                    className="p-5 rounded-2xl bg-ink-black/60 border border-white/[0.08] flex flex-col gap-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 flex-1">
-                        <span className="text-xs font-mono text-muted">#{groupIdx + 1}</span>
-                        <input
-                          type="text"
-                          value={group.title}
-                          onChange={(e) => updateSkillGroupTitle(group.id, e.target.value)}
-                          placeholder="Group Title (e.g. Frontend)"
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm font-medium text-foreground outline-none transition-colors w-full max-w-xs"
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => moveSkillGroup(groupIdx, "up")}
-                          disabled={groupIdx === 0}
-                          className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveSkillGroup(groupIdx, "down")}
-                          disabled={groupIdx === (content.resume?.skills?.length || 1) - 1}
-                          className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeSkillGroup(group.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors ml-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Skill items badges */}
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {group.skills.map((skill, skillIdx) => (
-                        <span
-                          key={skillIdx}
-                          className="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-foreground inline-flex items-center gap-1.5"
-                        >
-                          {skill}
-                          <button
-                            type="button"
-                            onClick={() => removeSkillFromGroup(group.id, skillIdx)}
-                            className="text-muted hover:text-rose-400 transition-colors"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                      {group.skills.length === 0 && (
-                        <span className="text-xs font-mono text-muted italic">No skills added yet.</span>
-                      )}
-                    </div>
-
-                    {/* Add skill to this group */}
-                    <div className="flex items-center gap-2 pt-1">
+                <div
+                  id="resume-section-hero"
+                  role="region"
+                  aria-label="Hero Information"
+                  className={
+                    resumeOpenSections.hero
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
                       <input
                         type="text"
-                        value={newSkillText[group.id] || ""}
-                        onChange={(e) =>
-                          setNewSkillText((prev) => ({ ...prev, [group.id]: e.target.value }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            addSkillToGroup(group.id);
-                          }
-                        }}
-                        placeholder="Add skill (e.g. Next.js)..."
-                        className="px-3 py-1.5 rounded-lg bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors flex-1 max-w-sm"
+                        name="eyebrow"
+                        value={content.resume.eyebrow}
+                        onChange={(e) => handleFieldChange("resume", "eyebrow", e.target.value)}
+                        placeholder="RESUME / PROFILE · 2026"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
                       />
-                      <button
-                        type="button"
-                        onClick={() => addSkillToGroup(group.id)}
-                        className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-xs font-mono text-foreground inline-flex items-center gap-1 transition-colors"
-                      >
-                        <Plus className="w-3 h-3" />
-                        Add
-                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Resume Header Name</label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={content.resume.title}
+                        onChange={(e) => handleFieldChange("resume", "title", e.target.value)}
+                        placeholder="Rushan Siddiqui"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Professional Subtitle</label>
+                      <input
+                        type="text"
+                        name="subtitle"
+                        value={content.resume.subtitle}
+                        onChange={(e) => handleFieldChange("resume", "subtitle", e.target.value)}
+                        placeholder="Full Stack Developer · Web Craftsman"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Primary CTA Button Text</label>
+                      <input
+                        type="text"
+                        name="ctaText"
+                        value={content.resume.ctaText}
+                        onChange={(e) => handleFieldChange("resume", "ctaText", e.target.value)}
+                        placeholder="Hire Me"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 7. Professional Experience */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">Professional Experience</h3>
                 </div>
+              </div>
+
+              {/* 2. CONTACT INFORMATION */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
                 <button
                   type="button"
-                  onClick={addExperienceItem}
-                  className="px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center gap-1.5 transition-colors"
+                  onClick={() => toggleResumeSection("contact")}
+                  aria-expanded={Boolean(resumeOpenSections.contact)}
+                  aria-controls="resume-section-contact"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Position
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Contact Information
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {[
+                          content.contact?.location || content.resume?.contact?.location || "Location",
+                          content.contact?.email || content.resume?.contact?.email || "Email",
+                          content.resume?.contact?.website ? "Website" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {resumeOpenSections.contact ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          resumeOpenSections.contact ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
                 </button>
+
+                <div
+                  id="resume-section-contact"
+                  role="region"
+                  aria-label="Contact Information"
+                  className={
+                    resumeOpenSections.contact
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="flex items-center justify-between gap-2 pb-1">
+                    <span className="text-xs text-muted">
+                      Connected to site-wide contact credentials.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("contact")}
+                      className="text-xs font-mono text-pacific-cyan hover:underline flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <span>Manage in Contact &amp; Social</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Location</label>
+                      <div className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/40 border border-white/[0.06] text-xs sm:text-sm text-foreground/80 font-mono truncate">
+                        {content.contact?.location || content.global?.location || "Not configured"}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Email Address</label>
+                      <div className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/40 border border-white/[0.06] text-xs sm:text-sm text-foreground/80 font-mono truncate">
+                        {content.contact?.email || content.global?.contactEmail || "Not configured"}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Website URL</label>
+                      <input
+                        type="url"
+                        value={content.resume.contact?.website || ""}
+                        onChange={(e) => handleResumeContact("website", e.target.value)}
+                        placeholder="https://rawin.dev"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground font-mono outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-5">
-                {(content.resume?.experience || []).map((exp, expIdx) => (
-                  <div
-                    key={exp.id || expIdx}
-                    className="p-5 rounded-2xl bg-ink-black/60 border border-white/[0.08] flex flex-col gap-4"
-                  >
-                    <div className="flex items-center justify-between gap-3 border-b border-white/[0.04] pb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted">#{expIdx + 1}</span>
-                        <span className="text-sm font-medium text-foreground">{exp.role || "Role"}</span>
-                        <span className="text-xs text-muted">at</span>
-                        <span className="text-sm text-foreground">{exp.organization || "Organization"}</span>
-                      </div>
+              {/* 3. WORKING STATUS (WITH EXECUTIVE SUMMARY NESTED) */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleResumeSection("status")}
+                  aria-expanded={Boolean(resumeOpenSections.status)}
+                  aria-controls="resume-section-status"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Radio className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Working Status
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {[
+                          content.resume.status?.text || "Available for hire",
+                          content.resume.status?.indicator || "green",
+                        ].join(" · ")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {resumeOpenSections.status ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          resumeOpenSections.status ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
 
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => moveExperienceItem(expIdx, "up")}
-                          disabled={expIdx === 0}
-                          className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveExperienceItem(expIdx, "down")}
-                          disabled={expIdx === (content.resume?.experience?.length || 1) - 1}
-                          className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeExperienceItem(exp.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors ml-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                <div
+                  id="resume-section-status"
+                  role="region"
+                  aria-label="Working Status"
+                  className={
+                    resumeOpenSections.status
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-5 sm:gap-6 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Status Text</label>
+                      <input
+                        type="text"
+                        value={content.resume.status?.text || ""}
+                        onChange={(e) => handleResumeStatus("text", e.target.value)}
+                        placeholder="Available for hire"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-mono text-muted uppercase">Role Title</label>
-                        <input
-                          type="text"
-                          value={exp.role}
-                          onChange={(e) => updateExperienceField(exp.id, "role", e.target.value)}
-                          placeholder="e.g. Full Stack Engineer"
-                          className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-mono text-muted uppercase">Organization / Project</label>
-                        <input
-                          type="text"
-                          value={exp.organization}
-                          onChange={(e) => updateExperienceField(exp.id, "organization", e.target.value)}
-                          placeholder="e.g. RAWIN / Independent Projects"
-                          className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                        />
-                      </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Semantic Indicator Color</label>
+                      <RawinSelect
+                        name="statusIndicator"
+                        value={content.resume.status?.indicator || "green"}
+                        onChange={(val) => handleResumeStatus("indicator", val)}
+                        options={STATUS_INDICATOR_OPTIONS}
+                        fontMono
+                      />
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-mono text-muted uppercase">Start Date</label>
-                        <input
-                          type="text"
-                          value={exp.startDate}
-                          onChange={(e) => updateExperienceField(exp.id, "startDate", e.target.value)}
-                          placeholder="e.g. 2024"
-                          className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                        />
+                  {/* Status Preview */}
+                  <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-ink-black/40 border border-white/[0.04] text-xs font-mono">
+                    <span className="text-muted">Public Preview:</span>
+                    <span
+                      className={`inline-block w-2.5 h-2.5 rounded-full ${
+                        (content.resume.status?.indicator || "green") === "green"
+                          ? "bg-emerald-400"
+                          : (content.resume.status?.indicator || "green") === "orange"
+                          ? "bg-amber-400"
+                          : (content.resume.status?.indicator || "green") === "cyan"
+                          ? "bg-pacific-cyan"
+                          : "bg-zinc-400"
+                      }`}
+                    />
+                    <span className="text-foreground font-sans font-medium text-xs sm:text-sm">
+                      {content.resume.status?.text || "Available for hire"}
+                    </span>
+                  </div>
+
+                  {/* Divider and Executive Summary subsection */}
+                  <div className="border-t border-white/[0.06] pt-5 flex flex-col gap-3">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-mono font-semibold text-foreground uppercase tracking-wider">
+                        Executive Summary
+                      </span>
+                      <span className="text-[11px] font-mono text-muted/70">
+                        Profile overview displayed prominently at the top of the resume.
+                      </span>
+                    </div>
+                    <textarea
+                      rows={4}
+                      name="summary"
+                      value={content.resume.summary}
+                      onChange={(e) => handleFieldChange("resume", "summary", e.target.value)}
+                      className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      placeholder="Concise overview of focus and principles..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. RESUME PDF */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleResumeSection("pdf")}
+                  aria-expanded={Boolean(resumeOpenSections.pdf)}
+                  aria-controls="resume-section-pdf"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <FileDown className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Resume PDF
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {content.resume?.pdf
+                          ? `PDF · ${content.resume.pdf.filename} · Active`
+                          : "No PDF uploaded · Inactive"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {resumeOpenSections.pdf ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          resumeOpenSections.pdf ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="resume-section-pdf"
+                  role="region"
+                  aria-label="Resume PDF"
+                  className={
+                    resumeOpenSections.pdf
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted">
+                      Direct download asset for public /resume visitors.
+                    </span>
+                    <span className="text-[11px] font-mono text-muted/70 shrink-0">
+                      Max size: 10MB · PDF only
+                    </span>
+                  </div>
+
+                  <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-ink-black/60 border border-white/[0.08] flex flex-col gap-4">
+                    {content.resume?.pdf ? (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                        <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                          <div className="w-10 h-10 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div className="flex flex-col gap-1 min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs sm:text-sm font-medium text-foreground break-all">
+                                {content.resume.pdf.filename}
+                              </span>
+                              <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                                Active
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-muted">
+                              {content.resume.pdf.size && (
+                                <span>{(content.resume.pdf.size / (1024 * 1024)).toFixed(2)} MB</span>
+                              )}
+                              {content.resume.pdf.updatedAt && (
+                                <>
+                                  <span>·</span>
+                                  <span>Updated {new Date(content.resume.pdf.updatedAt).toLocaleDateString()}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action buttons row: grid on mobile, inline on desktop */}
+                        <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/[0.06]">
+                          <a
+                            href="/api/resume/download"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full sm:w-auto min-h-[38px] h-9 px-3.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-mono text-foreground inline-flex items-center justify-center gap-1.5 transition-colors select-none"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-pacific-cyan" />
+                            <span>Open PDF</span>
+                          </a>
+
+                          <label
+                            htmlFor="resume-pdf-replace"
+                            className="w-full sm:w-auto min-h-[38px] h-9 px-3.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors select-none"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Replace PDF</span>
+                          </label>
+                          <input
+                            id="resume-pdf-replace"
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            className="hidden"
+                            onChange={handlePdfSelect}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => setShowPdfRemoveConfirm(true)}
+                            className="w-full sm:w-auto min-h-[38px] h-9 px-3.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-mono text-rose-400 inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Remove</span>
+                          </button>
+                        </div>
                       </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-mono text-muted uppercase">End Date</label>
-                        <input
-                          type="text"
-                          value={exp.endDate || ""}
-                          disabled={exp.current}
-                          onChange={(e) => updateExperienceField(exp.id, "endDate", e.target.value)}
-                          placeholder={exp.current ? "Present" : "e.g. 2025"}
-                          className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors disabled:opacity-40"
-                        />
-                      </div>
-
-                      <div className="pt-6">
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-6 sm:p-8 rounded-xl border border-dashed border-white/[0.12] bg-white/[0.01] text-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-muted">
+                          <FileDown className="w-6 h-6 text-pacific-cyan/60" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm font-medium text-foreground">No resume PDF uploaded</p>
+                          <p className="text-xs text-muted">Upload a PDF to activate the public download button on /resume.</p>
+                        </div>
                         <label
-                          htmlFor={`curr-${exp.id}`}
-                          className="flex items-center gap-2.5 cursor-pointer group select-none"
+                          htmlFor="resume-pdf-upload"
+                          className="mt-2 w-full sm:w-auto px-4 py-2 rounded-xl bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center justify-center gap-2 cursor-pointer transition-colors"
                         >
-                          <div className="relative flex items-center justify-center">
-                            <input
-                              id={`curr-${exp.id}`}
-                              type="checkbox"
-                              checked={exp.current || false}
-                              onChange={(e) => updateExperienceField(exp.id, "current", e.target.checked)}
-                              className="peer sr-only"
-                            />
-                            <div
-                              className={`w-4 h-4 rounded-[5px] border transition-all flex items-center justify-center ${
-                                exp.current
-                                  ? "bg-pacific-cyan border-pacific-cyan text-ink-black shadow-[0_0_10px_rgba(24,155,173,0.35)]"
-                                  : "bg-ink-black/70 border-white/[0.18] group-hover:border-white/30"
-                              } peer-focus-visible:ring-2 peer-focus-visible:ring-pacific-cyan/50 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-black`}
-                            >
-                              <Check
-                                className={`w-3 h-3 stroke-[3] transition-opacity duration-150 ${
-                                  exp.current ? "opacity-100" : "opacity-0"
+                          <Upload className="w-4 h-4" />
+                          <span>Upload Resume PDF</span>
+                        </label>
+                        <input
+                          id="resume-pdf-upload"
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          className="hidden"
+                          onChange={handlePdfSelect}
+                        />
+                      </div>
+                    )}
+
+                    {/* Staged PDF file ready to upload */}
+                    {selectedPdfFile && (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-pacific-cyan/[0.06] border border-pacific-cyan/30">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <FileText className="w-5 h-5 text-pacific-cyan shrink-0" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs sm:text-sm font-medium text-foreground break-all">
+                              {selectedPdfFile.name}
+                            </span>
+                            <span className="text-[11px] font-mono text-muted">
+                              {(selectedPdfFile.size / (1024 * 1024)).toFixed(2)} MB (staged)
+                            </span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
+                          <button
+                            type="button"
+                            onClick={handleUploadResumePdf}
+                            disabled={resumePdfLoading === "upload"}
+                            className="w-full sm:w-auto min-h-[38px] h-9 px-4 rounded-lg bg-pacific-cyan text-ink-black font-semibold text-xs inline-flex items-center justify-center gap-1.5 hover:bg-pacific-cyan/90 transition-colors disabled:opacity-50 cursor-pointer"
+                          >
+                            {resumePdfLoading === "upload" ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Uploading...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Confirm &amp; Upload</span>
+                              </>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPdfFile(null)}
+                            disabled={resumePdfLoading === "upload"}
+                            className="w-full sm:w-auto min-h-[38px] h-9 px-3 rounded-lg bg-white/[0.04] text-xs font-mono text-muted hover:text-foreground inline-flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Removal Confirmation Dialog */}
+                    {showPdfRemoveConfirm && (
+                      <div className="p-3.5 sm:p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 text-xs text-rose-300">
+                          <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                          <span>Remove active Resume PDF? The public download button on /resume will be hidden immediately.</span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
+                          <button
+                            type="button"
+                            onClick={handleRemoveResumePdf}
+                            disabled={resumePdfLoading === "remove"}
+                            className="w-full sm:w-auto min-h-[38px] h-9 px-3.5 rounded-lg bg-rose-500 text-white text-xs font-semibold inline-flex items-center justify-center gap-1 hover:bg-rose-600 transition-colors disabled:opacity-50 cursor-pointer"
+                          >
+                            {resumePdfLoading === "remove" ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Removing...</span>
+                              </>
+                            ) : (
+                              "Confirm Remove"
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowPdfRemoveConfirm(false)}
+                            className="w-full sm:w-auto min-h-[38px] h-9 px-3 rounded-lg bg-white/[0.06] text-xs font-mono text-foreground hover:bg-white/[0.1] inline-flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. TECHNICAL SKILLS */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleResumeSection("skills")}
+                  aria-expanded={Boolean(resumeOpenSections.skills)}
+                  aria-controls="resume-section-skills"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Technical Skills
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {`${(content.resume?.skills || []).length} groups · ${(content.resume?.skills || []).reduce(
+                          (acc, g) => acc + (g.skills?.length || 0),
+                          0
+                        )} skills`}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {resumeOpenSections.skills ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          resumeOpenSections.skills ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="resume-section-skills"
+                  role="region"
+                  aria-label="Technical Skills"
+                  className={
+                    resumeOpenSections.skills
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="flex items-center justify-between gap-2 pb-1">
+                    <span className="text-xs text-muted">
+                      Organize skills into categories for the technical matrix.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={addSkillGroup}
+                      className="px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Skill Group</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {(content.resume?.skills || []).map((group, groupIdx) => {
+                      const isGroupOpen = Boolean(openSkillGroups[group.id]);
+                      return (
+                        <div
+                          key={group.id || groupIdx}
+                          className="rounded-xl border border-white/[0.08] bg-ink-black/50 overflow-hidden transition-colors hover:border-white/[0.12]"
+                        >
+                          {/* Nested Skill Group Accordion Trigger */}
+                          <button
+                            type="button"
+                            onClick={() => toggleSkillGroup(group.id)}
+                            aria-expanded={isGroupOpen}
+                            aria-controls={`skill-group-${group.id}`}
+                            className="w-full p-3 sm:p-3.5 flex items-center justify-between gap-2 text-left hover:bg-white/[0.02] cursor-pointer select-none"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs font-mono text-muted shrink-0">#{groupIdx + 1}</span>
+                              <span className="text-xs sm:text-sm font-medium text-foreground truncate">
+                                {group.title || "Untitled Group"}
+                              </span>
+                              <span className="text-[11px] font-mono text-muted/60 shrink-0">
+                                ({group.skills?.length || 0} skills)
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                                {isGroupOpen ? "Collapse" : "Expand"}
+                              </span>
+                              <ChevronDown
+                                className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                                  isGroupOpen ? "rotate-180 text-pacific-cyan" : ""
                                 }`}
                               />
                             </div>
-                          </div>
-                          <span className="text-xs font-mono text-foreground/90 group-hover:text-foreground transition-colors">
-                            Current Position (Present)
-                          </span>
-                        </label>
-                      </div>
-                    </div>
+                          </button>
 
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-mono text-muted uppercase">Location (optional)</label>
-                      <input
-                        type="text"
-                        value={exp.location || ""}
-                        onChange={(e) => updateExperienceField(exp.id, "location", e.target.value)}
-                        placeholder="e.g. Remote or Bengaluru, India"
-                        className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                      />
-                    </div>
-
-                    {/* Bullets */}
-                    <div className="flex flex-col gap-2 pt-2 border-t border-white/[0.04]">
-                      <label className="text-xs font-mono text-muted uppercase">Key Responsibilities / Impact</label>
-                      <div className="flex flex-col gap-2">
-                        {exp.bullets.map((bullet, bulletIdx) => (
-                          <div key={bulletIdx} className="flex items-start gap-2">
-                            <span className="text-pacific-cyan mt-2 text-xs">●</span>
-                            <textarea
-                              rows={2}
-                              value={bullet}
-                              onChange={(e) => updateBulletInExperience(exp.id, bulletIdx, e.target.value)}
-                              className="px-3 py-1.5 rounded-lg bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors flex-1 resize-y leading-relaxed"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeBulletFromExperience(exp.id, bulletIdx)}
-                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors mt-1"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-1">
-                        <input
-                          type="text"
-                          value={newBulletText[exp.id] || ""}
-                          onChange={(e) =>
-                            setNewBulletText((prev) => ({ ...prev, [exp.id]: e.target.value }))
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              addBulletToExperience(exp.id);
+                          {/* Nested Skill Group Content */}
+                          <div
+                            id={`skill-group-${group.id}`}
+                            role="region"
+                            aria-label={group.title || `Skill Group #${groupIdx + 1}`}
+                            className={
+                              isGroupOpen
+                                ? "p-3.5 sm:p-4 border-t border-white/[0.06] flex flex-col gap-3 bg-white/[0.01]"
+                                : "hidden"
                             }
-                          }}
-                          placeholder="Add bullet point..."
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors flex-1"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => addBulletToExperience(exp.id)}
-                          className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-xs font-mono text-foreground inline-flex items-center gap-1 transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                          Add Bullet
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <label className="text-xs font-mono text-muted uppercase shrink-0">Title</label>
+                                <input
+                                  type="text"
+                                  value={group.title}
+                                  onChange={(e) => updateSkillGroupTitle(group.id, e.target.value)}
+                                  placeholder="Group Title (e.g. Frontend)"
+                                  className="px-3 py-1.5 rounded-lg bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm font-medium text-foreground outline-none transition-colors w-full max-w-xs"
+                                />
+                              </div>
 
-            {/* 8. Education */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">Education</h3>
+                              <div className="flex items-center gap-1 self-end sm:self-auto shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => moveSkillGroup(groupIdx, "up")}
+                                  disabled={groupIdx === 0}
+                                  aria-label="Move skill group up"
+                                  className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
+                                >
+                                  <ChevronUp className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveSkillGroup(groupIdx, "down")}
+                                  disabled={groupIdx === (content.resume?.skills?.length || 1) - 1}
+                                  aria-label="Move skill group down"
+                                  className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
+                                >
+                                  <ChevronDown className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeSkillGroup(group.id)}
+                                  aria-label="Delete skill group"
+                                  className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors ml-1"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Skill chips */}
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {group.skills.map((skill, skillIdx) => (
+                                <span
+                                  key={skillIdx}
+                                  className="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-foreground inline-flex items-center gap-1.5"
+                                >
+                                  <span>{skill}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSkillFromGroup(group.id, skillIdx)}
+                                    aria-label={`Remove ${skill}`}
+                                    className="text-muted hover:text-rose-400 transition-colors"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              ))}
+                              {group.skills.length === 0 && (
+                                <span className="text-xs font-mono text-muted italic">No skills added yet.</span>
+                              )}
+                            </div>
+
+                            {/* Add skill input & button */}
+                            <div className="flex items-center gap-2 pt-1">
+                              <input
+                                type="text"
+                                value={newSkillText[group.id] || ""}
+                                onChange={(e) =>
+                                  setNewSkillText((prev) => ({ ...prev, [group.id]: e.target.value }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    addSkillToGroup(group.id);
+                                  }
+                                }}
+                                placeholder="Add skill (e.g. Next.js)..."
+                                className="px-3 py-1.5 rounded-lg bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors flex-1 max-w-sm"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => addSkillToGroup(group.id)}
+                                className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-xs font-mono text-foreground inline-flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Add</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
+              </div>
+
+              {/* 6. PROFESSIONAL EXPERIENCE */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
                 <button
                   type="button"
-                  onClick={addEducationItem}
-                  className="px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center gap-1.5 transition-colors"
+                  onClick={() => toggleResumeSection("experience")}
+                  aria-expanded={Boolean(resumeOpenSections.experience)}
+                  aria-controls="resume-section-experience"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Education
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                {(content.resume?.education || []).map((edu, eduIdx) => (
-                  <div
-                    key={edu.id || eduIdx}
-                    className="p-5 rounded-2xl bg-ink-black/60 border border-white/[0.08] flex flex-col gap-4"
-                  >
-                    <div className="flex items-center justify-between gap-3 border-b border-white/[0.04] pb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted">#{eduIdx + 1}</span>
-                        <span className="text-sm font-medium text-foreground">{edu.degree || "Degree"}</span>
-                        <span className="text-xs text-muted">at</span>
-                        <span className="text-sm text-foreground">{edu.institution || "Institution"}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => moveEducationItem(eduIdx, "up")}
-                          disabled={eduIdx === 0}
-                          className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveEducationItem(eduIdx, "down")}
-                          disabled={eduIdx === (content.resume?.education?.length || 1) - 1}
-                          className="p-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeEducationItem(edu.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors ml-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Briefcase className="w-4 h-4" />
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-mono text-muted uppercase">Degree / Program</label>
-                        <input
-                          type="text"
-                          value={edu.degree}
-                          onChange={(e) => updateEducationField(edu.id, "degree", e.target.value)}
-                          placeholder="e.g. Bachelor of Technology in Computer Science"
-                          className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-mono text-muted uppercase">Institution</label>
-                        <input
-                          type="text"
-                          value={edu.institution}
-                          onChange={(e) => updateEducationField(edu.id, "institution", e.target.value)}
-                          placeholder="e.g. University / College"
-                          className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                        />
-                      </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Professional Experience
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {`${(content.resume?.experience || []).length} positions`}
+                      </span>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-mono text-muted uppercase">Location</label>
-                        <input
-                          type="text"
-                          value={edu.location || ""}
-                          onChange={(e) => updateEducationField(edu.id, "location", e.target.value)}
-                          placeholder="e.g. Bengaluru, India"
-                          className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-mono text-muted uppercase">Start Date (optional)</label>
-                        <input
-                          type="text"
-                          value={edu.startDate || ""}
-                          onChange={(e) => updateEducationField(edu.id, "startDate", e.target.value)}
-                          placeholder="e.g. 2020"
-                          className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-mono text-muted uppercase">End Date (optional)</label>
-                        <input
-                          type="text"
-                          value={edu.endDate || ""}
-                          onChange={(e) => updateEducationField(edu.id, "endDate", e.target.value)}
-                          placeholder="e.g. 2024"
-                          className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-mono text-muted uppercase">Description / Focus (optional)</label>
-                      <textarea
-                        rows={2}
-                        value={edu.description || ""}
-                        onChange={(e) => updateEducationField(edu.id, "description", e.target.value)}
-                        placeholder="Relevant coursework, focus areas, or honors..."
-                        className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors resize-y leading-relaxed"
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {resumeOpenSections.experience ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          resumeOpenSections.experience ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
                       />
                     </div>
                   </div>
-                ))}
+                </button>
+
+                <div
+                  id="resume-section-experience"
+                  role="region"
+                  aria-label="Professional Experience"
+                  className={
+                    resumeOpenSections.experience
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="flex items-center justify-between gap-2 pb-1">
+                    <span className="text-xs text-muted">
+                      Chronological positions and career timeline.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={addExperienceItem}
+                      className="px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Position</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-3 sm:gap-4">
+                    {(content.resume?.experience || []).map((exp, expIdx) => {
+                      const isExpOpen = Boolean(openExperienceRecords[exp.id]);
+                      return (
+                        <div
+                          key={exp.id || expIdx}
+                          className="rounded-xl sm:rounded-2xl border border-white/[0.08] bg-ink-black/50 overflow-hidden transition-colors hover:border-white/[0.12]"
+                        >
+                          {/* Nested Experience Accordion Trigger */}
+                          <button
+                            type="button"
+                            onClick={() => toggleExperienceRecord(exp.id)}
+                            aria-expanded={isExpOpen}
+                            aria-controls={`exp-record-${exp.id}`}
+                            className="w-full p-3 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] cursor-pointer select-none"
+                          >
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-muted shrink-0">#{expIdx + 1}</span>
+                                <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
+                                  {exp.role || "Role"}
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-mono text-muted/70 truncate pl-6">
+                                {exp.organization || "Organization"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[11px] font-mono text-pacific-cyan/80 hidden sm:inline">
+                                {exp.startDate || ""} {exp.current ? "(Present)" : exp.endDate ? `-> ${exp.endDate}` : ""}
+                              </span>
+                              <ChevronDown
+                                className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                                  isExpOpen ? "rotate-180 text-pacific-cyan" : ""
+                                }`}
+                              />
+                            </div>
+                          </button>
+
+                          {/* Nested Experience Content */}
+                          <div
+                            id={`exp-record-${exp.id}`}
+                            role="region"
+                            aria-label={`${exp.role || "Position"} at ${exp.organization || "Organization"}`}
+                            className={
+                              isExpOpen
+                                ? "p-4 sm:p-5 border-t border-white/[0.06] flex flex-col gap-4 bg-white/[0.01]"
+                                : "hidden"
+                            }
+                          >
+                            {/* Card Header & Controls (Mobile Safe!) */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className="text-xs font-mono text-muted shrink-0">#{expIdx + 1}</span>
+                                <span className="text-xs sm:text-sm font-semibold text-foreground break-words">
+                                  {exp.role || "Role"}
+                                </span>
+                                <span className="text-xs text-muted shrink-0">at</span>
+                                <span className="text-xs sm:text-sm text-foreground/90 break-words">
+                                  {exp.organization || "Organization"}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => moveExperienceItem(expIdx, "up")}
+                                  disabled={expIdx === 0}
+                                  aria-label="Move position up"
+                                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
+                                >
+                                  <ChevronUp className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveExperienceItem(expIdx, "down")}
+                                  disabled={expIdx === (content.resume?.experience?.length || 1) - 1}
+                                  aria-label="Move position down"
+                                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
+                                >
+                                  <ChevronDown className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeExperienceItem(exp.id)}
+                                  aria-label="Delete position"
+                                  className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors ml-1"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-mono text-muted uppercase">Role Title</label>
+                                <input
+                                  type="text"
+                                  value={exp.role}
+                                  onChange={(e) => updateExperienceField(exp.id, "role", e.target.value)}
+                                  placeholder="e.g. Full Stack Developer"
+                                  className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-mono text-muted uppercase">Organization / Project</label>
+                                <input
+                                  type="text"
+                                  value={exp.organization}
+                                  onChange={(e) => updateExperienceField(exp.id, "organization", e.target.value)}
+                                  placeholder="e.g. RAWIN / Independent Projects"
+                                  className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-mono text-muted uppercase">Start Date</label>
+                                <input
+                                  type="text"
+                                  value={exp.startDate}
+                                  onChange={(e) => updateExperienceField(exp.id, "startDate", e.target.value)}
+                                  placeholder="e.g. 2024"
+                                  className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-mono text-muted uppercase">End Date</label>
+                                <input
+                                  type="text"
+                                  value={exp.endDate || ""}
+                                  disabled={exp.current}
+                                  onChange={(e) => updateExperienceField(exp.id, "endDate", e.target.value)}
+                                  placeholder={exp.current ? "Present" : "e.g. 2025"}
+                                  className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors disabled:opacity-40"
+                                />
+                              </div>
+
+                              <div className="pt-2 sm:pt-6">
+                                <label
+                                  htmlFor={`curr-${exp.id}`}
+                                  className="flex items-center gap-2.5 cursor-pointer group select-none"
+                                >
+                                  <div className="relative flex items-center justify-center">
+                                    <input
+                                      id={`curr-${exp.id}`}
+                                      type="checkbox"
+                                      checked={exp.current || false}
+                                      onChange={(e) => updateExperienceField(exp.id, "current", e.target.checked)}
+                                      className="peer sr-only"
+                                    />
+                                    <div
+                                      className={`w-4 h-4 rounded-[5px] border transition-all flex items-center justify-center ${
+                                        exp.current
+                                          ? "bg-pacific-cyan border-pacific-cyan text-ink-black shadow-[0_0_10px_rgba(24,155,173,0.35)]"
+                                          : "bg-ink-black/70 border-white/[0.18] group-hover:border-white/30"
+                                      } peer-focus-visible:ring-2 peer-focus-visible:ring-pacific-cyan/50 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-black`}
+                                    >
+                                      <Check
+                                        className={`w-3 h-3 stroke-[3] transition-opacity duration-150 ${
+                                          exp.current ? "opacity-100" : "opacity-0"
+                                        }`}
+                                      />
+                                    </div>
+                                  </div>
+                                  <span className="text-xs font-mono text-foreground/90 group-hover:text-foreground transition-colors">
+                                    Current Position (Present)
+                                  </span>
+                                </label>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs font-mono text-muted uppercase">Location (optional)</label>
+                              <input
+                                type="text"
+                                value={exp.location || ""}
+                                onChange={(e) => updateExperienceField(exp.id, "location", e.target.value)}
+                                placeholder="e.g. Remote or Bengaluru, India"
+                                className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                              />
+                            </div>
+
+                            {/* Bullets */}
+                            <div className="flex flex-col gap-2 pt-2 border-t border-white/[0.04]">
+                              <label className="text-xs font-mono text-muted uppercase">Key Responsibilities / Impact</label>
+                              <div className="flex flex-col gap-2">
+                                {exp.bullets.map((bullet, bulletIdx) => (
+                                  <div key={bulletIdx} className="flex items-start gap-2">
+                                    <span className="text-pacific-cyan mt-2 text-xs">●</span>
+                                    <textarea
+                                      rows={2}
+                                      value={bullet}
+                                      onChange={(e) => updateBulletInExperience(exp.id, bulletIdx, e.target.value)}
+                                      className="px-3 py-1.5 rounded-lg bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors flex-1 resize-y leading-relaxed"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => removeBulletFromExperience(exp.id, bulletIdx)}
+                                      aria-label="Remove bullet"
+                                      className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors mt-1"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div className="w-full max-w-full flex items-center gap-2 pt-1">
+                                <input
+                                  type="text"
+                                  value={newBulletText[exp.id] || ""}
+                                  onChange={(e) =>
+                                    setNewBulletText((prev) => ({ ...prev, [exp.id]: e.target.value }))
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      addBulletToExperience(exp.id);
+                                    }
+                                  }}
+                                  placeholder="Add bullet point..."
+                                  className="flex-1 min-w-0 h-9 sm:h-[34px] px-3 py-1.5 rounded-lg bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => addBulletToExperience(exp.id)}
+                                  aria-label="Add bullet"
+                                  title="Add bullet"
+                                  className="w-9 sm:w-auto h-9 sm:h-[34px] px-0 sm:px-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-xs font-mono text-foreground inline-flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
+                                >
+                                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                                  <span className="hidden sm:inline">Add Bullet</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 7. EDUCATION */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleResumeSection("education")}
+                  aria-expanded={Boolean(resumeOpenSections.education)}
+                  aria-controls="resume-section-education"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Education
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {`${(content.resume?.education || []).length} records`}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {resumeOpenSections.education ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          resumeOpenSections.education ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="resume-section-education"
+                  role="region"
+                  aria-label="Education"
+                  className={
+                    resumeOpenSections.education
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="flex items-center justify-between gap-2 pb-1">
+                    <span className="text-xs text-muted">
+                      Academic degrees, institutions, and coursework.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={addEducationItem}
+                      className="px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 text-xs font-mono text-pacific-cyan inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Education</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-3 sm:gap-4">
+                    {(content.resume?.education || []).map((edu, eduIdx) => {
+                      const isEduOpen = Boolean(openEducationRecords[edu.id]);
+                      return (
+                        <div
+                          key={edu.id || eduIdx}
+                          className="rounded-xl sm:rounded-2xl border border-white/[0.08] bg-ink-black/50 overflow-hidden transition-colors hover:border-white/[0.12]"
+                        >
+                          {/* Nested Education Accordion Trigger */}
+                          <button
+                            type="button"
+                            onClick={() => toggleEducationRecord(edu.id)}
+                            aria-expanded={isEduOpen}
+                            aria-controls={`edu-record-${edu.id}`}
+                            className="w-full p-3 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] cursor-pointer select-none"
+                          >
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-muted shrink-0">#{eduIdx + 1}</span>
+                                <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
+                                  {edu.degree || "Degree"}
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-mono text-muted/70 truncate pl-6">
+                                {edu.institution || "Institution"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[11px] font-mono text-pacific-cyan/80 hidden sm:inline">
+                                {edu.startDate || ""} {edu.endDate ? `-> ${edu.endDate}` : ""}
+                              </span>
+                              <ChevronDown
+                                className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                                  isEduOpen ? "rotate-180 text-pacific-cyan" : ""
+                                }`}
+                              />
+                            </div>
+                          </button>
+
+                          {/* Nested Education Content */}
+                          <div
+                            id={`edu-record-${edu.id}`}
+                            role="region"
+                            aria-label={`${edu.degree || "Degree"} at ${edu.institution || "Institution"}`}
+                            className={
+                              isEduOpen
+                                ? "p-4 sm:p-5 border-t border-white/[0.06] flex flex-col gap-4 bg-white/[0.01]"
+                                : "hidden"
+                            }
+                          >
+                            {/* Card Header & Controls (Mobile Safe!) */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className="text-xs font-mono text-muted shrink-0">#{eduIdx + 1}</span>
+                                <span className="text-xs sm:text-sm font-semibold text-foreground break-words">
+                                  {edu.degree || "Degree"}
+                                </span>
+                                <span className="text-xs text-muted shrink-0">at</span>
+                                <span className="text-xs sm:text-sm text-foreground/90 break-words">
+                                  {edu.institution || "Institution"}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => moveEducationItem(eduIdx, "up")}
+                                  disabled={eduIdx === 0}
+                                  aria-label="Move education record up"
+                                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
+                                >
+                                  <ChevronUp className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveEducationItem(eduIdx, "down")}
+                                  disabled={eduIdx === (content.resume?.education?.length || 1) - 1}
+                                  aria-label="Move education record down"
+                                  className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-30 transition-colors"
+                                >
+                                  <ChevronDown className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeEducationItem(edu.id)}
+                                  aria-label="Delete education record"
+                                  className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors ml-1"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-mono text-muted uppercase">Degree / Program</label>
+                                <input
+                                  type="text"
+                                  value={edu.degree}
+                                  onChange={(e) => updateEducationField(edu.id, "degree", e.target.value)}
+                                  placeholder="e.g. Bachelor of Technology in Computer Science"
+                                  className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-mono text-muted uppercase">Institution</label>
+                                <input
+                                  type="text"
+                                  value={edu.institution}
+                                  onChange={(e) => updateEducationField(edu.id, "institution", e.target.value)}
+                                  placeholder="e.g. University / College"
+                                  className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-mono text-muted uppercase">Location</label>
+                                <input
+                                  type="text"
+                                  value={edu.location || ""}
+                                  onChange={(e) => updateEducationField(edu.id, "location", e.target.value)}
+                                  placeholder="e.g. Bengaluru, India"
+                                  className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-mono text-muted uppercase">Start Date (optional)</label>
+                                <input
+                                  type="text"
+                                  value={edu.startDate || ""}
+                                  onChange={(e) => updateEducationField(edu.id, "startDate", e.target.value)}
+                                  placeholder="e.g. 2020"
+                                  className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-mono text-muted uppercase">End Date (optional)</label>
+                                <input
+                                  type="text"
+                                  value={edu.endDate || ""}
+                                  onChange={(e) => updateEducationField(edu.id, "endDate", e.target.value)}
+                                  placeholder="e.g. 2024"
+                                  className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs font-mono text-muted uppercase">Description / Focus (optional)</label>
+                              <textarea
+                                rows={2}
+                                value={edu.description || ""}
+                                onChange={(e) => updateEducationField(edu.id, "description", e.target.value)}
+                                placeholder="Relevant coursework, focus areas, or honors..."
+                                className="px-3.5 py-2 rounded-xl bg-ink-black/40 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors resize-y leading-relaxed"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* 9. Final Resume CTA */}
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">Bottom Call To Action</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">CTA Heading</label>
-                  <input
-                    type="text"
-                    value={content.resume.cta?.heading || ""}
-                    onChange={(e) => handleResumeCta("heading", e.target.value)}
-                    placeholder="Let's build something enduring."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">CTA Button Text</label>
-                  <input
-                    type="text"
-                    value={content.resume.cta?.buttonText || ""}
-                    onChange={(e) => handleResumeCta("buttonText", e.target.value)}
-                    placeholder="Get In Touch"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">CTA Description</label>
-                  <textarea
-                    rows={2}
-                    value={content.resume.cta?.description || ""}
-                    onChange={(e) => handleResumeCta("description", e.target.value)}
-                    placeholder="Available for full-time roles and high-impact engineering opportunities."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-              </div>
+            {/* Bottom Save Action for Resume Content */}
+            <div className="pt-2 sm:pt-4 flex items-center justify-end">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[44px] h-11 px-6 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_20px_rgba(24,155,173,0.35)] disabled:opacity-50 cursor-pointer select-none"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Resume Content</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
 
         {activeTab === "uses" && (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6 sm:gap-8">
             {/* Hidden JSON inputs for complex fields */}
             <input
               type="hidden"
@@ -6015,732 +6821,1116 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               name="mySetup"
               value={JSON.stringify(content.uses?.mySetup || {})}
             />
+            <input
+              type="hidden"
+              name="updatedYear"
+              value={content.uses?.updatedYear || "2026"}
+            />
 
-            {/* Block 1: Page Header & Metadata */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
-                    Page Header
-                  </h3>
-                </div>
-                <span className="text-[11px] font-mono text-muted/60">
-                  Header metadata &amp; copy
+            {/* Top Toolbar: Section summary and Expand/Collapse All */}
+            <div className="flex items-center justify-between px-1 pb-1 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                  Uses Sections
+                </span>
+                <span className="text-[10px] font-mono text-muted/60">
+                  (6 sections)
                 </span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
-                  <input
-                    type="text"
-                    name="eyebrow"
-                    placeholder="TOOLS & HARDWARE"
-                    value={content.uses?.eyebrow || ""}
-                    onChange={(e) => handleFieldChange("uses", "eyebrow", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Update Label</label>
-                  <input
-                    type="text"
-                    name="updateLabel"
-                    placeholder="UPDATED REGULARLY · 2026"
-                    value={content.uses?.updateLabel || "UPDATED REGULARLY · 2026"}
-                    onChange={(e) => handleFieldChange("uses", "updateLabel", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors font-mono"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Page Heading</label>
-                  <input
-                    type="text"
-                    name="title"
-                    placeholder="What I Use"
-                    value={content.uses?.title || ""}
-                    onChange={(e) => handleFieldChange("uses", "title", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Page Description</label>
-                  <textarea
-                    rows={3}
-                    name="description"
-                    placeholder="The tools, software, and workflows I actually reach for when building, designing, debugging, and shipping."
-                    value={content.uses?.description || ""}
-                    onChange={(e) => handleFieldChange("uses", "description", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={toggleAllUsesSections}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-foreground bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-colors cursor-pointer select-none"
+                title={
+                  ["header", "dailyStack", "developmentStack", "howIBuild", "mySetup", "currentlyExploring"].every(
+                    (k) => usesOpenSections[k]
+                  )
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+                aria-label={
+                  ["header", "dailyStack", "developmentStack", "howIBuild", "mySetup", "currentlyExploring"].every(
+                    (k) => usesOpenSections[k]
+                  )
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+              >
+                <ChevronsUpDown className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
+                <span className="hidden sm:inline">
+                  {["header", "dailyStack", "developmentStack", "howIBuild", "mySetup", "currentlyExploring"].every(
+                    (k) => usesOpenSections[k]
+                  )
+                    ? "Collapse All"
+                    : "Expand All"}
+                </span>
+              </button>
             </div>
 
-            {/* Block 2: Daily Stack (Workbench / Tool Inventory) */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <Cpu className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
-                    Daily Stack ({(content.uses?.dailyStack || []).length})
-                  </h3>
-                </div>
+            {/* Top-Level Accordion Stack */}
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {/* 1. PAGE HEADER */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
                 <button
                   type="button"
-                  onClick={handleAddDailyStackItem}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                  onClick={() => toggleUsesSection("header")}
+                  aria-expanded={Boolean(usesOpenSections.header)}
+                  aria-controls="uses-section-header"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Tool</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Wrench className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Page Header
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {[
+                          content.uses?.eyebrow || "TOOLS & HARDWARE",
+                          content.uses?.title || "What I Use",
+                        ].join(" · ")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {usesOpenSections.header ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          usesOpenSections.header ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
                 </button>
+
+                <div
+                  id="uses-section-header"
+                  role="region"
+                  aria-label="Page Header"
+                  className={
+                    usesOpenSections.header
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
+                      <input
+                        type="text"
+                        name="eyebrow"
+                        placeholder="TOOLS & HARDWARE"
+                        value={content.uses?.eyebrow || ""}
+                        onChange={(e) => handleFieldChange("uses", "eyebrow", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors font-mono"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Update Label</label>
+                      <input
+                        type="text"
+                        name="updateLabel"
+                        placeholder="UPDATED REGULARLY · 2026"
+                        value={content.uses?.updateLabel || "UPDATED REGULARLY · 2026"}
+                        onChange={(e) => handleFieldChange("uses", "updateLabel", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors font-mono"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Page Heading</label>
+                      <input
+                        type="text"
+                        name="title"
+                        placeholder="What I Use"
+                        value={content.uses?.title || ""}
+                        onChange={(e) => handleFieldChange("uses", "title", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Page Description</label>
+                      <textarea
+                        rows={3}
+                        name="description"
+                        placeholder="The tools, software, and workflows I actually reach for when building, designing, debugging, and shipping."
+                        value={content.uses?.description || ""}
+                        onChange={(e) => handleFieldChange("uses", "description", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                {(content.uses?.dailyStack || []).map((tool, idx) => (
-                  <div
-                    key={tool.id || idx}
-                    className={`p-4 rounded-xl bg-ink-black/50 border ${
-                      tool.enabled === false ? "border-white/[0.03] opacity-60" : "border-white/[0.06]"
-                    } flex flex-col gap-3 hover:border-white/[0.12] transition-colors`}
+              {/* 2. DAILY STACK */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <div className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 border-b border-transparent">
+                  <button
+                    type="button"
+                    onClick={() => toggleUsesSection("dailyStack")}
+                    aria-expanded={Boolean(usesOpenSections.dailyStack)}
+                    aria-controls="uses-section-daily-stack"
+                    className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer select-none group"
                   >
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Cpu className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-pacific-cyan bg-pacific-cyan/[0.06] border border-pacific-cyan/15 px-1.5 py-0.5 rounded">
-                          0{idx + 1}
+                        <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate group-hover:text-pacific-cyan transition-colors">
+                          Daily Stack
                         </span>
-                        <span className="text-xs font-bold font-space text-foreground">
-                          {tool.name || "Untitled Tool"}
+                        <span className="text-[10px] sm:text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 px-1.5 py-0.5 rounded border border-pacific-cyan/20 font-medium">
+                          {(content.uses?.dailyStack || []).length}
                         </span>
-                        {tool.category && (
-                          <span className="text-[10px] font-mono text-muted/80 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded uppercase">
-                            {tool.category}
-                          </span>
-                        )}
-                        {tool.enabled === false && (
-                          <span className="text-[10px] font-mono text-rose-400/80 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
-                            Disabled
-                          </span>
-                        )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateDailyStackItem(idx, "enabled", tool.enabled === false ? true : false)}
-                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {(content.uses?.dailyStack || []).length} tools in inventory
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleAddDailyStackItem}
+                      className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer select-none"
+                      title="Add Tool"
+                      aria-label="Add Tool"
+                    >
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
+                      <span className="hidden xs:inline font-medium">Add Tool</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleUsesSection("dailyStack")}
+                      aria-label={usesOpenSections.dailyStack ? "Collapse Daily Stack section" : "Expand Daily Stack section"}
+                      className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted hover:text-foreground transition-colors cursor-pointer"
+                    >
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          usesOpenSections.dailyStack ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="uses-section-daily-stack"
+                  role="region"
+                  aria-label="Daily Stack"
+                  className={
+                    usesOpenSections.dailyStack
+                      ? "p-3.5 sm:p-6 border-t border-white/[0.08] flex flex-col gap-3.5 sm:gap-4 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {(content.uses?.dailyStack || []).length === 0 ? (
+                    <div className="p-6 rounded-xl bg-ink-black/40 border border-dashed border-white/[0.08] text-center flex flex-col items-center gap-2">
+                      <span className="text-xs font-mono text-muted">No tools added to daily stack yet.</span>
+                      <button
+                        type="button"
+                        onClick={handleAddDailyStackItem}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add First Tool</span>
+                      </button>
+                    </div>
+                  ) : (
+                    (content.uses?.dailyStack || []).map((tool, idx) => {
+                      const toolId = tool.id || `tool-${idx}`;
+                      const isOpen = Boolean(openDailyStackItems[toolId]);
+                      return (
+                        <div
+                          key={toolId}
+                          data-item-card="true"
+                          className={`rounded-xl border ${
                             tool.enabled === false
-                              ? "text-muted/40 hover:text-foreground hover:bg-white/[0.06]"
-                              : "text-pacific-cyan hover:bg-pacific-cyan/10"
-                          }`}
-                          title={tool.enabled === false ? "Enable Tool" : "Disable Tool"}
+                              ? "bg-ink-black/30 border-white/[0.04] opacity-75"
+                              : "bg-ink-black/50 border-white/[0.07] hover:border-white/[0.12]"
+                          } overflow-hidden transition-colors`}
                         >
-                          {tool.enabled === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveDailyStackItem(idx, "up")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Up"
-                        >
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === (content.uses?.dailyStack || []).length - 1}
-                          onClick={() => handleMoveDailyStackItem(idx, "down")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Down"
-                        >
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteDailyStackItem(idx)}
-                          className="p-1 rounded-md text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Delete Tool"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                          <UsesItemHeader
+                            index={idx}
+                            totalCount={(content.uses?.dailyStack || []).length}
+                            title={tool.name}
+                            badge={idx + 1 < 10 ? `0${idx + 1}` : `${idx + 1}`}
+                            metaBadge={tool.category}
+                            enabled={tool.enabled !== false}
+                            isOpen={isOpen}
+                            onToggle={() => toggleDailyStackItem(toolId)}
+                            onToggleVisibility={() => handleUpdateDailyStackItem(idx, "enabled", tool.enabled === false ? true : false)}
+                            onMoveUp={() => handleMoveDailyStackItem(idx, "up")}
+                            onMoveDown={() => handleMoveDailyStackItem(idx, "down")}
+                            onDelete={() => handleDeleteDailyStackItem(idx)}
+                            itemTypeLabel="Tool"
+                            ariaControlsId={`daily-stack-item-${toolId}`}
+                          />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Name</label>
-                        <input
-                          type="text"
-                          value={tool.name}
-                          onChange={(e) => handleUpdateDailyStackItem(idx, "name", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Category</label>
-                        <input
-                          type="text"
-                          placeholder="Editor / Terminal / Browser"
-                          value={tool.category || ""}
-                          onChange={(e) => handleUpdateDailyStackItem(idx, "category", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Icon</label>
-                        <RawinSelect
-                          name={`daily-stack-icon-${idx}`}
-                          value={tool.icon || "terminal"}
-                          onChange={(val) => handleUpdateDailyStackItem(idx, "icon", val)}
-                          options={ICON_SELECT_OPTIONS}
-                          size="xs"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1 sm:col-span-3">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
-                        <input
-                          type="text"
-                          value={tool.description}
-                          onChange={(e) => handleUpdateDailyStackItem(idx, "description", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Block 3: Development Stack (Architecture Map) */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
-                    Development Stack ({(content.uses?.developmentStack || []).length})
-                  </h3>
+                          {isOpen && (
+                            <div
+                              id={`daily-stack-item-${toolId}`}
+                              role="region"
+                              aria-label={tool.name || "Tool details"}
+                              className="p-3.5 sm:p-5 border-t border-white/[0.06] bg-ink-black/30 flex flex-col gap-3.5 sm:gap-4"
+                            >
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Name</label>
+                                  <input
+                                    type="text"
+                                    value={tool.name}
+                                    onChange={(e) => handleUpdateDailyStackItem(idx, "name", e.target.value)}
+                                    placeholder="VS Code"
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Category</label>
+                                  <input
+                                    type="text"
+                                    placeholder="Editor / Terminal / Browser"
+                                    value={tool.category || ""}
+                                    onChange={(e) => handleUpdateDailyStackItem(idx, "category", e.target.value)}
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Icon</label>
+                                  <RawinSelect
+                                    name={`daily-stack-icon-${idx}`}
+                                    value={tool.icon || "terminal"}
+                                    onChange={(val) => handleUpdateDailyStackItem(idx, "icon", val)}
+                                    options={ICON_SELECT_OPTIONS}
+                                    size="sm"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5 sm:col-span-3">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Description</label>
+                                  <input
+                                    type="text"
+                                    value={tool.description}
+                                    onChange={(e) => handleUpdateDailyStackItem(idx, "description", e.target.value)}
+                                    placeholder="Tool description and everyday usage context..."
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAddDevStackItem}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Technology</span>
-                </button>
               </div>
 
-              <div className="flex flex-col gap-3">
-                {(content.uses?.developmentStack || []).map((tech, idx) => (
-                  <div
-                    key={tech.id || idx}
-                    className={`p-4 rounded-xl bg-ink-black/50 border ${
-                      tech.enabled === false ? "border-white/[0.03] opacity-60" : "border-white/[0.06]"
-                    } flex flex-col gap-3 hover:border-white/[0.12] transition-colors`}
+              {/* 3. DEVELOPMENT STACK */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <div className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 border-b border-transparent">
+                  <button
+                    type="button"
+                    onClick={() => toggleUsesSection("developmentStack")}
+                    aria-expanded={Boolean(usesOpenSections.developmentStack)}
+                    aria-controls="uses-section-development-stack"
+                    className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer select-none group"
                   >
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-muted/60 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
-                          #{idx + 1}
+                        <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate group-hover:text-pacific-cyan transition-colors">
+                          Development Stack
                         </span>
-                        <span className="text-xs font-bold font-space text-foreground">
-                          {tech.name || "Untitled Item"}
+                        <span className="text-[10px] sm:text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 px-1.5 py-0.5 rounded border border-pacific-cyan/20 font-medium">
+                          {(content.uses?.developmentStack || []).length}
                         </span>
-                        {tech.group && (
-                          <span className="text-[10px] font-mono text-pacific-cyan/70 bg-pacific-cyan/[0.06] border border-pacific-cyan/15 px-1.5 py-0.5 rounded">
-                            {tech.group}
-                          </span>
-                        )}
-                        {tech.category && (
-                          <span className="text-[10px] font-mono text-muted/70 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded">
-                            {tech.category}
-                          </span>
-                        )}
-                        {tech.enabled === false && (
-                          <span className="text-[10px] font-mono text-rose-400/80 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
-                            Disabled
-                          </span>
-                        )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateDevStackItem(idx, "enabled", tech.enabled === false ? true : false)}
-                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {(content.uses?.developmentStack || []).length} technologies mapped
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleAddDevStackItem}
+                      className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer select-none"
+                      title="Add Technology"
+                      aria-label="Add Technology"
+                    >
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
+                      <span className="hidden xs:inline font-medium">Add Technology</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleUsesSection("developmentStack")}
+                      aria-label={usesOpenSections.developmentStack ? "Collapse Development Stack section" : "Expand Development Stack section"}
+                      className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted hover:text-foreground transition-colors cursor-pointer"
+                    >
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          usesOpenSections.developmentStack ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="uses-section-development-stack"
+                  role="region"
+                  aria-label="Development Stack"
+                  className={
+                    usesOpenSections.developmentStack
+                      ? "p-3.5 sm:p-6 border-t border-white/[0.08] flex flex-col gap-3.5 sm:gap-4 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {(content.uses?.developmentStack || []).length === 0 ? (
+                    <div className="p-6 rounded-xl bg-ink-black/40 border border-dashed border-white/[0.08] text-center flex flex-col items-center gap-2">
+                      <span className="text-xs font-mono text-muted">No technologies added to development stack yet.</span>
+                      <button
+                        type="button"
+                        onClick={handleAddDevStackItem}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add First Technology</span>
+                      </button>
+                    </div>
+                  ) : (
+                    (content.uses?.developmentStack || []).map((tech, idx) => {
+                      const techId = tech.id || `tech-${idx}`;
+                      const isOpen = Boolean(openDevStackItems[techId]);
+                      return (
+                        <div
+                          key={techId}
+                          data-item-card="true"
+                          className={`rounded-xl border ${
                             tech.enabled === false
-                              ? "text-muted/40 hover:text-foreground hover:bg-white/[0.06]"
-                              : "text-pacific-cyan hover:bg-pacific-cyan/10"
-                          }`}
-                          title={tech.enabled === false ? "Enable Item" : "Disable Item"}
+                              ? "bg-ink-black/30 border-white/[0.04] opacity-75"
+                              : "bg-ink-black/50 border-white/[0.07] hover:border-white/[0.12]"
+                          } overflow-hidden transition-colors`}
                         >
-                          {tech.enabled === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveDevStackItem(idx, "up")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Up"
-                        >
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === (content.uses?.developmentStack || []).length - 1}
-                          onClick={() => handleMoveDevStackItem(idx, "down")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Down"
-                        >
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteDevStackItem(idx)}
-                          className="p-1 rounded-md text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Delete Item"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                          <UsesItemHeader
+                            index={idx}
+                            totalCount={(content.uses?.developmentStack || []).length}
+                            title={tech.name}
+                            badge={`#${idx + 1}`}
+                            metaBadge={tech.group || tech.category}
+                            enabled={tech.enabled !== false}
+                            isOpen={isOpen}
+                            onToggle={() => toggleDevStackItem(techId)}
+                            onToggleVisibility={() => handleUpdateDevStackItem(idx, "enabled", tech.enabled === false ? true : false)}
+                            onMoveUp={() => handleMoveDevStackItem(idx, "up")}
+                            onMoveDown={() => handleMoveDevStackItem(idx, "down")}
+                            onDelete={() => handleDeleteDevStackItem(idx)}
+                            itemTypeLabel="Technology"
+                            ariaControlsId={`dev-stack-item-${techId}`}
+                          />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Name</label>
-                        <input
-                          type="text"
-                          value={tech.name}
-                          onChange={(e) => handleUpdateDevStackItem(idx, "name", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Group</label>
-                        <input
-                          type="text"
-                          placeholder="Core Architecture"
-                          value={tech.group || "Core Architecture"}
-                          onChange={(e) => handleUpdateDevStackItem(idx, "group", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Category</label>
-                        <input
-                          type="text"
-                          value={tech.category || ""}
-                          onChange={(e) => handleUpdateDevStackItem(idx, "category", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Icon</label>
-                        <RawinSelect
-                          name={`dev-stack-icon-${idx}`}
-                          value={tech.icon || "layers"}
-                          onChange={(val) => handleUpdateDevStackItem(idx, "icon", val)}
-                          options={ICON_SELECT_OPTIONS}
-                          size="xs"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1 sm:col-span-4">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
-                        <input
-                          type="text"
-                          value={tech.description}
-                          onChange={(e) => handleUpdateDevStackItem(idx, "description", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Block 4: How I Build (Engineering Timeline) */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <Boxes className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
-                    How I Build ({(content.uses?.howIBuild || []).length})
-                  </h3>
+                          {isOpen && (
+                            <div
+                              id={`dev-stack-item-${techId}`}
+                              role="region"
+                              aria-label={tech.name || "Technology details"}
+                              className="p-3.5 sm:p-5 border-t border-white/[0.06] bg-ink-black/30 flex flex-col gap-3.5 sm:gap-4"
+                            >
+                              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5 sm:gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Name</label>
+                                  <input
+                                    type="text"
+                                    value={tech.name}
+                                    onChange={(e) => handleUpdateDevStackItem(idx, "name", e.target.value)}
+                                    placeholder="Next.js"
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Group</label>
+                                  <input
+                                    type="text"
+                                    placeholder="Core Architecture"
+                                    value={tech.group || "Core Architecture"}
+                                    onChange={(e) => handleUpdateDevStackItem(idx, "group", e.target.value)}
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Category</label>
+                                  <input
+                                    type="text"
+                                    value={tech.category || ""}
+                                    placeholder="Framework / Database"
+                                    onChange={(e) => handleUpdateDevStackItem(idx, "category", e.target.value)}
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Icon</label>
+                                  <RawinSelect
+                                    name={`dev-stack-icon-${idx}`}
+                                    value={tech.icon || "layers"}
+                                    onChange={(val) => handleUpdateDevStackItem(idx, "icon", val)}
+                                    options={ICON_SELECT_OPTIONS}
+                                    size="sm"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5 sm:col-span-4">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Description</label>
+                                  <input
+                                    type="text"
+                                    value={tech.description}
+                                    onChange={(e) => handleUpdateDevStackItem(idx, "description", e.target.value)}
+                                    placeholder="Application architecture, routing, and deployment details..."
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAddBuildStepItem}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Step</span>
-                </button>
               </div>
 
-              <div className="flex flex-col gap-3">
-                {(content.uses?.howIBuild || []).map((step, idx) => (
-                  <div
-                    key={step.id || idx}
-                    className={`p-4 rounded-xl bg-ink-black/50 border ${
-                      step.enabled === false ? "border-white/[0.03] opacity-60" : "border-white/[0.06]"
-                    } flex flex-col gap-3 hover:border-white/[0.12] transition-colors`}
+              {/* 4. HOW I BUILD */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <div className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 border-b border-transparent">
+                  <button
+                    type="button"
+                    onClick={() => toggleUsesSection("howIBuild")}
+                    aria-expanded={Boolean(usesOpenSections.howIBuild)}
+                    aria-controls="uses-section-how-i-build"
+                    className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer select-none group"
                   >
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Boxes className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-pacific-cyan bg-pacific-cyan/[0.06] border border-pacific-cyan/15 px-1.5 py-0.5 rounded font-bold">
-                          {step.number || step.step || `0${idx + 1}`}
+                        <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate group-hover:text-pacific-cyan transition-colors">
+                          How I Build
                         </span>
-                        <span className="text-xs font-bold font-space text-foreground">
-                          {step.title || "Untitled Step"}
+                        <span className="text-[10px] sm:text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 px-1.5 py-0.5 rounded border border-pacific-cyan/20 font-medium">
+                          {(content.uses?.howIBuild || []).length}
                         </span>
-                        {step.enabled === false && (
-                          <span className="text-[10px] font-mono text-rose-400/80 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
-                            Disabled
-                          </span>
-                        )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateBuildStepItem(idx, "enabled", step.enabled === false ? true : false)}
-                          className={`p-1 rounded-md transition-colors cursor-pointer ${
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {(content.uses?.howIBuild || []).length} workflow steps
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleAddBuildStepItem}
+                      className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer select-none"
+                      title="Add Step"
+                      aria-label="Add Step"
+                    >
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
+                      <span className="hidden xs:inline font-medium">Add Step</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleUsesSection("howIBuild")}
+                      aria-label={usesOpenSections.howIBuild ? "Collapse How I Build section" : "Expand How I Build section"}
+                      className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted hover:text-foreground transition-colors cursor-pointer"
+                    >
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          usesOpenSections.howIBuild ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="uses-section-how-i-build"
+                  role="region"
+                  aria-label="How I Build"
+                  className={
+                    usesOpenSections.howIBuild
+                      ? "p-3.5 sm:p-6 border-t border-white/[0.08] flex flex-col gap-3.5 sm:gap-4 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {(content.uses?.howIBuild || []).length === 0 ? (
+                    <div className="p-6 rounded-xl bg-ink-black/40 border border-dashed border-white/[0.08] text-center flex flex-col items-center gap-2">
+                      <span className="text-xs font-mono text-muted">No workflow steps added yet.</span>
+                      <button
+                        type="button"
+                        onClick={handleAddBuildStepItem}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add First Step</span>
+                      </button>
+                    </div>
+                  ) : (
+                    (content.uses?.howIBuild || []).map((step, idx) => {
+                      const stepId = step.id || `step-${idx}`;
+                      const isOpen = Boolean(openBuildStepItems[stepId]);
+                      const numBadge = step.number || step.step || (idx + 1 < 10 ? `0${idx + 1}` : `${idx + 1}`);
+                      return (
+                        <div
+                          key={stepId}
+                          data-item-card="true"
+                          className={`rounded-xl border ${
                             step.enabled === false
-                              ? "text-muted/40 hover:text-foreground hover:bg-white/[0.06]"
-                              : "text-pacific-cyan hover:bg-pacific-cyan/10"
-                          }`}
-                          title={step.enabled === false ? "Enable Step" : "Disable Step"}
+                              ? "bg-ink-black/30 border-white/[0.04] opacity-75"
+                              : "bg-ink-black/50 border-white/[0.07] hover:border-white/[0.12]"
+                          } overflow-hidden transition-colors`}
                         >
-                          {step.enabled === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveBuildStepItem(idx, "up")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Up"
-                        >
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === (content.uses?.howIBuild || []).length - 1}
-                          onClick={() => handleMoveBuildStepItem(idx, "down")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Down"
-                        >
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteBuildStepItem(idx)}
-                          className="p-1 rounded-md text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Delete Step"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                          <UsesItemHeader
+                            index={idx}
+                            totalCount={(content.uses?.howIBuild || []).length}
+                            title={step.title}
+                            badge={numBadge}
+                            enabled={step.enabled !== false}
+                            isOpen={isOpen}
+                            onToggle={() => toggleBuildStepItem(stepId)}
+                            onToggleVisibility={() => handleUpdateBuildStepItem(idx, "enabled", step.enabled === false ? true : false)}
+                            onMoveUp={() => handleMoveBuildStepItem(idx, "up")}
+                            onMoveDown={() => handleMoveBuildStepItem(idx, "down")}
+                            onDelete={() => handleDeleteBuildStepItem(idx)}
+                            itemTypeLabel="Step"
+                            ariaControlsId={`build-step-item-${stepId}`}
+                          />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                      <div className="flex flex-col gap-1 sm:col-span-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Number</label>
-                        <input
-                          type="text"
-                          value={step.number || step.step || ""}
-                          placeholder="01"
-                          onChange={(e) => {
-                            handleUpdateBuildStepItem(idx, "number", e.target.value);
-                            handleUpdateBuildStepItem(idx, "step", e.target.value);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1 sm:col-span-3">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Title</label>
-                        <input
-                          type="text"
-                          value={step.title}
-                          placeholder="Explore / Design / Build"
-                          onChange={(e) => handleUpdateBuildStepItem(idx, "title", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1 sm:col-span-4">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
-                        <input
-                          type="text"
-                          value={step.description}
-                          onChange={(e) => handleUpdateBuildStepItem(idx, "description", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Block 5: My Setup */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <Laptop className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
-                    My Setup
-                  </h3>
+                          {isOpen && (
+                            <div
+                              id={`build-step-item-${stepId}`}
+                              role="region"
+                              aria-label={step.title || "Step details"}
+                              className="p-3.5 sm:p-5 border-t border-white/[0.06] bg-ink-black/30 flex flex-col gap-3.5 sm:gap-4"
+                            >
+                              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5 sm:gap-4">
+                                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Number</label>
+                                  <input
+                                    type="text"
+                                    value={step.number || step.step || ""}
+                                    placeholder="01"
+                                    onChange={(e) => {
+                                      handleUpdateBuildStepItem(idx, "number", e.target.value);
+                                      handleUpdateBuildStepItem(idx, "step", e.target.value);
+                                    }}
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors font-mono"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5 sm:col-span-3">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Title</label>
+                                  <input
+                                    type="text"
+                                    value={step.title}
+                                    placeholder="Explore / Design / Build"
+                                    onChange={(e) => handleUpdateBuildStepItem(idx, "title", e.target.value)}
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5 sm:col-span-4">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Description</label>
+                                  <input
+                                    type="text"
+                                    value={step.description}
+                                    onChange={(e) => handleUpdateBuildStepItem(idx, "description", e.target.value)}
+                                    placeholder="Workflow phase details and deliverables..."
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
-                <span className="text-[11px] font-mono text-muted/60">
-                  Workstation context
-                </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {/* Main Machine */}
-                <div className="p-4 rounded-xl bg-ink-black/40 border border-white/[0.06] flex flex-col gap-3">
-                  <div className="flex items-center gap-2 text-pacific-cyan text-xs font-mono uppercase">
-                    <Laptop className="w-3.5 h-3.5" />
-                    <span>Main Machine</span>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted/80">Label</label>
-                    <input
-                      type="text"
-                      value={content.uses?.mySetup?.mainMachine?.label || "Main machine"}
-                      onChange={(e) => handleMySetupField("mainMachine", "label", e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted/80">Value</label>
-                    <input
-                      type="text"
-                      value={content.uses?.mySetup?.mainMachine?.value || "Windows PC"}
-                      onChange={(e) => handleMySetupField("mainMachine", "value", e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted/80">Description</label>
-                    <textarea
-                      rows={2}
-                      value={content.uses?.mySetup?.mainMachine?.description || ""}
-                      onChange={(e) => handleMySetupField("mainMachine", "description", e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors resize-y leading-relaxed"
-                    />
-                  </div>
-                </div>
-
-                {/* Fuel */}
-                <div className="p-4 rounded-xl bg-ink-black/40 border border-white/[0.06] flex flex-col gap-3">
-                  <div className="flex items-center gap-2 text-apricot-cream text-xs font-mono uppercase">
-                    <Flame className="w-3.5 h-3.5" />
-                    <span>Fuel</span>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted/80">Label</label>
-                    <input
-                      type="text"
-                      value={content.uses?.mySetup?.fuel?.label || "Fuel"}
-                      onChange={(e) => handleMySetupField("fuel", "label", e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted/80">Value</label>
-                    <input
-                      type="text"
-                      value={content.uses?.mySetup?.fuel?.value || "Passion to build something worth showing."}
-                      onChange={(e) => handleMySetupField("fuel", "value", e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted/80">Description</label>
-                    <textarea
-                      rows={2}
-                      value={content.uses?.mySetup?.fuel?.description || ""}
-                      onChange={(e) => handleMySetupField("fuel", "description", e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors resize-y leading-relaxed"
-                    />
-                  </div>
-                </div>
-
-                {/* Current Status */}
-                <div className="p-4 rounded-xl bg-ink-black/40 border border-white/[0.06] flex flex-col gap-3">
-                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono uppercase">
-                    <Radio className="w-3.5 h-3.5" />
-                    <span>Current Status</span>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted/80">Label</label>
-                    <input
-                      type="text"
-                      value={content.uses?.mySetup?.currentStatus?.label || "Current status"}
-                      onChange={(e) => handleMySetupField("currentStatus", "label", e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted/80">Value</label>
-                    <input
-                      type="text"
-                      value={content.uses?.mySetup?.currentStatus?.value || "Probably coding."}
-                      onChange={(e) => handleMySetupField("currentStatus", "value", e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted/80">Description</label>
-                    <textarea
-                      rows={2}
-                      value={content.uses?.mySetup?.currentStatus?.description || ""}
-                      onChange={(e) => handleMySetupField("currentStatus", "description", e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors resize-y leading-relaxed"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Block 6: Currently Exploring (Research Board) */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-5">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <Compass className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-xs font-mono font-semibold uppercase text-foreground">
-                    Currently Exploring ({(content.uses?.currentlyExploring || []).length})
-                  </h3>
-                </div>
+              {/* 5. MY SETUP */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
                 <button
                   type="button"
-                  onClick={handleAddExploringItem}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                  onClick={() => toggleUsesSection("mySetup")}
+                  aria-expanded={Boolean(usesOpenSections.mySetup)}
+                  aria-controls="uses-section-my-setup"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Topic</span>
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                {(content.uses?.currentlyExploring || []).map((topic, idx) => (
-                  <div
-                    key={topic.id || idx}
-                    className={`p-4 rounded-xl bg-ink-black/50 border ${
-                      topic.enabled === false ? "border-white/[0.03] opacity-60" : "border-white/[0.06]"
-                    } flex flex-col gap-3 hover:border-white/[0.12] transition-colors`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-muted/60 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
-                          #{idx + 1}
-                        </span>
-                        <span className="text-xs font-bold font-space text-foreground">
-                          {topic.name || "Untitled Topic"}
-                        </span>
-                        {topic.category && (
-                          <span className="text-[10px] font-mono text-apricot-cream/70 bg-apricot-cream/[0.06] border border-apricot-cream/15 px-1.5 py-0.5 rounded">
-                            {topic.category}
-                          </span>
-                        )}
-                        {topic.enabled === false && (
-                          <span className="text-[10px] font-mono text-rose-400/80 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
-                            Disabled
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateExploringItem(idx, "enabled", topic.enabled === false ? true : false)}
-                          className={`p-1 rounded-md transition-colors cursor-pointer ${
-                            topic.enabled === false
-                              ? "text-muted/40 hover:text-foreground hover:bg-white/[0.06]"
-                              : "text-pacific-cyan hover:bg-pacific-cyan/10"
-                          }`}
-                          title={topic.enabled === false ? "Enable Topic" : "Disable Topic"}
-                        >
-                          {topic.enabled === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveExploringItem(idx, "up")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Up"
-                        >
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === (content.uses?.currentlyExploring || []).length - 1}
-                          onClick={() => handleMoveExploringItem(idx, "down")}
-                          className="p-1 rounded-md text-muted hover:text-foreground hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer"
-                          title="Move Down"
-                        >
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteExploringItem(idx)}
-                          className="p-1 rounded-md text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Delete Topic"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Laptop className="w-4 h-4" />
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Topic Name</label>
-                        <input
-                          type="text"
-                          value={topic.name}
-                          onChange={(e) => handleUpdateExploringItem(idx, "name", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Category</label>
-                        <input
-                          type="text"
-                          value={topic.category || ""}
-                          onChange={(e) => handleUpdateExploringItem(idx, "category", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Icon</label>
-                        <RawinSelect
-                          name={`exploring-icon-${idx}`}
-                          value={topic.icon || "compass"}
-                          onChange={(val) => handleUpdateExploringItem(idx, "icon", val)}
-                          options={ICON_SELECT_OPTIONS}
-                          size="xs"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1 sm:col-span-3">
-                        <label className="text-[10px] font-mono text-muted/80 uppercase">Description</label>
-                        <input
-                          type="text"
-                          value={topic.description}
-                          onChange={(e) => handleUpdateExploringItem(idx, "description", e.target.value)}
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        My Setup
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {[
+                          content.uses?.mySetup?.mainMachine?.value || "Main machine",
+                          content.uses?.mySetup?.fuel?.value || "Fuel",
+                          content.uses?.mySetup?.currentStatus?.value || "Current status",
+                        ].join(" · ")}
+                      </span>
                     </div>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {usesOpenSections.mySetup ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          usesOpenSections.mySetup ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="uses-section-my-setup"
+                  role="region"
+                  aria-label="My Setup"
+                  className={
+                    usesOpenSections.mySetup
+                      ? "p-3.5 sm:p-6 border-t border-white/[0.08] flex flex-col gap-3.5 sm:gap-4 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {/* Setup Item 1: Main Machine */}
+                  <div className="rounded-xl border border-white/[0.07] bg-ink-black/50 overflow-hidden hover:border-white/[0.12] transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => toggleMySetupItem("mainMachine")}
+                      aria-expanded={Boolean(openMySetupItems.mainMachine)}
+                      aria-controls="my-setup-main-machine"
+                      className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] cursor-pointer select-none group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-7 h-7 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                          <Laptop className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs sm:text-sm font-bold font-space text-foreground truncate group-hover:text-pacific-cyan transition-colors">
+                            {content.uses?.mySetup?.mainMachine?.label || "Main machine"}
+                          </span>
+                          <span className="text-[11px] font-mono text-muted/70 truncate">
+                            {content.uses?.mySetup?.mainMachine?.value || "Windows PC"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center shrink-0">
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                            openMySetupItems.mainMachine ? "rotate-180 text-pacific-cyan" : "text-muted"
+                          }`}
+                        />
+                      </div>
+                    </button>
+
+                    {openMySetupItems.mainMachine && (
+                      <div
+                        id="my-setup-main-machine"
+                        role="region"
+                        aria-label="Main Machine details"
+                        className="p-3.5 sm:p-5 border-t border-white/[0.06] bg-ink-black/30 flex flex-col gap-3.5"
+                      >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-mono text-muted uppercase font-medium">Label</label>
+                            <input
+                              type="text"
+                              value={content.uses?.mySetup?.mainMachine?.label || "Main machine"}
+                              onChange={(e) => handleMySetupField("mainMachine", "label", e.target.value)}
+                              className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-mono text-muted uppercase font-medium">Value</label>
+                            <input
+                              type="text"
+                              value={content.uses?.mySetup?.mainMachine?.value || "Windows PC"}
+                              onChange={(e) => handleMySetupField("mainMachine", "value", e.target.value)}
+                              className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[11px] font-mono text-muted uppercase font-medium">Description</label>
+                          <textarea
+                            rows={2}
+                            value={content.uses?.mySetup?.mainMachine?.description || ""}
+                            onChange={(e) => handleMySetupField("mainMachine", "description", e.target.value)}
+                            placeholder="Hardware, workstation details, and environment context..."
+                            className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Setup Item 2: Fuel */}
+                  <div className="rounded-xl border border-white/[0.07] bg-ink-black/50 overflow-hidden hover:border-white/[0.12] transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => toggleMySetupItem("fuel")}
+                      aria-expanded={Boolean(openMySetupItems.fuel)}
+                      aria-controls="my-setup-fuel"
+                      className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] cursor-pointer select-none group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-7 h-7 rounded-lg bg-apricot-cream/10 border border-apricot-cream/20 flex items-center justify-center text-apricot-cream shrink-0">
+                          <Flame className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs sm:text-sm font-bold font-space text-foreground truncate group-hover:text-pacific-cyan transition-colors">
+                            {content.uses?.mySetup?.fuel?.label || "Fuel"}
+                          </span>
+                          <span className="text-[11px] font-mono text-muted/70 truncate">
+                            {content.uses?.mySetup?.fuel?.value || "Passion to build something worth showing."}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center shrink-0">
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                            openMySetupItems.fuel ? "rotate-180 text-pacific-cyan" : "text-muted"
+                          }`}
+                        />
+                      </div>
+                    </button>
+
+                    {openMySetupItems.fuel && (
+                      <div
+                        id="my-setup-fuel"
+                        role="region"
+                        aria-label="Fuel details"
+                        className="p-3.5 sm:p-5 border-t border-white/[0.06] bg-ink-black/30 flex flex-col gap-3.5"
+                      >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-mono text-muted uppercase font-medium">Label</label>
+                            <input
+                              type="text"
+                              value={content.uses?.mySetup?.fuel?.label || "Fuel"}
+                              onChange={(e) => handleMySetupField("fuel", "label", e.target.value)}
+                              className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-mono text-muted uppercase font-medium">Value</label>
+                            <input
+                              type="text"
+                              value={content.uses?.mySetup?.fuel?.value || "Passion to build something worth showing."}
+                              onChange={(e) => handleMySetupField("fuel", "value", e.target.value)}
+                              className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[11px] font-mono text-muted uppercase font-medium">Description</label>
+                          <textarea
+                            rows={2}
+                            value={content.uses?.mySetup?.fuel?.description || ""}
+                            onChange={(e) => handleMySetupField("fuel", "description", e.target.value)}
+                            placeholder="Motivation, mindset, and creative drive..."
+                            className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Setup Item 3: Current Status */}
+                  <div className="rounded-xl border border-white/[0.07] bg-ink-black/50 overflow-hidden hover:border-white/[0.12] transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => toggleMySetupItem("currentStatus")}
+                      aria-expanded={Boolean(openMySetupItems.currentStatus)}
+                      aria-controls="my-setup-current-status"
+                      className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] cursor-pointer select-none group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                          <Radio className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs sm:text-sm font-bold font-space text-foreground truncate group-hover:text-pacific-cyan transition-colors">
+                            {content.uses?.mySetup?.currentStatus?.label || "Current status"}
+                          </span>
+                          <span className="text-[11px] font-mono text-muted/70 truncate">
+                            {content.uses?.mySetup?.currentStatus?.value || "Probably coding."}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center shrink-0">
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                            openMySetupItems.currentStatus ? "rotate-180 text-pacific-cyan" : "text-muted"
+                          }`}
+                        />
+                      </div>
+                    </button>
+
+                    {openMySetupItems.currentStatus && (
+                      <div
+                        id="my-setup-current-status"
+                        role="region"
+                        aria-label="Current Status details"
+                        className="p-3.5 sm:p-5 border-t border-white/[0.06] bg-ink-black/30 flex flex-col gap-3.5"
+                      >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-mono text-muted uppercase font-medium">Label</label>
+                            <input
+                              type="text"
+                              value={content.uses?.mySetup?.currentStatus?.label || "Current status"}
+                              onChange={(e) => handleMySetupField("currentStatus", "label", e.target.value)}
+                              className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-mono text-muted uppercase font-medium">Value</label>
+                            <input
+                              type="text"
+                              value={content.uses?.mySetup?.currentStatus?.value || "Probably coding."}
+                              onChange={(e) => handleMySetupField("currentStatus", "value", e.target.value)}
+                              className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[11px] font-mono text-muted uppercase font-medium">Description</label>
+                          <textarea
+                            rows={2}
+                            value={content.uses?.mySetup?.currentStatus?.description || ""}
+                            onChange={(e) => handleMySetupField("currentStatus", "description", e.target.value)}
+                            placeholder="Current day-to-day focus and work state..."
+                            className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
+
+              {/* 6. CURRENTLY EXPLORING */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <div className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 border-b border-transparent">
+                  <button
+                    type="button"
+                    onClick={() => toggleUsesSection("currentlyExploring")}
+                    aria-expanded={Boolean(usesOpenSections.currentlyExploring)}
+                    aria-controls="uses-section-currently-exploring"
+                    className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer select-none group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Compass className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate group-hover:text-pacific-cyan transition-colors">
+                          Currently Exploring
+                        </span>
+                        <span className="text-[10px] sm:text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 px-1.5 py-0.5 rounded border border-pacific-cyan/20 font-medium">
+                          {(content.uses?.currentlyExploring || []).length}
+                        </span>
+                      </div>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {(content.uses?.currentlyExploring || []).length} research topics
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleAddExploringItem}
+                      className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer select-none"
+                      title="Add Topic"
+                      aria-label="Add Topic"
+                    >
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
+                      <span className="hidden xs:inline font-medium">Add Topic</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleUsesSection("currentlyExploring")}
+                      aria-label={usesOpenSections.currentlyExploring ? "Collapse Currently Exploring section" : "Expand Currently Exploring section"}
+                      className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted hover:text-foreground transition-colors cursor-pointer"
+                    >
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          usesOpenSections.currentlyExploring ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="uses-section-currently-exploring"
+                  role="region"
+                  aria-label="Currently Exploring"
+                  className={
+                    usesOpenSections.currentlyExploring
+                      ? "p-3.5 sm:p-6 border-t border-white/[0.08] flex flex-col gap-3.5 sm:gap-4 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {(content.uses?.currentlyExploring || []).length === 0 ? (
+                    <div className="p-6 rounded-xl bg-ink-black/40 border border-dashed border-white/[0.08] text-center flex flex-col items-center gap-2">
+                      <span className="text-xs font-mono text-muted">No research topics added yet.</span>
+                      <button
+                        type="button"
+                        onClick={handleAddExploringItem}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add First Topic</span>
+                      </button>
+                    </div>
+                  ) : (
+                    (content.uses?.currentlyExploring || []).map((topic, idx) => {
+                      const topicId = topic.id || `exp-${idx}`;
+                      const isOpen = Boolean(openExploringItems[topicId]);
+                      return (
+                        <div
+                          key={topicId}
+                          data-item-card="true"
+                          className={`rounded-xl border ${
+                            topic.enabled === false
+                              ? "bg-ink-black/30 border-white/[0.04] opacity-75"
+                              : "bg-ink-black/50 border-white/[0.07] hover:border-white/[0.12]"
+                          } overflow-hidden transition-colors`}
+                        >
+                          <UsesItemHeader
+                            index={idx}
+                            totalCount={(content.uses?.currentlyExploring || []).length}
+                            title={topic.name}
+                            badge={`#${idx + 1}`}
+                            metaBadge={topic.category}
+                            enabled={topic.enabled !== false}
+                            isOpen={isOpen}
+                            onToggle={() => toggleExploringItem(topicId)}
+                            onToggleVisibility={() => handleUpdateExploringItem(idx, "enabled", topic.enabled === false ? true : false)}
+                            onMoveUp={() => handleMoveExploringItem(idx, "up")}
+                            onMoveDown={() => handleMoveExploringItem(idx, "down")}
+                            onDelete={() => handleDeleteExploringItem(idx)}
+                            itemTypeLabel="Topic"
+                            ariaControlsId={`exploring-item-${topicId}`}
+                          />
+
+                          {isOpen && (
+                            <div
+                              id={`exploring-item-${topicId}`}
+                              role="region"
+                              aria-label={topic.name || "Topic details"}
+                              className="p-3.5 sm:p-5 border-t border-white/[0.06] bg-ink-black/30 flex flex-col gap-3.5 sm:gap-4"
+                            >
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Topic Name</label>
+                                  <input
+                                    type="text"
+                                    value={topic.name}
+                                    onChange={(e) => handleUpdateExploringItem(idx, "name", e.target.value)}
+                                    placeholder="Edge AI"
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Category</label>
+                                  <input
+                                    type="text"
+                                    value={topic.category || ""}
+                                    placeholder="AI / Performance / Graphics"
+                                    onChange={(e) => handleUpdateExploringItem(idx, "category", e.target.value)}
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Icon</label>
+                                  <RawinSelect
+                                    name={`exploring-icon-${idx}`}
+                                    value={topic.icon || "compass"}
+                                    onChange={(val) => handleUpdateExploringItem(idx, "icon", val)}
+                                    options={ICON_SELECT_OPTIONS}
+                                    size="sm"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5 sm:col-span-3">
+                                  <label className="text-[11px] font-mono text-muted uppercase font-medium">Description</label>
+                                  <input
+                                    type="text"
+                                    value={topic.description}
+                                    onChange={(e) => handleUpdateExploringItem(idx, "description", e.target.value)}
+                                    placeholder="Research focus, experiments, and technical goals..."
+                                    className="px-3.5 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Save Action for Uses Content */}
+            <div className="pt-2 sm:pt-4 flex items-center justify-end">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[44px] h-11 px-6 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_20px_rgba(24,155,173,0.35)] disabled:opacity-50 cursor-pointer select-none"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Uses Content</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
 
         {activeTab === "ai" && (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4 sm:gap-6">
             {/* Hidden JSON inputs for array fields */}
             <input
               type="hidden"
@@ -6748,270 +7938,474 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               value={JSON.stringify(content.ai.suggestedPrompts || [])}
             />
 
-            {/* Orbit Core Content */}
-            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
+            {/* Orbit Accordions Toolbar */}
+            <div className="flex items-center justify-between gap-2 px-1">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Rawin Orbit Interface
-                </h3>
+                <span className="text-xs font-mono text-muted uppercase tracking-wider">
+                  Orbit Sections
+                </span>
+                <span className="text-[10px] font-mono text-muted/60">
+                  (3 sections)
+                </span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
-                  <input
-                    type="text"
-                    name="eyebrow"
-                    value={content.ai.eyebrow}
-                    onChange={(e) => handleFieldChange("ai", "eyebrow", e.target.value)}
-                    placeholder="RAWIN ORBIT"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Orbit Title</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={content.ai.title}
-                    onChange={(e) => handleFieldChange("ai", "title", e.target.value)}
-                    placeholder="Rawin Orbit"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Page Description</label>
-                  <textarea
-                    rows={2}
-                    name="description"
-                    value={content.ai.description}
-                    onChange={(e) => handleFieldChange("ai", "description", e.target.value)}
-                    placeholder="Interactive intelligence core powered by Cloudflare Workers AI..."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Initial Greeting Message</label>
-                  <textarea
-                    rows={3}
-                    name="greetingMessage"
-                    value={content.ai.greetingMessage}
-                    onChange={(e) => handleFieldChange("ai", "greetingMessage", e.target.value)}
-                    placeholder="Greetings. I am Rawin Orbit, an intelligent cognitive interface..."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Mobile Composer Placeholder</label>
-                  <input
-                    type="text"
-                    name="mobileComposerPlaceholder"
-                    value={content.ai.mobileComposerPlaceholder || ""}
-                    onChange={(e) => handleFieldChange("ai", "mobileComposerPlaceholder", e.target.value)}
-                    placeholder="Ask Orbit"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Desktop Composer Placeholder</label>
-                  <input
-                    type="text"
-                    name="desktopComposerPlaceholder"
-                    value={content.ai.desktopComposerPlaceholder || ""}
-                    onChange={(e) => handleFieldChange("ai", "desktopComposerPlaceholder", e.target.value)}
-                    placeholder="Only Ask Orbit"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Suggested Prompts Section Label</label>
-                  <input
-                    type="text"
-                    name="suggestedPromptsLabel"
-                    value={content.ai.suggestedPromptsLabel || ""}
-                    onChange={(e) => handleFieldChange("ai", "suggestedPromptsLabel", e.target.value)}
-                    placeholder="SUGGESTED PROMPTS"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={toggleAllOrbitSections}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-foreground bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-colors cursor-pointer select-none"
+                title={
+                  ["interface", "prompts", "verification"].every((k) => orbitOpenSections[k])
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+                aria-label={
+                  ["interface", "prompts", "verification"].every((k) => orbitOpenSections[k])
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+              >
+                <ChevronsUpDown className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
+                <span className="hidden sm:inline">
+                  {["interface", "prompts", "verification"].every((k) => orbitOpenSections[k])
+                    ? "Collapse All"
+                    : "Expand All"}
+                </span>
+              </button>
             </div>
 
-            {/* Suggested Prompts Management */}
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                    Suggested Prompts ({(content.ai.suggestedPrompts || []).length})
-                  </h3>
-                </div>
+            {/* Top-Level Accordion Stack */}
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {/* 1. RAWIN ORBIT INTERFACE */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
                 <button
                   type="button"
-                  onClick={handleAddPrompt}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/20 text-xs font-mono transition-colors"
+                  onClick={() => toggleOrbitSection("interface")}
+                  aria-expanded={Boolean(orbitOpenSections.interface)}
+                  aria-controls="orbit-section-interface"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Prompt
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Rawin Orbit Interface
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {[
+                          content.ai?.eyebrow || "RAWIN ORBIT",
+                          content.ai?.title || "Rawin Orbit",
+                        ].join(" · ")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {orbitOpenSections.interface ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          orbitOpenSections.interface ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
                 </button>
+
+                <div
+                  id="orbit-section-interface"
+                  role="region"
+                  aria-label="Rawin Orbit Interface"
+                  className={
+                    orbitOpenSections.interface
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
+                      <input
+                        type="text"
+                        name="eyebrow"
+                        value={content.ai.eyebrow}
+                        onChange={(e) => handleFieldChange("ai", "eyebrow", e.target.value)}
+                        placeholder="RAWIN ORBIT"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors font-mono"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Orbit Title</label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={content.ai.title}
+                        onChange={(e) => handleFieldChange("ai", "title", e.target.value)}
+                        placeholder="Rawin Orbit"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Page Description</label>
+                      <textarea
+                        rows={2}
+                        name="description"
+                        value={content.ai.description}
+                        onChange={(e) => handleFieldChange("ai", "description", e.target.value)}
+                        placeholder="Interactive intelligence core powered by Cloudflare Workers AI..."
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Initial Greeting Message</label>
+                      <textarea
+                        rows={3}
+                        name="greetingMessage"
+                        value={content.ai.greetingMessage}
+                        onChange={(e) => handleFieldChange("ai", "greetingMessage", e.target.value)}
+                        placeholder="Greetings. I am Rawin Orbit, an intelligent cognitive interface..."
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Mobile Composer Placeholder</label>
+                      <input
+                        type="text"
+                        name="mobileComposerPlaceholder"
+                        value={content.ai.mobileComposerPlaceholder || ""}
+                        onChange={(e) => handleFieldChange("ai", "mobileComposerPlaceholder", e.target.value)}
+                        placeholder="Ask Orbit"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Desktop Composer Placeholder</label>
+                      <input
+                        type="text"
+                        name="desktopComposerPlaceholder"
+                        value={content.ai.desktopComposerPlaceholder || ""}
+                        onChange={(e) => handleFieldChange("ai", "desktopComposerPlaceholder", e.target.value)}
+                        placeholder="Only Ask Orbit"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Suggested Prompts Section Label</label>
+                      <input
+                        type="text"
+                        name="suggestedPromptsLabel"
+                        value={content.ai.suggestedPromptsLabel || ""}
+                        onChange={(e) => handleFieldChange("ai", "suggestedPromptsLabel", e.target.value)}
+                        placeholder="SUGGESTED PROMPTS"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                {(content.ai.suggestedPrompts || []).map((prompt, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
+              {/* 2. SUGGESTED PROMPTS */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <div className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 border-b border-transparent">
+                  <button
+                    type="button"
+                    onClick={() => toggleOrbitSection("prompts")}
+                    aria-expanded={Boolean(orbitOpenSections.prompts)}
+                    aria-controls="orbit-section-prompts"
+                    className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer select-none group"
                   >
-                    <span className="text-[11px] font-mono text-muted/60 bg-white/[0.04] px-2 py-1 rounded border border-white/[0.06] shrink-0">
-                      #{idx + 1}
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <MessageSquare className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate group-hover:text-pacific-cyan transition-colors">
+                          Suggested Prompts
+                        </span>
+                        <span className="text-[10px] sm:text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 px-1.5 py-0.5 rounded border border-pacific-cyan/20 font-medium">
+                          {(content.ai?.suggestedPrompts || []).length}
+                        </span>
+                      </div>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        {(content.ai?.suggestedPrompts || []).length} prompts configured
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddPrompt();
+                      }}
+                      className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer select-none"
+                      title="Add Prompt"
+                      aria-label="Add Prompt"
+                    >
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
+                      <span className="hidden xs:inline font-medium">Add Prompt</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleOrbitSection("prompts")}
+                      aria-label={orbitOpenSections.prompts ? "Collapse Suggested Prompts section" : "Expand Suggested Prompts section"}
+                      className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted hover:text-foreground transition-colors cursor-pointer"
+                    >
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          orbitOpenSections.prompts ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="orbit-section-prompts"
+                  role="region"
+                  aria-label="Suggested Prompts"
+                  className={
+                    orbitOpenSections.prompts
+                      ? "p-3.5 sm:p-6 border-t border-white/[0.08] flex flex-col gap-3 sm:gap-3.5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {(content.ai?.suggestedPrompts || []).length === 0 ? (
+                    <div className="p-6 rounded-xl bg-ink-black/40 border border-dashed border-white/[0.08] text-center flex flex-col items-center gap-2">
+                      <span className="text-xs font-mono text-muted">No suggested prompts added yet.</span>
+                      <button
+                        type="button"
+                        onClick={handleAddPrompt}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-pacific-cyan bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/30 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add First Prompt</span>
+                      </button>
+                    </div>
+                  ) : (
+                    (content.ai?.suggestedPrompts || []).map((prompt, idx) => (
+                      <div
+                        key={idx}
+                        data-item-card="true"
+                        className="p-2.5 sm:p-3 rounded-xl bg-ink-black/50 border border-white/[0.07] hover:border-white/[0.12] transition-colors flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <span className="text-[10px] sm:text-[11px] font-mono text-pacific-cyan bg-pacific-cyan/[0.08] border border-pacific-cyan/20 px-2 py-1 rounded shrink-0 font-medium">
+                            #{idx + 1}
+                          </span>
+                          <input
+                            type="text"
+                            value={prompt}
+                            onChange={(e) => handleUpdatePrompt(idx, e.target.value)}
+                            placeholder="e.g. What is RAWIN?"
+                            className="flex-1 min-w-0 px-3 py-1.5 sm:py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-end gap-1.5 shrink-0 pt-1 sm:pt-0 border-t border-white/[0.03] sm:border-0">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMovePrompt(idx, "up")}
+                            aria-label="Move prompt up"
+                            title="Move prompt up"
+                            className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer transition-colors"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === (content.ai.suggestedPrompts || []).length - 1}
+                            onClick={() => handleMovePrompt(idx, "down")}
+                            aria-label="Move prompt down"
+                            title="Move prompt down"
+                            className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer transition-colors"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePrompt(idx)}
+                            aria-label="Delete prompt"
+                            title="Delete prompt"
+                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/30 transition-colors cursor-pointer ml-0.5"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* 3. OWNER VERIFICATION */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleOrbitSection("verification")}
+                  aria-expanded={Boolean(orbitOpenSections.verification)}
+                  aria-controls="orbit-section-verification"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                          Owner Verification
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pacific-cyan/10 text-pacific-cyan border border-pacific-cyan/20 shrink-0 font-medium">
+                          Security Setting
+                        </span>
+                      </div>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Passcode configuration and administrative lock
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {orbitOpenSections.verification ? "Collapse" : "Expand"}
                     </span>
-                    <input
-                      type="text"
-                      value={prompt}
-                      onChange={(e) => handleUpdatePrompt(idx, e.target.value)}
-                      placeholder="e.g. What is RAWIN?"
-                      className="flex-1 px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          orbitOpenSections.verification ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="orbit-section-verification"
+                  role="region"
+                  aria-label="Owner Verification"
+                  className={
+                    orbitOpenSections.verification
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="p-4 sm:p-5 rounded-xl bg-ink-black/50 border border-white/[0.06] flex flex-col gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-mono text-muted uppercase">New Verification Code</label>
+                        <div className="relative">
+                          <input
+                            type={showNewCode ? "text" : "password"}
+                            value={newVerificationCode}
+                            onChange={(e) => setNewVerificationCode(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full px-3.5 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm font-mono text-foreground outline-none transition-colors pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewCode(!showNewCode)}
+                            aria-label={showNewCode ? "Hide verification code" : "Show verification code"}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground cursor-pointer"
+                          >
+                            {showNewCode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                        <span className="text-[10px] font-mono text-muted/60">
+                          Between 4 and 32 characters.
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-mono text-muted uppercase">Confirm New Code</label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmCode ? "text" : "password"}
+                            value={confirmVerificationCode}
+                            onChange={(e) => setConfirmVerificationCode(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full px-3.5 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm font-mono text-foreground outline-none transition-colors pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmCode(!showConfirmCode)}
+                            aria-label={showConfirmCode ? "Hide confirmation code" : "Show confirmation code"}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground cursor-pointer"
+                          >
+                            {showConfirmCode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                        <span className="text-[10px] font-mono text-muted/60">
+                          Must match new verification code.
+                        </span>
+                      </div>
+                    </div>
+
+                    {verificationMsg && (
+                      <div
+                        className={`p-3 rounded-xl border text-xs font-mono flex items-center gap-2 ${
+                          verificationMsg.success
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                            : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                        }`}
+                      >
+                        {verificationMsg.success ? (
+                          <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                        )}
+                        <span>{verificationMsg.message || verificationMsg.error}</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-1">
                       <button
                         type="button"
-                        disabled={idx === 0}
-                        onClick={() => handleMovePrompt(idx, "up")}
-                        aria-label="Move prompt up"
-                        className="p-1.5 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
+                        onClick={handleSaveVerificationCode}
+                        disabled={isSavingCode || !newVerificationCode.trim()}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-pacific-cyan hover:bg-pacific-cyan/90 text-ink-black text-xs font-mono font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_12px_rgba(24,155,173,0.3)] cursor-pointer"
                       >
-                        <ChevronUp className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={idx === (content.ai.suggestedPrompts || []).length - 1}
-                        onClick={() => handleMovePrompt(idx, "down")}
-                        aria-label="Move prompt down"
-                        className="p-1.5 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePrompt(idx)}
-                        aria-label="Delete prompt"
-                        className="p-1.5 rounded hover:bg-red-500/20 text-red-400 transition-colors ml-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
+                        {isSavingCode ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Lock className="w-3.5 h-3.5" />
+                        )}
+                        <span>Save Verification Code</span>
                       </button>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
 
-            {/* Owner Verification Security Setting */}
-            <div className="flex flex-col gap-4 pt-8 border-t border-white/[0.08]">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                    Owner Verification
-                  </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pacific-cyan/10 text-pacific-cyan border border-pacific-cyan/20">
-                    Security Setting
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[11px] font-mono text-muted">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>Active (Masked)</span>
-                </div>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col gap-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-mono text-muted uppercase">New Verification Code</label>
-                    <div className="relative">
-                      <input
-                        type={showNewCode ? "text" : "password"}
-                        value={newVerificationCode}
-                        onChange={(e) => setNewVerificationCode(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs font-mono text-foreground outline-none transition-colors pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewCode(!showNewCode)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground cursor-pointer"
-                      >
-                        {showNewCode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                    <span className="text-[10px] font-mono text-muted/60">
-                      Between 4 and 32 characters.
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-mono text-muted uppercase">Confirm New Code</label>
-                    <div className="relative">
-                      <input
-                        type={showConfirmCode ? "text" : "password"}
-                        value={confirmVerificationCode}
-                        onChange={(e) => setConfirmVerificationCode(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs font-mono text-foreground outline-none transition-colors pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmCode(!showConfirmCode)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground cursor-pointer"
-                      >
-                        {showConfirmCode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                    <span className="text-[10px] font-mono text-muted/60">
-                      Must match new verification code.
-                    </span>
-                  </div>
-                </div>
-
-                {verificationMsg && (
-                  <div
-                    className={`p-3 rounded-xl border text-xs font-mono flex items-center gap-2 ${
-                      verificationMsg.success
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                        : "bg-rose-500/10 border-rose-500/30 text-rose-400"
-                    }`}
-                  >
-                    {verificationMsg.success ? (
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                    )}
-                    <span>{verificationMsg.message || verificationMsg.error}</span>
-                  </div>
+            {/* Bottom Primary Save Button */}
+            <div className="pt-2 sm:pt-4 flex justify-end">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[40px] h-10 px-5 sm:px-6 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_16px_rgba(24,155,173,0.3)] disabled:opacity-50 cursor-pointer select-none"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Rawin Orbit Content</span>
+                  </>
                 )}
-
-                <div className="flex justify-end pt-1">
-                  <button
-                    type="button"
-                    onClick={handleSaveVerificationCode}
-                    disabled={isSavingCode || !newVerificationCode.trim()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pacific-cyan hover:bg-pacific-cyan/90 text-ink-black text-xs font-mono font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_12px_rgba(24,155,173,0.3)] cursor-pointer"
-                  >
-                    {isSavingCode ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Lock className="w-3.5 h-3.5" />
-                    )}
-                    <span>Save Verification Code</span>
-                  </button>
-                </div>
-              </div>
+              </button>
             </div>
           </div>
         )}

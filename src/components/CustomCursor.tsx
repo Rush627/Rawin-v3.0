@@ -137,6 +137,30 @@ export default function CustomCursor() {
       rafId = requestAnimationFrame(animate);
     };
 
+    // Maintain standard z-50 on normal website; elevate above error, maintenance, or offline overlays
+    const updateErrorZIndex = () => {
+      const isErrorActive = Boolean(
+        document.documentElement.hasAttribute("data-error-active") ||
+        document.querySelector("[data-error-view], [data-error-overlay]")
+      );
+      if (cursorRef.current) {
+        cursorRef.current.style.zIndex = isErrorActive ? "10000" : "";
+      }
+    };
+
+    updateErrorZIndex();
+
+    const mutationObserver = new MutationObserver(() => {
+      updateErrorZIndex();
+    });
+
+    mutationObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-error-active"],
+      childList: true,
+      subtree: true,
+    });
+
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     document.documentElement.addEventListener("pointerleave", onPointerLeave);
     document.documentElement.addEventListener("pointerenter", onPointerEnter);
@@ -144,6 +168,7 @@ export default function CustomCursor() {
     rafId = requestAnimationFrame(animate);
 
     return () => {
+      mutationObserver.disconnect();
       document.documentElement.classList.remove("custom-cursor-active");
       window.removeEventListener("pointermove", onPointerMove);
       document.documentElement.removeEventListener("pointerleave", onPointerLeave);
@@ -161,6 +186,7 @@ export default function CustomCursor() {
   return (
     <div
       ref={cursorRef}
+      data-custom-cursor="true"
       aria-hidden="true"
       className="fixed top-0 left-0 pointer-events-none z-50 opacity-0 will-change-transform"
       style={{

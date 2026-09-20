@@ -70,6 +70,15 @@ export default function RawinErrorView({
     return () => clearInterval(interval);
   }, [endsAt]);
 
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-error-active", "true");
+      return () => {
+        document.documentElement.removeAttribute("data-error-active");
+      };
+    }
+  }, []);
+
   const handleAction = () => {
     if (onAction) {
       onAction();
@@ -83,6 +92,7 @@ export default function RawinErrorView({
   return (
     <main
       role="main"
+      data-error-view="true"
       className="relative w-full min-h-screen min-h-dvh flex flex-col items-center justify-center px-4 py-12 bg-ink-black text-foreground overflow-hidden selection:bg-pacific-cyan/30"
     >
       {/* Subtle Atmospheric Radial Accent */}

@@ -19,7 +19,6 @@ import {
   ArrowUpDown,
   Filter,
 } from "lucide-react";
-import NeoToggle from "@/components/NeoToggle";
 import RawinSelect, { type RawinSelectOption } from "./RawinSelect";
 import type {
   OrbitKnowledgeItem,
@@ -242,26 +241,21 @@ export default function OrbitKnowledgeManager({ initialItems }: OrbitKnowledgeMa
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Top Banner & Action Header */}
-      <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Action Header */}
+      <div className="glass-card rounded-2xl p-4 sm:p-6 border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 text-pacific-cyan">
-            <BookOpen className="w-5 h-5" />
+          <div className="p-2 sm:p-2.5 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 text-pacific-cyan shrink-0">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-space text-foreground">
-              Orbit Knowledge Base
-            </h2>
-            <p className="text-xs font-mono text-muted mt-0.5">
-              Authoritative manual facts supplied directly to Rawin Orbit.
-            </p>
-          </div>
+          <h2 className="text-base sm:text-xl font-bold font-space text-foreground tracking-tight">
+            Orbit Knowledge Base
+          </h2>
         </div>
 
         <button
           type="button"
           onClick={openCreateForm}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-pacific-cyan hover:bg-pacific-cyan/90 text-ink-black text-xs font-mono font-semibold transition-all shadow-[0_0_15px_rgba(24,155,173,0.3)] cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-pacific-cyan hover:bg-pacific-cyan/90 text-ink-black text-xs font-mono font-semibold transition-all shadow-[0_0_15px_rgba(24,155,173,0.3)] cursor-pointer self-stretch sm:self-auto min-h-[38px]"
         >
           <Plus className="w-4 h-4" />
           <span>Add Knowledge Item</span>
@@ -301,16 +295,16 @@ export default function OrbitKnowledgeManager({ initialItems }: OrbitKnowledgeMa
         </div>
       )}
 
-      {/* Category Pills & Filters */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+      {/* Category Navigation Rail */}
+      <div className="w-full">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto w-full p-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
             onClick={() => setSelectedCategory("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+            className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer whitespace-nowrap min-h-[34px] ${
               selectedCategory === "all"
-                ? "bg-white/[0.12] text-foreground font-semibold"
-                : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30 font-semibold"
+                : "text-muted hover:text-foreground hover:bg-white/[0.04] border border-transparent"
             }`}
           >
             All Categories ({items.length})
@@ -323,10 +317,10 @@ export default function OrbitKnowledgeManager({ initialItems }: OrbitKnowledgeMa
                 key={cat.key}
                 type="button"
                 onClick={() => setSelectedCategory(cat.key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer whitespace-nowrap min-h-[34px] ${
                   isSel
                     ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30 font-semibold"
-                    : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                    : "text-muted hover:text-foreground hover:bg-white/[0.04] border border-transparent"
                 }`}
               >
                 {cat.label} ({count})
@@ -334,59 +328,59 @@ export default function OrbitKnowledgeManager({ initialItems }: OrbitKnowledgeMa
             );
           })}
         </div>
+      </div>
 
-        {/* Search & Status Filter Row */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-3.5 h-3.5 text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search knowledge title or content..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-            />
-          </div>
+      {/* Search & Status Filter Controls */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="relative w-full sm:max-w-md">
+          <Search className="w-3.5 h-3.5 text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search knowledge title or content..."
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors min-h-[38px]"
+          />
+        </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono text-muted uppercase">Status:</span>
-            <div className="inline-flex items-center rounded-lg bg-white/[0.03] border border-white/[0.06] p-0.5">
-              <button
-                type="button"
-                onClick={() => setStatusFilter("all")}
-                className={`px-2.5 py-1 text-[11px] font-mono rounded-md transition-colors cursor-pointer ${
-                  statusFilter === "all" ? "bg-white/[0.1] text-foreground" : "text-muted hover:text-foreground"
-                }`}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter("current")}
-                className={`px-2.5 py-1 text-[11px] font-mono rounded-md transition-colors cursor-pointer ${
-                  statusFilter === "current" ? "bg-emerald-500/20 text-emerald-400 font-medium" : "text-muted hover:text-foreground"
-                }`}
-              >
-                Current
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter("historical")}
-                className={`px-2.5 py-1 text-[11px] font-mono rounded-md transition-colors cursor-pointer ${
-                  statusFilter === "historical" ? "bg-amber-500/20 text-amber-400 font-medium" : "text-muted hover:text-foreground"
-                }`}
-              >
-                Historical
-              </button>
-            </div>
+        <div className="flex items-center justify-between sm:justify-start gap-2.5">
+          <span className="text-[11px] font-mono text-muted uppercase tracking-wider">Status</span>
+          <div className="inline-flex items-center rounded-lg bg-white/[0.03] border border-white/[0.06] p-0.5">
+            <button
+              type="button"
+              onClick={() => setStatusFilter("all")}
+              className={`px-2.5 py-1 text-[11px] font-mono rounded-md transition-colors cursor-pointer min-h-[30px] ${
+                statusFilter === "all" ? "bg-white/[0.1] text-foreground font-medium" : "text-muted hover:text-foreground"
+              }`}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("current")}
+              className={`px-2.5 py-1 text-[11px] font-mono rounded-md transition-colors cursor-pointer min-h-[30px] ${
+                statusFilter === "current" ? "bg-emerald-500/20 text-emerald-400 font-medium" : "text-muted hover:text-foreground"
+              }`}
+            >
+              Current
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("historical")}
+              className={`px-2.5 py-1 text-[11px] font-mono rounded-md transition-colors cursor-pointer min-h-[30px] ${
+                statusFilter === "historical" ? "bg-amber-500/20 text-amber-400 font-medium" : "text-muted hover:text-foreground"
+              }`}
+            >
+              Historical
+            </button>
           </div>
         </div>
       </div>
 
       {/* Items List */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3.5">
         {filteredItems.length === 0 ? (
-          <div className="p-12 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col items-center justify-center text-center gap-2">
+          <div className="p-8 sm:p-12 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col items-center justify-center text-center gap-2">
             <BookOpen className="w-8 h-8 text-muted/40 mb-1" />
             <p className="text-sm font-space text-foreground">No knowledge records found.</p>
             <p className="text-xs font-mono text-muted">
@@ -405,103 +399,121 @@ export default function OrbitKnowledgeManager({ initialItems }: OrbitKnowledgeMa
             return (
               <div
                 key={item._id}
-                className={`p-5 rounded-2xl border transition-all ${
+                className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col gap-3 ${
                   item.enabled
                     ? "bg-white/[0.02] border-white/[0.08] hover:border-white/[0.14]"
                     : "bg-white/[0.01] border-white/[0.04] opacity-60"
                 }`}
               >
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                  {/* Left Metadata & Content */}
-                  <div className="flex-1 flex flex-col gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-white/[0.06] text-muted border border-white/[0.08]">
-                        {catLabel}
-                      </span>
+                {/* Top Badges */}
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-white/[0.06] text-muted border border-white/[0.08]">
+                    {catLabel}
+                  </span>
 
+                  <span
+                    className={`text-[11px] font-mono px-2 py-0.5 rounded-md border font-medium ${
+                      item.status === "current"
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                    }`}
+                  >
+                    {item.status === "current" ? "Current" : "Historical"}
+                  </span>
+
+                  <span
+                    className={`text-[11px] font-mono px-2 py-0.5 rounded-md border ${
+                      item.priority === "high"
+                        ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                        : item.priority === "low"
+                        ? "bg-white/[0.03] text-muted border-white/[0.06]"
+                        : "bg-pacific-cyan/10 text-pacific-cyan border-pacific-cyan/20"
+                    }`}
+                  >
+                    Priority: {item.priority}
+                  </span>
+
+                  {!item.enabled && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
+                      Standby
+                    </span>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h3 className="text-sm sm:text-base font-bold font-space text-foreground break-words">
+                  {item.title}
+                </h3>
+
+                {/* Content Preview */}
+                <p className="text-xs font-mono text-muted/90 whitespace-pre-wrap leading-relaxed max-h-24 overflow-hidden text-ellipsis line-clamp-3">
+                  {item.content}
+                </p>
+
+                {/* Updated Timestamp */}
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted/60">
+                  <Calendar className="w-3 h-3 shrink-0" />
+                  <span>Updated: {formatDate(item.updatedAt)}</span>
+                </div>
+
+                {/* Action Bar (Compact Toggle + Edit/Delete Buttons) */}
+                <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-white/[0.05]">
+                  {/* Compact Status Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggle(item)}
+                    disabled={isToggling}
+                    aria-label={`Orbit Status: ${item.enabled ? "Active" : "Standby"}. Tap to toggle.`}
+                    className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border transition-all cursor-pointer min-h-[34px] ${
+                      item.enabled
+                        ? "bg-pacific-cyan/10 border-pacific-cyan/25 text-pacific-cyan hover:bg-pacific-cyan/15"
+                        : "bg-white/[0.03] border-white/[0.08] text-muted hover:text-foreground hover:bg-white/[0.06]"
+                    } ${isToggling ? "opacity-50 cursor-wait" : ""}`}
+                  >
+                    <span
+                      className={`relative inline-flex h-3.5 w-6 shrink-0 rounded-full border transition-colors duration-200 ease-in-out ${
+                        item.enabled
+                          ? "bg-pacific-cyan border-pacific-cyan"
+                          : "bg-white/[0.1] border-white/[0.15]"
+                      }`}
+                    >
                       <span
-                        className={`text-[11px] font-mono px-2 py-0.5 rounded-md border font-medium ${
-                          item.status === "current"
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                            : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        className={`pointer-events-none inline-block h-2.5 w-2.5 transform rounded-full bg-ink-black shadow-sm ring-0 transition duration-200 ease-in-out mt-[1px] ${
+                          item.enabled ? "translate-x-2.5" : "translate-x-0.5"
                         }`}
-                      >
-                        {item.status === "current" ? "Current" : "Historical"}
-                      </span>
-
-                      <span
-                        className={`text-[11px] font-mono px-2 py-0.5 rounded-md border ${
-                          item.priority === "high"
-                            ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                            : item.priority === "low"
-                            ? "bg-white/[0.03] text-muted border-white/[0.06]"
-                            : "bg-pacific-cyan/10 text-pacific-cyan border-pacific-cyan/20"
-                        }`}
-                      >
-                        Priority: {item.priority}
-                      </span>
-
-                      {!item.enabled && (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
-                          Disabled
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="text-base font-bold font-space text-foreground">
-                      {item.title}
-                    </h3>
-
-                    <p className="text-xs font-mono text-muted/90 whitespace-pre-wrap leading-relaxed max-h-28 overflow-hidden text-ellipsis line-clamp-3">
-                      {item.content}
-                    </p>
-
-                    <div className="flex items-center gap-2 pt-1 text-[10px] font-mono text-muted/60">
-                      <Calendar className="w-3 h-3" />
-                      <span>Updated: {formatDate(item.updatedAt)}</span>
-                    </div>
-                  </div>
-
-                  {/* Right Actions */}
-                  <div className="flex items-center gap-2 self-end sm:self-start shrink-0">
-                    {/* Enable / Disable Switch */}
-                    <div className="flex items-center gap-2 mr-2">
-                      <span className="text-[11px] font-mono text-muted hidden sm:inline">
-                        {item.enabled ? "Active" : "Off"}
-                      </span>
-                      <NeoToggle
-                        checked={item.enabled}
-                        onChange={() => handleToggle(item)}
-                        disabled={isToggling}
                       />
-                    </div>
+                    </span>
+                    <span className="text-[10px] font-mono font-semibold tracking-wider uppercase">
+                      {item.enabled ? "ACTIVE" : "STANDBY"}
+                    </span>
+                  </button>
 
-                    {/* Edit Button */}
+                  {/* Edit & Delete Controls */}
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => openEditForm(item)}
                       aria-label="Edit knowledge entry"
-                      className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-lg text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-colors cursor-pointer min-h-[34px] min-w-[34px] flex items-center justify-center"
                       title="Edit entry"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
 
-                    {/* Delete with Confirmation */}
                     {isDeleting ? (
-                      <div className="flex items-center gap-1 bg-red-500/10 p-1 rounded-xl border border-red-500/30">
+                      <div className="flex items-center gap-1.5 bg-rose-500/10 p-1 rounded-lg border border-rose-500/30">
                         <button
                           type="button"
                           onClick={() => handleDelete(item._id)}
                           disabled={isPending}
-                          className="px-2 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-mono transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded-md bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-mono font-semibold transition-colors cursor-pointer min-h-[30px]"
                         >
                           Confirm
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeleteConfirmId(null)}
-                          className="p-1 text-muted hover:text-foreground cursor-pointer"
+                          className="p-1 text-muted hover:text-foreground cursor-pointer min-h-[30px] min-w-[30px] flex items-center justify-center"
                           aria-label="Cancel deletion"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -512,7 +524,7 @@ export default function OrbitKnowledgeManager({ initialItems }: OrbitKnowledgeMa
                         type="button"
                         onClick={() => setDeleteConfirmId(item._id)}
                         aria-label="Delete knowledge entry"
-                        className="p-2 rounded-xl text-muted hover:text-red-400 bg-white/[0.04] hover:bg-red-500/10 border border-white/[0.08] hover:border-red-500/20 transition-colors cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/35 transition-colors cursor-pointer min-h-[34px] min-w-[34px] flex items-center justify-center"
                         title="Delete entry"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -528,20 +540,20 @@ export default function OrbitKnowledgeManager({ initialItems }: OrbitKnowledgeMa
 
       {/* Create / Edit Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-ink-black border border-white/[0.12] p-6 sm:p-8 flex flex-col gap-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] rounded-2xl bg-ink-black border border-white/[0.12] flex flex-col shadow-2xl overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/[0.08] shrink-0">
               <div className="flex items-center gap-2.5">
-                <BookOpen className="w-5 h-5 text-pacific-cyan" />
-                <h3 className="text-lg font-bold font-space text-foreground">
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-pacific-cyan shrink-0" />
+                <h3 className="text-base sm:text-lg font-bold font-space text-foreground">
                   {editingItem ? "Edit Knowledge Entry" : "New Knowledge Entry"}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={closeForm}
-                className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-white/[0.06] transition-colors cursor-pointer"
+                className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-white/[0.06] transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
                 aria-label="Close dialog"
               >
                 <X className="w-4 h-4" />
@@ -549,123 +561,149 @@ export default function OrbitKnowledgeManager({ initialItems }: OrbitKnowledgeMa
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSave} className="flex flex-col gap-5">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Category */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-mono text-muted uppercase">Category</label>
-                  <RawinSelect
-                    name="category"
-                    value={formCategory}
-                    onChange={(val) => setFormCategory(val as OrbitKnowledgeCategory)}
-                    options={CATEGORY_OPTIONS}
-                  />
+            <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {/* Scrollable Fields Body */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 sm:gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  {/* Category */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-mono text-muted uppercase">Category</label>
+                    <RawinSelect
+                      name="category"
+                      value={formCategory}
+                      onChange={(val) => setFormCategory(val as OrbitKnowledgeCategory)}
+                      options={CATEGORY_OPTIONS}
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-mono text-muted uppercase">Status</label>
+                    <RawinSelect
+                      name="status"
+                      value={formStatus}
+                      onChange={(val) => setFormStatus(val as OrbitKnowledgeStatus)}
+                      options={STATUS_OPTIONS}
+                    />
+                  </div>
+
+                  {/* Priority */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-mono text-muted uppercase">Priority</label>
+                    <RawinSelect
+                      name="priority"
+                      value={formPriority}
+                      onChange={(val) => setFormPriority(val as OrbitKnowledgePriority)}
+                      options={PRIORITY_OPTIONS}
+                    />
+                  </div>
                 </div>
 
-                {/* Status */}
+                {/* Title */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-mono text-muted uppercase">Status</label>
-                  <RawinSelect
-                    name="status"
-                    value={formStatus}
-                    onChange={(val) => setFormStatus(val as OrbitKnowledgeStatus)}
-                    options={STATUS_OPTIONS}
-                  />
-                </div>
-
-                {/* Priority */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-mono text-muted uppercase">Priority</label>
-                  <RawinSelect
-                    name="priority"
-                    value={formPriority}
-                    onChange={(val) => setFormPriority(val as OrbitKnowledgePriority)}
-                    options={PRIORITY_OPTIONS}
-                  />
-                </div>
-              </div>
-
-              {/* Title */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-mono text-muted uppercase">
-                  Title / Subject <span className="text-pacific-cyan">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="e.g. Master's Degree in Computer Science, or RAWIN Architecture"
-                  maxLength={200}
-                  required
-                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors"
-                />
-              </div>
-
-              {/* Content (Markdown) */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
                   <label className="text-xs font-mono text-muted uppercase">
-                    Knowledge Content (Markdown) <span className="text-pacific-cyan">*</span>
+                    Title / Subject <span className="text-pacific-cyan">*</span>
                   </label>
+                  <input
+                    type="text"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    placeholder="e.g. Master of Science in Computer Science, or RAWIN Architecture"
+                    maxLength={200}
+                    required
+                    className="px-3.5 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-sm text-foreground outline-none transition-colors min-h-[40px]"
+                  />
+                </div>
+
+                {/* Content (Markdown) */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-mono text-muted uppercase">
+                      Knowledge Content (Markdown) <span className="text-pacific-cyan">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowPreview(!showPreview)}
+                      className="inline-flex items-center gap-1 text-[11px] font-mono text-pacific-cyan hover:underline cursor-pointer py-1"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>{showPreview ? "Edit Source" : "Preview"}</span>
+                    </button>
+                  </div>
+
+                  {showPreview ? (
+                    <div className="min-h-[140px] max-h-[220px] overflow-y-auto p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.08] text-xs font-mono text-foreground whitespace-pre-wrap leading-relaxed">
+                      {formContent ? formContent : <span className="text-muted italic">No content entered.</span>}
+                    </div>
+                  ) : (
+                    <textarea
+                      rows={6}
+                      value={formContent}
+                      onChange={(e) => setFormContent(e.target.value)}
+                      placeholder="Enter authoritative factual context. Markdown bullet points, key facts, dates, technologies, or notes..."
+                      required
+                      maxLength={20000}
+                      className="px-3.5 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs font-mono text-foreground outline-none transition-colors resize-y leading-relaxed min-h-[120px]"
+                    />
+                  )}
+                  <span className="text-[10px] font-mono text-muted/60 self-end">
+                    {formContent.length} / 20,000 chars
+                  </span>
+                </div>
+
+                {/* Enable for Orbit Inquiries (Compact mobile toggle) */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-mono text-foreground font-medium">
+                      Enable for Orbit Inquiries
+                    </span>
+                    <span className="text-[10px] font-mono text-muted mt-0.5">
+                      When disabled, this entry will not be supplied to Orbit.
+                    </span>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setShowPreview(!showPreview)}
-                    className="inline-flex items-center gap-1 text-[11px] font-mono text-pacific-cyan hover:underline cursor-pointer"
+                    onClick={() => setFormEnabled(!formEnabled)}
+                    aria-label={`Enable for Orbit Inquiries: ${formEnabled ? "Active" : "Standby"}`}
+                    className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer self-start sm:self-auto min-h-[36px] ${
+                      formEnabled
+                        ? "bg-pacific-cyan/10 border-pacific-cyan/25 text-pacific-cyan hover:bg-pacific-cyan/15"
+                        : "bg-white/[0.03] border-white/[0.08] text-muted hover:text-foreground"
+                    }`}
                   >
-                    <Eye className="w-3 h-3" />
-                    <span>{showPreview ? "Edit Source" : "Preview"}</span>
+                    <span
+                      className={`relative inline-flex h-3.5 w-6 shrink-0 rounded-full border transition-colors duration-200 ease-in-out ${
+                        formEnabled
+                          ? "bg-pacific-cyan border-pacific-cyan"
+                          : "bg-white/[0.1] border-white/[0.15]"
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-2.5 w-2.5 transform rounded-full bg-ink-black shadow-sm ring-0 transition duration-200 ease-in-out mt-[1px] ${
+                          formEnabled ? "translate-x-2.5" : "translate-x-0.5"
+                        }`}
+                      />
+                    </span>
+                    <span className="text-[11px] font-mono font-semibold tracking-wider uppercase">
+                      {formEnabled ? "ACTIVE" : "STANDBY"}
+                    </span>
                   </button>
                 </div>
-
-                {showPreview ? (
-                  <div className="min-h-[160px] p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] text-xs font-mono text-foreground whitespace-pre-wrap leading-relaxed">
-                    {formContent ? formContent : <span className="text-muted italic">No content entered.</span>}
-                  </div>
-                ) : (
-                  <textarea
-                    rows={8}
-                    value={formContent}
-                    onChange={(e) => setFormContent(e.target.value)}
-                    placeholder="Enter authoritative factual context. Markdown bullet points, key facts, dates, technologies, or notes..."
-                    required
-                    maxLength={20000}
-                    className="px-4 py-3 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs font-mono text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                )}
-                <span className="text-[10px] font-mono text-muted/60 self-end">
-                  {formContent.length} / 20,000 chars
-                </span>
               </div>
 
-              {/* Enabled Switch */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="flex flex-col">
-                  <span className="text-xs font-mono text-foreground font-medium">
-                    Enable for Orbit Inquiries
-                  </span>
-                  <span className="text-[10px] font-mono text-muted">
-                    When disabled, this entry will not be supplied to Orbit.
-                  </span>
-                </div>
-                <NeoToggle
-                  checked={formEnabled}
-                  onChange={(c) => setFormEnabled(c)}
-                />
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.06]">
+              {/* Modal Action Footer: Cancel on LEFT, Update on RIGHT */}
+              <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-t border-white/[0.08] bg-ink-black/95 backdrop-blur-sm shrink-0">
                 <button
                   type="button"
                   onClick={closeForm}
-                  className="px-4 py-2 rounded-xl text-xs font-mono text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-mono text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-colors cursor-pointer min-h-[38px]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isPending || !formTitle.trim() || !formContent.trim()}
-                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-pacific-cyan hover:bg-pacific-cyan/90 text-ink-black text-xs font-mono font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(24,155,173,0.3)] cursor-pointer"
+                  className="flex items-center gap-2 px-4 sm:px-5 py-2 rounded-xl bg-pacific-cyan hover:bg-pacific-cyan/90 text-ink-black text-xs font-mono font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(24,155,173,0.3)] cursor-pointer min-h-[38px]"
                 >
                   {isPending ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

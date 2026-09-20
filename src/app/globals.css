@@ -367,4 +367,37 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     animation: none !important;
     transform: none !important;
   }
-}
+}
+
+/* Prevent iOS Safari automatic viewport zoom on mobile form controls in Admin portal */
+@media (max-width: 639px) {
+  [data-admin-portal] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  [data-admin-portal] textarea,
+  [data-admin-portal] select {
+    font-size: 16px !important;
+  }
+}
+
+/* Elevate custom cursor above error, offline, and maintenance screens */
+body:has([data-error-view]) [data-custom-cursor],
+body:has([data-error-overlay]) [data-custom-cursor],
+html[data-error-active] [data-custom-cursor] {
+  z-index: 10000 !important;
+}
+
+/* Fallback: Ensure browser pointer remains visible on error screens when custom cursor is inactive */
+html:not(.custom-cursor-active) [data-error-view],
+html:not(.custom-cursor-active) [data-error-overlay],
+html:not(.custom-cursor-active) [data-error-view] *,
+html:not(.custom-cursor-active) [data-error-overlay] * {
+  cursor: auto !important;
+}
+
+html:not(.custom-cursor-active) [data-error-view] button,
+html:not(.custom-cursor-active) [data-error-overlay] button,
+html:not(.custom-cursor-active) [data-error-view] a,
+html:not(.custom-cursor-active) [data-error-overlay] a {
+  cursor: pointer !important;
+}
+
+

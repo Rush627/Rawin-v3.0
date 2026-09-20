@@ -31,6 +31,16 @@ export default function OfflineDetector() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (isOffline) {
+      document.documentElement.setAttribute("data-error-active", "true");
+      return () => {
+        document.documentElement.removeAttribute("data-error-active");
+      };
+    }
+  }, [isOffline]);
+
   const handleRetry = useCallback(() => {
     if (typeof window !== "undefined") {
       if (navigator.onLine) {
@@ -46,7 +56,10 @@ export default function OfflineDetector() {
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-ink-black flex flex-col">
+    <div
+      data-error-overlay="true"
+      className="fixed inset-0 z-[9999] bg-ink-black flex flex-col"
+    >
       <RawinErrorView
         code="OFFLINE"
         title="You're offline"

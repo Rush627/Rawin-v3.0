@@ -27,11 +27,14 @@ export default async function AdminLayout({
 
   // If unauthenticated (e.g. at /admin/login), render isolated content without admin chrome
   if (!session) {
-    return <>{children}</>;
+    return <div data-admin-portal="true">{children}</div>;
   }
 
   return (
-    <div className="min-h-screen min-h-dvh w-full bg-ink-black text-foreground flex flex-col">
+    <div
+      data-admin-portal="true"
+      className="min-h-screen min-h-dvh w-full bg-ink-black text-foreground flex flex-col"
+    >
       {/* Top Admin Navigation Header */}
       <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-ink-black/80 backdrop-blur-xl px-3.5 sm:px-8 py-2.5 sm:py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
@@ -67,6 +70,18 @@ export default async function AdminLayout({
               <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
+
+          {/* Smartphone Compact Live Website Link */}
+          <Link
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="sm:hidden inline-flex items-center gap-1 text-[11px] font-mono text-muted hover:text-pacific-cyan transition-colors px-2 py-1 rounded-md hover:bg-white/[0.04] shrink-0 select-none min-h-[32px]"
+            aria-label="View live website"
+          >
+            <span>Live Website</span>
+            <ExternalLink className="w-2.5 h-2.5 text-pacific-cyan/80" />
+          </Link>
 
           {/* User Status & Logout Right */}
           <div className="flex items-center gap-2 sm:gap-3">

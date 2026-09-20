@@ -120,7 +120,19 @@ export default function AvailabilityWatcher({
   }, [pathname, isAdmin, checkAvailability]);
 
   // If on admin routes, or if the site is live, or if this is the server fallback, do not render client overlay
-  if (isAdmin || state.status === "live" || isServerFallback) {
+  const isOverlayActive = !isAdmin && state.status !== "live" && !isServerFallback;
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (isOverlayActive) {
+      document.documentElement.setAttribute("data-error-active", "true");
+      return () => {
+        document.documentElement.removeAttribute("data-error-active");
+      };
+    }
+  }, [isOverlayActive]);
+
+  if (!isOverlayActive) {
     return null;
   }
 
@@ -128,6 +140,7 @@ export default function AvailabilityWatcher({
 
   return (
     <div
+      data-error-overlay="true"
       className="fixed inset-0 z-[9998] bg-ink-black flex flex-col overflow-y-auto"
       role="region"
       aria-label="Website Availability Notice"

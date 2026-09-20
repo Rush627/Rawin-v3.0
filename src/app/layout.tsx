@@ -119,7 +119,6 @@ export default async function RootLayout({
           suppressHydrationWarning
           className="min-h-screen min-h-dvh bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans"
         >
-          <PublicCustomCursor />
           <AvailabilityWatcher
             initialStatus={isMaintenanceMessage ? "maintenance" : "offline"}
             isServerFallback={true}
@@ -140,6 +139,7 @@ export default async function RootLayout({
             }
             actionLabel="Refresh"
           />
+          <PublicCustomCursor />
         </body>
       </html>
     );
@@ -167,7 +167,6 @@ export default async function RootLayout({
         suppressHydrationWarning
         className="min-h-screen min-h-dvh bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative"
       >
-        <PublicCustomCursor />
         <OfflineDetector />
         <AvailabilityWatcher />
         <SmoothScroll>
@@ -188,6 +187,7 @@ export default async function RootLayout({
           />
           <TorchSpotlight />
         </SmoothScroll>
+        <PublicCustomCursor />
       </body>
     </html>
   );
