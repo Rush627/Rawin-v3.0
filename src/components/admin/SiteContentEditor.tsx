@@ -23,6 +23,8 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
+  ChevronRight,
+  ChevronsUpDown,
   Layers,
   Compass,
   Laptop,
@@ -197,6 +199,26 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
   const [content, setContent] = useState<SiteContent>(initialContent);
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<ContentActionState | null>(null);
+  const [isMobileGlobalOpen, setIsMobileGlobalOpen] = useState(false);
+  const [isMobileHomeOpen, setIsMobileHomeOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Auto-expand mobile accordions on error
+  useEffect(() => {
+    if (activeTab === "global" && feedback?.error) {
+      setIsMobileGlobalOpen(true);
+    }
+    if (activeTab === "home" && feedback?.error) {
+      setIsMobileHomeOpen(true);
+    }
+  }, [activeTab, feedback]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -297,6 +319,93 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
 
   const [assetLoading, setAssetLoading] = useState<string | null>(null);
   const [milestoneLoading, setMilestoneLoading] = useState<string | null>(null);
+
+  // Site Assets accordion state (collapsed by default)
+  const [openAssetSections, setOpenAssetSections] = useState<Record<AssetKey, boolean>>({
+    profilePhoto: false,
+    logo: false,
+    favicon: false,
+  });
+
+  const toggleAssetSection = (key: AssetKey) => {
+    setOpenAssetSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleAllAssetSections = () => {
+    const keys: AssetKey[] = ["profilePhoto", "logo", "favicon"];
+    const allOpen = keys.every((k) => openAssetSections[k]);
+    const nextState = !allOpen;
+    setOpenAssetSections({
+      profilePhoto: nextState,
+      logo: nextState,
+      favicon: nextState,
+    });
+  };
+
+  // About Content Top-Level Accordion States (Collapsed by default)
+  const [aboutOpenSections, setAboutOpenSections] = useState<Record<string, boolean>>({
+    intro: false,
+    narrative: false,
+    evolution: false,
+    principles: false,
+    journey: false,
+    focus: false,
+    cta: false,
+  });
+
+  const toggleAboutSection = (key: string) => {
+    setAboutOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleAllAboutSections = () => {
+    const keys = ["intro", "narrative", "evolution", "principles", "journey", "focus", "cta"];
+    const allOpen = keys.every((k) => aboutOpenSections[k]);
+    const nextState = !allOpen;
+    const updated: Record<string, boolean> = {};
+    keys.forEach((k) => {
+      updated[k] = nextState;
+    });
+    setAboutOpenSections(updated);
+  };
+
+  // Contact & Social Top-Level Accordion States (Collapsed by default)
+  const [contactOpenSections, setContactOpenSections] = useState<Record<string, boolean>>({
+    details: false,
+    socials: false,
+    form: false,
+    headings: false,
+  });
+
+  const toggleContactSection = (key: string) => {
+    setContactOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleAllContactSections = () => {
+    const keys = ["details", "socials", "form", "headings"];
+    const allOpen = keys.every((k) => contactOpenSections[k]);
+    const nextState = !allOpen;
+    const updated: Record<string, boolean> = {};
+    keys.forEach((k) => {
+      updated[k] = nextState;
+    });
+    setContactOpenSections(updated);
+  };
+
+  // Nested Accordions for Repeatable Items (Milestones, Principles, Focus Areas)
+  const [openMilestones, setOpenMilestones] = useState<Record<string, boolean>>({});
+  const toggleMilestone = (key: string) => {
+    setOpenMilestones((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const [openPrinciples, setOpenPrinciples] = useState<Record<string, boolean>>({});
+  const togglePrinciple = (key: string) => {
+    setOpenPrinciples((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const [openFocusAreas, setOpenFocusAreas] = useState<Record<string, boolean>>({});
+  const toggleFocusArea = (key: string) => {
+    setOpenFocusAreas((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   // Resume PDF & complex states
   const [resumePdfLoading, setResumePdfLoading] = useState<"upload" | "remove" | null>(null);
@@ -1330,13 +1439,13 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
     }));
   };
 
-  const handleContactSocial = (field: "github" | "linkedin" | "twitter", val: string) => {
+  const handleContactSocial = (field: "github" | "linkedin" | "twitter" | "instagram", val: string) => {
     setContent((prev) => ({
       ...prev,
       contact: {
         ...prev.contact,
         socials: {
-          ...(prev.contact.socials || { github: "", linkedin: "", twitter: "" }),
+          ...(prev.contact.socials || { github: "", linkedin: "", twitter: "", instagram: "" }),
           [field]: val,
         },
       },
@@ -1662,9 +1771,9 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
   const currentSection = SECTIONS.find((s) => s.key === activeTab)!;
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Tab Selector Bar */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] w-full">
+    <div className="flex flex-col gap-5 sm:gap-8">
+      {/* Desktop Tab Selector Bar (>= sm) */}
+      <div className="hidden sm:flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] w-full">
         {SECTIONS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -1687,6 +1796,51 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
             </button>
           );
         })}
+      </div>
+
+      {/* Smartphone Horizontal Scrolling Section Navigation (< sm) */}
+      <div className="flex sm:hidden flex-col gap-2 w-full max-w-full">
+        <div className="flex items-center justify-between px-0.5">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted font-semibold">
+            Content Sections
+          </span>
+          <span className="text-[10px] font-mono text-pacific-cyan">
+            {currentSection.label} active
+          </span>
+        </div>
+
+        <div className="w-full max-w-full overflow-x-auto flex-nowrap flex items-center gap-2 py-2.5 px-0.5 -my-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {SECTIONS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setFeedback(null);
+                }}
+                className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium shrink-0 transition-all cursor-pointer select-none whitespace-nowrap min-h-[42px] ${
+                  isActive
+                    ? "bg-pacific-cyan/15 text-pacific-cyan font-semibold border border-pacific-cyan/60 ring-1 ring-pacific-cyan/30 shadow-[0_0_8px_rgba(24,155,173,0.2)]"
+                    : "text-muted hover:text-foreground bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06]"
+                }`}
+              >
+                <div
+                  className={`p-1 rounded-lg shrink-0 ${
+                    isActive
+                      ? "bg-pacific-cyan/20 text-pacific-cyan"
+                      : "bg-white/[0.04] text-muted"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Status Feedback Notification */}
@@ -1726,439 +1880,522 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
       {activeTab === "orbit-knowledge" ? (
         <OrbitKnowledgeManager initialItems={initialKnowledge || []} />
       ) : activeTab === "assets" ? (
-        <div className="flex flex-col gap-6">
-          <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 text-pacific-cyan">
-                <ImageIcon className="w-5 h-5" />
+        <div className="flex flex-col gap-4 sm:gap-6">
+          <div className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/[0.08] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 text-pacific-cyan shrink-0">
+                <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div>
-                <h2 className="text-xl font-bold font-space text-foreground">
+              <div className="flex flex-col min-w-0">
+                <h2 className="text-base sm:text-lg font-bold font-space text-foreground truncate">
                   Visual Identity &amp; Site Assets
                 </h2>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 1: Profile Photo */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-pacific-cyan"></span>
-                <h3 className="text-base font-bold font-space text-foreground">Profile Photo</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-pacific-cyan/10 text-pacific-cyan border border-pacific-cyan/20">
-                  Homepage, About, OpenGraph
+                <span className="text-[10px] sm:text-xs font-mono text-muted truncate">
+                  Brand imagery and icon management
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => handleAssetReset("profilePhoto")}
-                disabled={assetLoading === "profilePhoto-reset"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 cursor-pointer disabled:opacity-50"
-              >
-                {assetLoading === "profilePhoto-reset" ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <RotateCcw className="w-3 h-3" />
-                )}
-                <span>Reset to Default</span>
-              </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-              {/* Preview */}
-              <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-ink-black/40 border border-white/5 text-center gap-3">
-                <div className="relative group">
-                  <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-pacific-cyan/40 via-apricot-cream/30 to-pacific-cyan/40 blur-md opacity-70"></div>
-                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-pacific-cyan/50 p-1 bg-surface/80 shadow-2xl">
-                    <img
-                      src={previewUrls.profilePhoto || assetUrls.profilePhoto}
-                      alt={assetAlts.profilePhoto}
-                      className="w-full h-full object-cover rounded-full filter contrast-105"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] font-mono text-muted">Active Portrait Preview</span>
-                  {selectedFiles.profilePhoto && (
-                    <span className="text-[10px] font-mono text-emerald-400">
-                      New file selected: {selectedFiles.profilePhoto.name}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Controls */}
-              <div className="md:col-span-2 flex flex-col gap-5">
-                {/* File Upload Trigger */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">
-                    Upload New Image File (Max 5MB • PNG, JPG, WebP)
-                  </label>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <input
-                      id="upload-profilePhoto"
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      onChange={(e) => handleFileSelect("profilePhoto", e)}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="upload-profilePhoto"
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Choose New Image</span>
-                    </label>
-
-                    {selectedFiles.profilePhoto ? (
-                      <button
-                        type="button"
-                        onClick={() => handleAssetUpload("profilePhoto")}
-                        disabled={assetLoading === "profilePhoto-upload"}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 transition-all shadow-[0_0_15px_rgba(24,155,173,0.3)] cursor-pointer disabled:opacity-50"
-                      >
-                        {assetLoading === "profilePhoto-upload" ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Save className="w-3.5 h-3.5" />
-                        )}
-                        <span>Upload &amp; Save Photo</span>
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* Alt Text */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">
-                    Accessible Alt Text
-                  </label>
-                  <input
-                    type="text"
-                    value={assetAlts.profilePhoto}
-                    onChange={(e) =>
-                      setAssetAlts((prev) => ({ ...prev, profilePhoto: e.target.value }))
-                    }
-                    placeholder="Rushan Siddiqui : Full Stack Developer"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                {/* Direct URL Override */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">
-                    Asset URL Reference (GridFS Stream or Static Path)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={assetUrls.profilePhoto}
-                      onChange={(e) =>
-                        setAssetUrls((prev) => ({ ...prev, profilePhoto: e.target.value }))
-                      }
-                      className="flex-1 px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors font-mono text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleAssetSaveMeta("profilePhoto")}
-                      disabled={assetLoading === "profilePhoto-meta"}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      {assetLoading === "profilePhoto-meta" ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Save className="w-3.5 h-3.5" />
-                      )}
-                      <span>Save URL &amp; Alt</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={toggleAllAssetSections}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-foreground bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-colors cursor-pointer select-none shrink-0"
+              title={
+                (["profilePhoto", "logo", "favicon"] as AssetKey[]).every((k) => openAssetSections[k])
+                  ? "Collapse all sections"
+                  : "Expand all sections"
+              }
+              aria-label={
+                (["profilePhoto", "logo", "favicon"] as AssetKey[]).every((k) => openAssetSections[k])
+                  ? "Collapse all sections"
+                  : "Expand all sections"
+              }
+            >
+              <ChevronsUpDown className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
+              <span className="hidden sm:inline">
+                {(["profilePhoto", "logo", "favicon"] as AssetKey[]).every((k) => openAssetSections[k])
+                  ? "Collapse All"
+                  : "Expand All"}
+              </span>
+            </button>
           </div>
 
-          {/* Card 2: Website Logo */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-pacific-cyan"></span>
-                <h3 className="text-base font-bold font-space text-foreground">Website Logo</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-pacific-cyan/10 text-pacific-cyan border border-pacific-cyan/20">
-                  Navbar (Unified Glow), Footer, Admin, Login
-                </span>
-              </div>
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {/* Accordion 1: Profile Photo */}
+            <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
               <button
                 type="button"
-                onClick={() => handleAssetReset("logo")}
-                disabled={assetLoading === "logo-reset"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 cursor-pointer disabled:opacity-50"
+                onClick={() => toggleAssetSection("profilePhoto")}
+                aria-expanded={Boolean(openAssetSections.profilePhoto)}
+                aria-controls="asset-section-profilePhoto"
+                className="w-full p-3.5 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
               >
-                {assetLoading === "logo-reset" ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <RotateCcw className="w-3.5 h-3.5" />
-                )}
-                <span>Reset to Default</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-              {/* Preview with atmospheric glow simulation */}
-              <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-ink-black/40 border border-white/5 text-center gap-4">
-                <div className="relative flex items-center justify-center p-4 rounded-xl bg-surface/50 border border-white/10 w-full max-w-[220px]">
-                  {/* Atmospheric Glow simulation */}
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-0 rounded-xl bg-pacific-cyan/20 blur-lg opacity-40 pointer-events-none"
-                  />
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-1 rounded-lg bg-gradient-to-r from-pacific-cyan/15 via-apricot-cream/10 to-pacific-cyan/15 blur-sm opacity-50 pointer-events-none"
-                  />
-                  <img
-                    src={previewUrls.logo || assetUrls.logo}
-                    alt={assetAlts.logo}
-                    className="relative h-8 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(24,155,173,0.35)]"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] font-mono text-muted">Navbar Glow Simulation</span>
-                  {selectedFiles.logo && (
-                    <span className="text-[10px] font-mono text-emerald-400">
-                      New file selected: {selectedFiles.logo.name}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-pacific-cyan" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                      Profile Photo
                     </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Controls */}
-              <div className="md:col-span-2 flex flex-col gap-5">
-                {/* File Upload Trigger */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">
-                    Upload New Logo File (Max 2MB • PNG, WebP)
-                  </label>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <input
-                      id="upload-logo"
-                      type="file"
-                      accept="image/png,image/webp"
-                      onChange={(e) => handleFileSelect("logo", e)}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="upload-logo"
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Choose New Logo</span>
-                    </label>
-
-                    {selectedFiles.logo ? (
-                      <button
-                        type="button"
-                        onClick={() => handleAssetUpload("logo")}
-                        disabled={assetLoading === "logo-upload"}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 transition-all shadow-[0_0_15px_rgba(24,155,173,0.3)] cursor-pointer disabled:opacity-50"
-                      >
-                        {assetLoading === "logo-upload" ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Save className="w-3.5 h-3.5" />
-                        )}
-                        <span>Upload &amp; Save Logo</span>
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* Alt Text */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">
-                    Logo Alt / Brand Label
-                  </label>
-                  <input
-                    type="text"
-                    value={assetAlts.logo}
-                    onChange={(e) =>
-                      setAssetAlts((prev) => ({ ...prev, logo: e.target.value }))
-                    }
-                    placeholder="RAWIN Logo"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                {/* Direct URL Override */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">
-                    Logo URL Reference (GridFS Stream or Static Path)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={assetUrls.logo}
-                      onChange={(e) =>
-                        setAssetUrls((prev) => ({ ...prev, logo: e.target.value }))
-                      }
-                      className="flex-1 px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors font-mono text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleAssetSaveMeta("logo")}
-                      disabled={assetLoading === "logo-meta"}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      {assetLoading === "logo-meta" ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Save className="w-3.5 h-3.5" />
-                      )}
-                      <span>Save URL &amp; Alt</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Website Favicon */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-pacific-cyan"></span>
-                <h3 className="text-base font-bold font-space text-foreground">Website Favicon</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-pacific-cyan/10 text-pacific-cyan border border-pacific-cyan/20">
-                  Browser Tab, Bookmarks, Mobile Shortcut
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleAssetReset("favicon")}
-                disabled={assetLoading === "favicon-reset"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 cursor-pointer disabled:opacity-50"
-              >
-                {assetLoading === "favicon-reset" ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <RotateCcw className="w-3 h-3" />
-                )}
-                <span>Reset to Default</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-              {/* Preview with simulated browser tab */}
-              <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-ink-black/40 border border-white/5 text-center gap-4">
-                {/* Simulated browser tab */}
-                <div className="w-full flex flex-col gap-2">
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface/80 border border-white/10 w-full">
-                    <img
-                      src={previewUrls.favicon || assetUrls.favicon}
-                      alt="Favicon"
-                      className="w-4 h-4 object-contain rounded"
-                    />
-                    <span className="text-[11px] font-medium text-foreground truncate">
-                      RAWIN | Rushan Siddiqui
+                    <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                      Homepage · About · OpenGraph
                     </span>
                   </div>
-                  <div className="flex items-center justify-center gap-4 pt-2">
-                    <div className="flex flex-col items-center gap-1">
-                      <img
-                        src={previewUrls.favicon || assetUrls.favicon}
-                        alt="32px Favicon"
-                        className="w-8 h-8 object-contain p-1 rounded-lg bg-surface border border-white/10"
-                      />
-                      <span className="text-[9px] font-mono text-muted">32px</span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                    {openAssetSections.profilePhoto ? "Collapse" : "Expand"}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                      openAssetSections.profilePhoto ? "rotate-180 text-pacific-cyan" : ""
+                    }`}
+                  />
+                </div>
+              </button>
+
+              <div
+                id="asset-section-profilePhoto"
+                role="region"
+                aria-label="Profile Photo"
+                className={
+                  openAssetSections.profilePhoto
+                    ? "block p-4 sm:p-6 pt-2 sm:pt-4 border-t border-white/[0.06] flex flex-col gap-5"
+                    : "hidden"
+                }
+              >
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-start">
+                  {/* Preview */}
+                  <div className="md:col-span-4 flex flex-col items-center justify-center p-4 sm:p-5 rounded-xl bg-ink-black/40 border border-white/5 text-center gap-3">
+                    <div className="relative group">
+                      <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-pacific-cyan/30 via-apricot-cream/20 to-pacific-cyan/30 blur-sm opacity-60"></div>
+                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-pacific-cyan/50 p-0.5 bg-surface/80 shadow-lg">
+                        <img
+                          src={previewUrls.profilePhoto || assetUrls.profilePhoto}
+                          alt={assetAlts.profilePhoto}
+                          className="w-full h-full object-cover rounded-full filter contrast-105"
+                        />
+                      </div>
                     </div>
-                    <div className="flex flex-col items-center gap-1">
-                      <img
-                        src={previewUrls.favicon || assetUrls.favicon}
-                        alt="48px Favicon"
-                        className="w-12 h-12 object-contain p-1.5 rounded-xl bg-surface border border-white/10"
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] font-mono text-muted">Active Portrait Preview</span>
+                      {selectedFiles.profilePhoto && (
+                        <span className="text-[10px] font-mono text-emerald-400 break-all">
+                          Selected: {selectedFiles.profilePhoto.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Controls */}
+                  <div className="md:col-span-8 flex flex-col gap-4">
+                    {/* File Upload */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-mono text-muted uppercase font-semibold">
+                        Upload
+                      </label>
+                      <span className="text-[10px] font-mono text-muted/60">
+                        PNG · JPG · WEBP · MAX 5MB
+                      </span>
+                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                        <input
+                          id="upload-profilePhoto"
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={(e) => handleFileSelect("profilePhoto", e)}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="upload-profilePhoto"
+                          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer select-none"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Choose Image</span>
+                        </label>
+
+                        {selectedFiles.profilePhoto ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAssetUpload("profilePhoto")}
+                            disabled={assetLoading === "profilePhoto-upload"}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 transition-all shadow-[0_0_12px_rgba(24,155,173,0.25)] cursor-pointer disabled:opacity-50"
+                          >
+                            {assetLoading === "profilePhoto-upload" ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Upload className="w-3.5 h-3.5" />
+                            )}
+                            <span>Upload Photo</span>
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Accessible Alt Text */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-mono text-muted uppercase font-semibold">
+                        Accessible Alt Text
+                      </label>
+                      <input
+                        type="text"
+                        value={assetAlts.profilePhoto}
+                        onChange={(e) =>
+                          setAssetAlts((prev) => ({ ...prev, profilePhoto: e.target.value }))
+                        }
+                        placeholder="Rushan Siddiqui : Full Stack Developer"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
                       />
-                      <span className="text-[9px] font-mono text-muted">48px</span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/[0.06]">
+                      <button
+                        type="button"
+                        onClick={() => handleAssetReset("profilePhoto")}
+                        disabled={assetLoading === "profilePhoto-reset"}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono text-muted hover:text-red-400 hover:bg-red-500/10 transition-all border border-white/[0.08] hover:border-red-500/20 cursor-pointer disabled:opacity-50"
+                      >
+                        {assetLoading === "profilePhoto-reset" ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3" />
+                        )}
+                        <span>Reset to Default</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAssetSaveMeta("profilePhoto")}
+                        disabled={assetLoading === "profilePhoto-meta"}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {assetLoading === "profilePhoto-meta" ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Save className="w-3.5 h-3.5" />
+                        )}
+                        <span>Save Alt Text</span>
+                      </button>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] font-mono text-muted">Browser Tab Mockup</span>
-                  {selectedFiles.favicon && (
-                    <span className="text-[10px] font-mono text-emerald-400">
-                      New file selected: {selectedFiles.favicon.name}
-                    </span>
-                  )}
-                </div>
               </div>
+            </div>
 
-              {/* Controls */}
-              <div className="md:col-span-2 flex flex-col gap-5">
-                {/* File Upload Trigger */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">
-                    Upload New Favicon (Max 1MB • PNG, ICO, WebP)
-                  </label>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <input
-                      id="upload-favicon"
-                      type="file"
-                      accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/webp"
-                      onChange={(e) => handleFileSelect("favicon", e)}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="upload-favicon"
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Choose New Favicon</span>
-                    </label>
+            {/* Accordion 2: Website Logo */}
+            <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+              <button
+                type="button"
+                onClick={() => toggleAssetSection("logo")}
+                aria-expanded={Boolean(openAssetSections.logo)}
+                aria-controls="asset-section-logo"
+                className="w-full p-3.5 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-pacific-cyan" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                      Website Logo
+                    </span>
+                    <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                      Navbar · Footer · Admin · Login
+                    </span>
+                  </div>
+                </div>
 
-                    {selectedFiles.favicon ? (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                    {openAssetSections.logo ? "Collapse" : "Expand"}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                      openAssetSections.logo ? "rotate-180 text-pacific-cyan" : ""
+                    }`}
+                  />
+                </div>
+              </button>
+
+              <div
+                id="asset-section-logo"
+                role="region"
+                aria-label="Website Logo"
+                className={
+                  openAssetSections.logo
+                    ? "block p-4 sm:p-6 pt-2 sm:pt-4 border-t border-white/[0.06] flex flex-col gap-5"
+                    : "hidden"
+                }
+              >
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-start">
+                  {/* Preview */}
+                  <div className="md:col-span-4 flex flex-col items-center justify-center p-4 sm:p-5 rounded-xl bg-ink-black/40 border border-white/5 text-center gap-3">
+                    <div className="relative flex items-center justify-center p-3 sm:p-4 rounded-xl bg-surface/50 border border-white/10 w-full max-w-[200px] min-h-[56px]">
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 rounded-xl bg-pacific-cyan/20 blur-md opacity-30 pointer-events-none"
+                      />
+                      <img
+                        src={previewUrls.logo || assetUrls.logo}
+                        alt={assetAlts.logo}
+                        className="relative h-6 sm:h-7 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(24,155,173,0.35)]"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] font-mono text-muted">Navbar Glow Simulation</span>
+                      {selectedFiles.logo && (
+                        <span className="text-[10px] font-mono text-emerald-400 break-all">
+                          Selected: {selectedFiles.logo.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Controls */}
+                  <div className="md:col-span-8 flex flex-col gap-4">
+                    {/* File Upload */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-mono text-muted uppercase font-semibold">
+                        Upload
+                      </label>
+                      <span className="text-[10px] font-mono text-muted/60">
+                        PNG · WEBP · MAX 2MB
+                      </span>
+                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                        <input
+                          id="upload-logo"
+                          type="file"
+                          accept="image/png,image/webp"
+                          onChange={(e) => handleFileSelect("logo", e)}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="upload-logo"
+                          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer select-none"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Choose Logo</span>
+                        </label>
+
+                        {selectedFiles.logo ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAssetUpload("logo")}
+                            disabled={assetLoading === "logo-upload"}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 transition-all shadow-[0_0_12px_rgba(24,155,173,0.25)] cursor-pointer disabled:opacity-50"
+                          >
+                            {assetLoading === "logo-upload" ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Upload className="w-3.5 h-3.5" />
+                            )}
+                            <span>Upload Logo</span>
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Logo Alt / Brand Label */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-mono text-muted uppercase font-semibold">
+                        Logo Alt / Brand Label
+                      </label>
+                      <input
+                        type="text"
+                        value={assetAlts.logo}
+                        onChange={(e) =>
+                          setAssetAlts((prev) => ({ ...prev, logo: e.target.value }))
+                        }
+                        placeholder="RAWIN Logo"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/[0.06]">
                       <button
                         type="button"
-                        onClick={() => handleAssetUpload("favicon")}
-                        disabled={assetLoading === "favicon-upload"}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 transition-all shadow-[0_0_15px_rgba(24,155,173,0.3)] cursor-pointer disabled:opacity-50"
+                        onClick={() => handleAssetReset("logo")}
+                        disabled={assetLoading === "logo-reset"}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono text-muted hover:text-red-400 hover:bg-red-500/10 transition-all border border-white/[0.08] hover:border-red-500/20 cursor-pointer disabled:opacity-50"
                       >
-                        {assetLoading === "favicon-upload" ? (
+                        {assetLoading === "logo-reset" ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3" />
+                        )}
+                        <span>Reset to Default</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAssetSaveMeta("logo")}
+                        disabled={assetLoading === "logo-meta"}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {assetLoading === "logo-meta" ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
                           <Save className="w-3.5 h-3.5" />
                         )}
-                        <span>Upload &amp; Save Favicon</span>
+                        <span>Save Alt Text</span>
                       </button>
-                    ) : null}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Accordion 3: Website Favicon */}
+            <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+              <button
+                type="button"
+                onClick={() => toggleAssetSection("favicon")}
+                aria-expanded={Boolean(openAssetSections.favicon)}
+                aria-controls="asset-section-favicon"
+                className="w-full p-3.5 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
+                    <Globe className="w-4 h-4 text-pacific-cyan" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                      Website Favicon
+                    </span>
+                    <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                      Browser Tab · Bookmarks · Mobile
+                    </span>
                   </div>
                 </div>
 
-                {/* Direct URL Override */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">
-                    Favicon URL Reference (GridFS Stream or Static Path)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={assetUrls.favicon}
-                      onChange={(e) =>
-                        setAssetUrls((prev) => ({ ...prev, favicon: e.target.value }))
-                      }
-                      className="flex-1 px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors font-mono text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleAssetSaveMeta("favicon")}
-                      disabled={assetLoading === "favicon-meta"}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      {assetLoading === "favicon-meta" ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Save className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                    {openAssetSections.favicon ? "Collapse" : "Expand"}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                      openAssetSections.favicon ? "rotate-180 text-pacific-cyan" : ""
+                    }`}
+                  />
+                </div>
+              </button>
+
+              <div
+                id="asset-section-favicon"
+                role="region"
+                aria-label="Website Favicon"
+                className={
+                  openAssetSections.favicon
+                    ? "block p-4 sm:p-6 pt-2 sm:pt-4 border-t border-white/[0.06] flex flex-col gap-5"
+                    : "hidden"
+                }
+              >
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-start">
+                  {/* Preview */}
+                  <div className="md:col-span-4 flex flex-col items-center justify-center p-4 sm:p-5 rounded-xl bg-ink-black/40 border border-white/5 text-center gap-3">
+                    <div className="w-full max-w-[200px] flex flex-col gap-2">
+                      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface/80 border border-white/10 w-full">
+                        <img
+                          src={previewUrls.favicon || assetUrls.favicon}
+                          alt="Favicon"
+                          className="w-4 h-4 object-contain rounded shrink-0"
+                        />
+                        <span className="text-[10px] font-medium text-foreground truncate">
+                          RAWIN | Rushan
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-center gap-3 pt-1">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <img
+                            src={previewUrls.favicon || assetUrls.favicon}
+                            alt="32px Favicon"
+                            className="w-7 h-7 object-contain p-1 rounded-lg bg-surface border border-white/10"
+                          />
+                          <span className="text-[9px] font-mono text-muted">32px</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <img
+                            src={previewUrls.favicon || assetUrls.favicon}
+                            alt="48px Favicon"
+                            className="w-10 h-10 object-contain p-1 rounded-xl bg-surface border border-white/10"
+                          />
+                          <span className="text-[9px] font-mono text-muted">48px</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] font-mono text-muted">Browser Tab Mockup</span>
+                      {selectedFiles.favicon && (
+                        <span className="text-[10px] font-mono text-emerald-400 break-all">
+                          Selected: {selectedFiles.favicon.name}
+                        </span>
                       )}
-                      <span>Save URL</span>
-                    </button>
+                    </div>
+                  </div>
+
+                  {/* Controls */}
+                  <div className="md:col-span-8 flex flex-col gap-4">
+                    {/* File Upload */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-mono text-muted uppercase font-semibold">
+                        Upload
+                      </label>
+                      <span className="text-[10px] font-mono text-muted/60">
+                        PNG · ICO · WEBP · MAX 1MB
+                      </span>
+                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                        <input
+                          id="upload-favicon"
+                          type="file"
+                          accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/webp"
+                          onChange={(e) => handleFileSelect("favicon", e)}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="upload-favicon"
+                          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-medium glass-card hover:border-pacific-cyan/40 hover:text-pacific-cyan transition-all cursor-pointer select-none"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Choose Favicon</span>
+                        </label>
+
+                        {selectedFiles.favicon ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAssetUpload("favicon")}
+                            disabled={assetLoading === "favicon-upload"}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 transition-all shadow-[0_0_12px_rgba(24,155,173,0.25)] cursor-pointer disabled:opacity-50"
+                          >
+                            {assetLoading === "favicon-upload" ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Upload className="w-3.5 h-3.5" />
+                            )}
+                            <span>Upload Favicon</span>
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/[0.06]">
+                      <button
+                        type="button"
+                        onClick={() => handleAssetReset("favicon")}
+                        disabled={assetLoading === "favicon-reset"}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono text-muted hover:text-red-400 hover:bg-red-500/10 transition-all border border-white/[0.08] hover:border-red-500/20 cursor-pointer disabled:opacity-50"
+                      >
+                        {assetLoading === "favicon-reset" ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3" />
+                        )}
+                        <span>Reset to Default</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2167,282 +2404,775 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
         </div>
       ) : (
         /* Editor Form Card */
-        <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.08] flex flex-col gap-6">
-          {/* Form Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 text-pacific-cyan">
-                <currentSection.icon className="w-5 h-5" />
+        <form
+          onSubmit={handleSubmit}
+          className={
+            activeTab === "global" || activeTab === "home"
+              ? "flex flex-col sm:glass-card sm:rounded-2xl sm:p-8 sm:border sm:border-white/[0.08] gap-4 sm:gap-6"
+              : activeTab === "about" || activeTab === "contact"
+              ? "glass-card rounded-xl sm:rounded-2xl p-3.5 sm:p-6 lg:p-8 border border-white/[0.08] flex flex-col gap-4 sm:gap-6"
+              : "glass-card rounded-2xl p-5 sm:p-8 border border-white/[0.08] flex flex-col gap-6"
+          }
+        >
+          {/* Form Header: Hidden on mobile for Global and Home sections since mobile uses its own accordion and bottom save button */}
+          <div
+            className={`${
+              activeTab === "global" || activeTab === "home" ? "hidden sm:flex" : "flex"
+            } flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-white/[0.08]`}
+          >
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 text-pacific-cyan">
+                <currentSection.icon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold font-space text-foreground">
+                <h2 className="text-lg sm:text-xl font-bold font-space text-foreground">
                   {currentSection.label} Content
                 </h2>
               </div>
             </div>
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="inline-flex items-center justify-center gap-2 h-10 px-6 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_20px_rgba(24,155,173,0.35)] disabled:opacity-50 cursor-pointer select-none whitespace-nowrap self-start sm:self-auto"
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-3.5 h-3.5" />
-                <span>Save {currentSection.label} Content</span>
-              </>
-            )}
-          </button>
-        </div>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="inline-flex items-center justify-center gap-2 h-9 sm:h-10 px-4 sm:px-6 rounded-xl text-[11px] sm:text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_16px_rgba(24,155,173,0.3)] disabled:opacity-50 cursor-pointer select-none whitespace-nowrap self-start sm:self-auto"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save {currentSection.label} Content</span>
+                </>
+              )}
+            </button>
+          </div>
 
-        {/* Dynamic Fields Per Section */}
-        {activeTab === "global" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Brand / Site Name</label>
-              <input
-                type="text"
-                name="brandName"
-                value={content.global.brandName}
-                onChange={(e) => handleFieldChange("global", "brandName", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+          {/* Dynamic Fields Per Section */}
+          {activeTab === "global" && (
+            <>
+              {/* Desktop Presentation (>= sm) */}
+              <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Brand / Site Name</label>
+                  <input
+                    type="text"
+                    name={!isMobile ? "brandName" : undefined}
+                    value={content.global.brandName}
+                    onChange={(e) => handleFieldChange("global", "brandName", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
 
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Site Meta Title</label>
-              <input
-                type="text"
-                name="siteTitle"
-                value={content.global.siteTitle}
-                onChange={(e) => handleFieldChange("global", "siteTitle", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Site Meta Title</label>
+                  <input
+                    type="text"
+                    name={!isMobile ? "siteTitle" : undefined}
+                    value={content.global.siteTitle}
+                    onChange={(e) => handleFieldChange("global", "siteTitle", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Availability Status</label>
-              <input
-                type="text"
-                name="availabilityStatus"
-                value={content.global.availabilityStatus}
-                onChange={(e) => handleFieldChange("global", "availabilityStatus", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Availability Status</label>
+                  <input
+                    type="text"
+                    name={!isMobile ? "availabilityStatus" : undefined}
+                    value={content.global.availabilityStatus}
+                    onChange={(e) => handleFieldChange("global", "availabilityStatus", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Availability Badge Accent</label>
-              <input
-                type="text"
-                name="availabilityBadge"
-                value={content.global.availabilityBadge}
-                onChange={(e) => handleFieldChange("global", "availabilityBadge", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Availability Badge Accent</label>
+                  <input
+                    type="text"
+                    name={!isMobile ? "availabilityBadge" : undefined}
+                    value={content.global.availabilityBadge}
+                    onChange={(e) => handleFieldChange("global", "availabilityBadge", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Availability Status Color</label>
-              <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-ink-black/60 border border-white/[0.08]">
-                {(
-                  [
-                    { value: "green", label: "Green", dot: "bg-emerald-400" },
-                    { value: "orange", label: "Orange", dot: "bg-amber-400" },
-                    { value: "red", label: "Red", dot: "bg-rose-400" },
-                  ] as const
-                ).map((opt) => {
-                  const isSelected = (content.global.availabilityStatusColor || "green") === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => handleFieldChange("global", "availabilityStatusColor", opt.value)}
-                      className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-white/10 text-foreground border border-white/20 shadow-sm"
-                          : "text-muted hover:text-foreground hover:bg-white/[0.04]"
-                      }`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${opt.dot} ${isSelected ? "ring-2 ring-white/30" : ""}`} />
-                      <span>{opt.label}</span>
-                    </button>
-                  );
-                })}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono text-muted uppercase">Availability Status Color</label>
+                  <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-ink-black/60 border border-white/[0.08]">
+                    {(
+                      [
+                        { value: "green", label: "Green", dot: "bg-emerald-400" },
+                        { value: "orange", label: "Orange", dot: "bg-amber-400" },
+                        { value: "red", label: "Red", dot: "bg-rose-400" },
+                      ] as const
+                    ).map((opt) => {
+                      const isSelected = (content.global.availabilityStatusColor || "green") === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleFieldChange("global", "availabilityStatusColor", opt.value)}
+                          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-white/10 text-foreground border border-white/20 shadow-sm"
+                              : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                          }`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${opt.dot} ${isSelected ? "ring-2 ring-white/30" : ""}`} />
+                          <span>{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] sm:col-span-2">
+                  <div className="flex items-center gap-2 text-xs text-muted">
+                    <Mail className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
+                    <span>Primary Email and Location are managed in the Contact &amp; Social section.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("contact")}
+                    className="text-xs font-mono text-pacific-cyan hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                  >
+                    <span>Edit Contact Details</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Footer Copyright Text</label>
+                  <input
+                    type="text"
+                    name={!isMobile ? "footerCopyright" : undefined}
+                    value={content.global.footerCopyright}
+                    onChange={(e) => handleFieldChange("global", "footerCopyright", e.target.value)}
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:col-span-2">
+                  <label className="text-xs font-mono text-muted uppercase">Footer Bullet Notification</label>
+                  <input
+                    type="text"
+                    name={!isMobile ? "footerBulletNotification" : undefined}
+                    value={content.global.footerBulletNotification || ""}
+                    onChange={(e) => handleFieldChange("global", "footerBulletNotification", e.target.value)}
+                    placeholder="BUILDING WITH INTENT • CRAFTING DIGITAL EXPERIENCES • ALWAYS LEARNING"
+                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                  />
+                  <span className="text-[11px] font-mono text-muted/60">
+                    Scrolling notification shown in the mobile footer.
+                  </span>
+                </div>
               </div>
+
+              {/* Smartphone Presentation (< sm): Collapsible Accordion */}
+              <div className="flex sm:hidden flex-col gap-2">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted font-semibold">
+                    Global Content
+                  </span>
+                  <span className="text-[10px] font-mono text-pacific-cyan/80">
+                    {isMobileGlobalOpen ? "Tap to collapse" : "Tap to expand"}
+                  </span>
+                </div>
+
+                <div className="glass-card rounded-xl border border-white/[0.08] overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileGlobalOpen(!isMobileGlobalOpen)}
+                    aria-expanded={isMobileGlobalOpen}
+                    aria-controls="mobile-global-panel"
+                    className="w-full p-3.5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                        <Globe className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                          Global Content
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              content.global.availabilityStatusColor === "red"
+                                ? "bg-rose-400"
+                                : content.global.availabilityStatusColor === "orange"
+                                ? "bg-amber-400"
+                                : "bg-emerald-400"
+                            }`}
+                          />
+                          <span className="text-[11px] font-mono text-muted truncate">
+                            {content.global.brandName || "RAWIN"} · {content.global.availabilityBadge || "Available for hire"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted shrink-0">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          isMobileGlobalOpen ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  <div
+                    id="mobile-global-panel"
+                    role="region"
+                    aria-label="Global Content Form"
+                    className={isMobileGlobalOpen ? "p-4 sm:p-5 border-t border-white/[0.08] flex flex-col gap-5 bg-ink-black/25" : "hidden"}
+                  >
+                    {/* IDENTITY Sub-section */}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.08]">
+                        <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                          Identity
+                        </span>
+                        <span className="text-[10px] font-mono text-muted/60">
+                          Site naming &amp; SEO
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                          Brand
+                        </label>
+                        <input
+                          type="text"
+                          name={isMobile ? "brandName" : undefined}
+                          value={content.global.brandName}
+                          onChange={(e) => handleFieldChange("global", "brandName", e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                          placeholder="RAWIN"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                          Meta Title
+                        </label>
+                        <input
+                          type="text"
+                          name={isMobile ? "siteTitle" : undefined}
+                          value={content.global.siteTitle}
+                          onChange={(e) => handleFieldChange("global", "siteTitle", e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                          placeholder="Site meta title"
+                        />
+                      </div>
+                    </div>
+
+                    {/* AVAILABILITY Sub-section */}
+                    <div className="flex flex-col gap-3 pt-1">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.08]">
+                        <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                          Availability
+                        </span>
+                        <span className="text-[10px] font-mono text-muted/60">
+                          Work status &amp; badge
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                          Status
+                        </label>
+                        <input
+                          type="text"
+                          name={isMobile ? "availabilityStatus" : undefined}
+                          value={content.global.availabilityStatus}
+                          onChange={(e) => handleFieldChange("global", "availabilityStatus", e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                          placeholder="Open to opportunity"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                          Badge
+                        </label>
+                        <input
+                          type="text"
+                          name={isMobile ? "availabilityBadge" : undefined}
+                          value={content.global.availabilityBadge}
+                          onChange={(e) => handleFieldChange("global", "availabilityBadge", e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                          placeholder="Available for hire"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                          Color
+                        </label>
+                        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-ink-black/80 border border-white/[0.08]">
+                          {(
+                            [
+                              { value: "green", label: "Green", dot: "bg-emerald-400" },
+                              { value: "orange", label: "Orange", dot: "bg-amber-400" },
+                              { value: "red", label: "Red", dot: "bg-rose-400" },
+                            ] as const
+                          ).map((opt) => {
+                            const isSelected = (content.global.availabilityStatusColor || "green") === opt.value;
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => handleFieldChange("global", "availabilityStatusColor", opt.value)}
+                                className={`flex items-center justify-center gap-1.5 py-2 px-1 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer min-h-[38px] ${
+                                  isSelected
+                                    ? "bg-white/[0.12] text-foreground border border-white/20 shadow-sm font-semibold"
+                                    : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                                }`}
+                              >
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${opt.dot} ${isSelected ? "ring-2 ring-white/30" : ""}`} />
+                                <span className="truncate">{opt.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CONTACT DETAILS Sub-section */}
+                    <div className="flex flex-col gap-2 pt-1">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.08]">
+                        <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                          Contact Details
+                        </span>
+                        <span className="text-[10px] font-mono text-muted/60">
+                          Centralized reference
+                        </span>
+                      </div>
+
+                      <div className="rounded-xl p-3.5 bg-white/[0.02] border border-white/[0.06] flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-pacific-cyan">
+                          <Mail className="w-3.5 h-3.5 shrink-0" />
+                          <span className="text-xs font-mono font-medium text-foreground">
+                            Primary contact details
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted leading-relaxed">
+                          Email and location are managed in Contact &amp; Social.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("contact");
+                            setFeedback(null);
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-pacific-cyan hover:underline cursor-pointer self-start min-h-[36px] pt-0.5"
+                        >
+                          <span>Edit Contact Details</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* FOOTER Sub-section */}
+                    <div className="flex flex-col gap-3 pt-1">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.08]">
+                        <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                          Footer
+                        </span>
+                        <span className="text-[10px] font-mono text-muted/60">
+                          Copyright &amp; notice
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                          Copyright
+                        </label>
+                        <input
+                          type="text"
+                          name={isMobile ? "footerCopyright" : undefined}
+                          value={content.global.footerCopyright}
+                          onChange={(e) => handleFieldChange("global", "footerCopyright", e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                          placeholder="RAWIN. All rights reserved."
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                          Mobile Notification
+                        </label>
+                        <input
+                          type="text"
+                          name={isMobile ? "footerBulletNotification" : undefined}
+                          value={content.global.footerBulletNotification || ""}
+                          onChange={(e) => handleFieldChange("global", "footerBulletNotification", e.target.value)}
+                          placeholder="BUILDING WITH INTENT • CRAFTING DIGITAL EXPERIENCES • ALWAYS LEARNING"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                        />
+                        <span className="text-[10px] font-mono text-muted/60">
+                          Ticker text displayed in the mobile footer.
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Mobile Save Button */}
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        disabled={isPending}
+                        className="w-full min-h-[46px] py-3 px-4 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_24px_rgba(24,155,173,0.35)] disabled:opacity-50 cursor-pointer select-none flex items-center justify-center gap-2"
+                      >
+                        {isPending ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-3.5 h-3.5" />
+                            <span>Save Global Content</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Shared Hidden Sync Inputs */}
               <input
                 type="hidden"
                 name="availabilityStatusColor"
                 value={content.global.availabilityStatusColor || "green"}
               />
-            </div>
-
-            {/* Hidden sync inputs for backward compatibility */}
-            <input
-              type="hidden"
-              name="location"
-              value={content.contact?.location || content.global.location}
-            />
-            <input
-              type="hidden"
-              name="contactEmail"
-              value={content.contact?.email || content.global.contactEmail}
-            />
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] sm:col-span-2">
-              <div className="flex items-center gap-2 text-xs text-muted">
-                <Mail className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
-                <span>Primary Email and Location are managed in the Contact &amp; Social section.</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab("contact")}
-                className="text-xs font-mono text-pacific-cyan hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
-              >
-                <span>Edit Contact Details</span>
-                <ExternalLink className="w-3 h-3" />
-              </button>
-            </div>
-
-
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Footer Copyright Text</label>
               <input
-                type="text"
-                name="footerCopyright"
-                value={content.global.footerCopyright}
-                onChange={(e) => handleFieldChange("global", "footerCopyright", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                type="hidden"
+                name="location"
+                value={content.contact?.location || content.global.location || ""}
               />
-            </div>
-
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Footer Bullet Notification</label>
               <input
-                type="text"
-                name="footerBulletNotification"
-                value={content.global.footerBulletNotification || ""}
-                onChange={(e) => handleFieldChange("global", "footerBulletNotification", e.target.value)}
-                placeholder="BUILDING WITH INTENT • CRAFTING DIGITAL EXPERIENCES • ALWAYS LEARNING"
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                type="hidden"
+                name="contactEmail"
+                value={content.contact?.email || content.global.contactEmail || ""}
               />
-              <span className="text-[11px] font-mono text-muted/60">
-                Scrolling notification shown in the mobile footer.
-              </span>
-            </div>
-          </div>
-        )}
+            </>
+          )}
 
         {activeTab === "home" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Hero Eyebrow Status</label>
-              <input
-                type="text"
-                name="heroStatus"
-                value={content.home.heroStatus}
-                onChange={(e) => handleFieldChange("home", "heroStatus", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
+          <>
+            {/* Desktop Presentation (>= sm) */}
+            <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono text-muted uppercase">Hero Eyebrow Status</label>
+                <input
+                  type="text"
+                  name={!isMobile ? "heroStatus" : undefined}
+                  value={content.home.heroStatus}
+                  onChange={(e) => handleFieldChange("home", "heroStatus", e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono text-muted uppercase">Hero Eyebrow Badge</label>
+                <input
+                  type="text"
+                  name={!isMobile ? "heroBadge" : undefined}
+                  value={content.home.heroBadge}
+                  onChange={(e) => handleFieldChange("home", "heroBadge", e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono text-muted uppercase">Hero Title Prefix</label>
+                <input
+                  type="text"
+                  name={!isMobile ? "heroTitlePrefix" : undefined}
+                  value={content.home.heroTitlePrefix}
+                  onChange={(e) => handleFieldChange("home", "heroTitlePrefix", e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono text-muted uppercase">Hero Name Accent</label>
+                <input
+                  type="text"
+                  name={!isMobile ? "heroName" : undefined}
+                  value={content.home.heroName}
+                  onChange={(e) => handleFieldChange("home", "heroName", e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2 sm:col-span-2">
+                <label className="text-xs font-mono text-muted uppercase">Hero Introduction Bio</label>
+                <textarea
+                  rows={3}
+                  name={!isMobile ? "heroBio" : undefined}
+                  value={content.home.heroBio}
+                  onChange={(e) => handleFieldChange("home", "heroBio", e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono text-muted uppercase">Primary CTA Text</label>
+                <input
+                  type="text"
+                  name={!isMobile ? "heroPrimaryCtaText" : undefined}
+                  value={content.home.heroPrimaryCtaText}
+                  onChange={(e) => handleFieldChange("home", "heroPrimaryCtaText", e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono text-muted uppercase">Secondary CTA Text</label>
+                <input
+                  type="text"
+                  name={!isMobile ? "heroSecondaryCtaText" : undefined}
+                  value={content.home.heroSecondaryCtaText}
+                  onChange={(e) => handleFieldChange("home", "heroSecondaryCtaText", e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2 sm:col-span-2">
+                <label className="text-xs font-mono text-muted uppercase">Featured Section Heading</label>
+                <input
+                  type="text"
+                  name={!isMobile ? "featuredHeading" : undefined}
+                  value={content.home.featuredHeading}
+                  onChange={(e) => handleFieldChange("home", "featuredHeading", e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                />
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Hero Eyebrow Badge</label>
-              <input
-                type="text"
-                name="heroBadge"
-                value={content.home.heroBadge}
-                onChange={(e) => handleFieldChange("home", "heroBadge", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+            {/* Smartphone Presentation (< sm): Collapsible Accordion */}
+            <div className="flex sm:hidden flex-col gap-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-muted font-semibold">
+                  Home Content
+                </span>
+                <span className="text-[10px] font-mono text-pacific-cyan/80">
+                  {isMobileHomeOpen ? "Tap to collapse" : "Tap to expand"}
+                </span>
+              </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Hero Title Prefix</label>
-              <input
-                type="text"
-                name="heroTitlePrefix"
-                value={content.home.heroTitlePrefix}
-                onChange={(e) => handleFieldChange("home", "heroTitlePrefix", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+              <div className="glass-card rounded-xl border border-white/[0.08] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileHomeOpen(!isMobileHomeOpen)}
+                  aria-expanded={isMobileHomeOpen}
+                  aria-controls="mobile-home-panel"
+                  className="w-full p-3.5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Home className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Home Content
+                      </span>
+                      <span className="text-[11px] font-mono text-muted truncate">
+                        Hero · Actions · Featured Work
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted shrink-0">
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isMobileHomeOpen ? "rotate-180 text-pacific-cyan" : ""
+                      }`}
+                    />
+                  </div>
+                </button>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Hero Name Accent</label>
-              <input
-                type="text"
-                name="heroName"
-                value={content.home.heroName}
-                onChange={(e) => handleFieldChange("home", "heroName", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+                <div
+                  id="mobile-home-panel"
+                  role="region"
+                  aria-label="Home Content Form"
+                  className={
+                    isMobileHomeOpen
+                      ? "p-4 sm:p-5 border-t border-white/[0.08] flex flex-col gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {/* HERO Sub-section */}
+                  <div className="flex flex-col gap-3">
+                    <div className="pb-1.5 border-b border-white/[0.08]">
+                      <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                        Hero
+                      </span>
+                    </div>
 
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-xs font-mono text-muted uppercase">Hero Introduction Bio</label>
-              <textarea
-                rows={3}
-                name="heroBio"
-                value={content.home.heroBio}
-                onChange={(e) => handleFieldChange("home", "heroBio", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-              />
-            </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Hero Eyebrow Status
+                      </label>
+                      <input
+                        type="text"
+                        name={isMobile ? "heroStatus" : undefined}
+                        value={content.home.heroStatus}
+                        onChange={(e) => handleFieldChange("home", "heroStatus", e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                        placeholder="Open to opportunities"
+                      />
+                    </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Primary CTA Text</label>
-              <input
-                type="text"
-                name="heroPrimaryCtaText"
-                value={content.home.heroPrimaryCtaText}
-                onChange={(e) => handleFieldChange("home", "heroPrimaryCtaText", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Hero Eyebrow Badge
+                      </label>
+                      <input
+                        type="text"
+                        name={isMobile ? "heroBadge" : undefined}
+                        value={content.home.heroBadge}
+                        onChange={(e) => handleFieldChange("home", "heroBadge", e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                        placeholder="Available for hire"
+                      />
+                    </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Secondary CTA Text</label>
-              <input
-                type="text"
-                name="heroSecondaryCtaText"
-                value={content.home.heroSecondaryCtaText}
-                onChange={(e) => handleFieldChange("home", "heroSecondaryCtaText", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Hero Title Prefix
+                      </label>
+                      <input
+                        type="text"
+                        name={isMobile ? "heroTitlePrefix" : undefined}
+                        value={content.home.heroTitlePrefix}
+                        onChange={(e) => handleFieldChange("home", "heroTitlePrefix", e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                        placeholder="Hi, I'm"
+                      />
+                    </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Featured Section Eyebrow</label>
-              <input
-                type="text"
-                name="featuredDescription"
-                value={content.home.featuredDescription}
-                onChange={(e) => handleFieldChange("home", "featuredDescription", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
-            </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Hero Name Accent
+                      </label>
+                      <input
+                        type="text"
+                        name={isMobile ? "heroName" : undefined}
+                        value={content.home.heroName}
+                        onChange={(e) => handleFieldChange("home", "heroName", e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                        placeholder="Rushan Siddiqui"
+                      />
+                    </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-mono text-muted uppercase">Featured Section Heading</label>
-              <input
-                type="text"
-                name="featuredHeading"
-                value={content.home.featuredHeading}
-                onChange={(e) => handleFieldChange("home", "featuredHeading", e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-              />
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Hero Introduction Bio
+                      </label>
+                      <textarea
+                        rows={4}
+                        name={isMobile ? "heroBio" : undefined}
+                        value={content.home.heroBio}
+                        onChange={(e) => handleFieldChange("home", "heroBio", e.target.value)}
+                        className="w-full min-h-[96px] sm:min-h-[110px] px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all resize-y leading-relaxed font-sans placeholder:text-muted/40"
+                        placeholder="Building fast, thoughtful web applications..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* ACTIONS Sub-section */}
+                  <div className="flex flex-col gap-3 pt-1">
+                    <div className="pb-1.5 border-b border-white/[0.08]">
+                      <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                        Actions
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Primary CTA Text
+                      </label>
+                      <input
+                        type="text"
+                        name={isMobile ? "heroPrimaryCtaText" : undefined}
+                        value={content.home.heroPrimaryCtaText}
+                        onChange={(e) => handleFieldChange("home", "heroPrimaryCtaText", e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                        placeholder="Explore Case Studies"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Secondary CTA Text
+                      </label>
+                      <input
+                        type="text"
+                        name={isMobile ? "heroSecondaryCtaText" : undefined}
+                        value={content.home.heroSecondaryCtaText}
+                        onChange={(e) => handleFieldChange("home", "heroSecondaryCtaText", e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                        placeholder="Let's Connect"
+                      />
+                    </div>
+                  </div>
+
+                  {/* FEATURED WORK Sub-section */}
+                  <div className="flex flex-col gap-3 pt-1">
+                    <div className="pb-1.5 border-b border-white/[0.08]">
+                      <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                        Featured Work
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Featured Section Heading
+                      </label>
+                      <input
+                        type="text"
+                        name={isMobile ? "featuredHeading" : undefined}
+                        value={content.home.featuredHeading}
+                        onChange={(e) => handleFieldChange("home", "featuredHeading", e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                        placeholder="Featured Case Studies"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mobile Save Button */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isPending}
+                      className="w-full min-h-[46px] py-3 px-4 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_24px_rgba(24,155,173,0.35)] disabled:opacity-50 cursor-pointer select-none flex items-center justify-center gap-2"
+                    >
+                      {isPending ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3.5 h-3.5" />
+                          <span>Save Home Content</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {activeTab === "about" && (
-          <div className="flex flex-col gap-10">
+          <div className="flex flex-col gap-4 sm:gap-6">
             {/* Hidden JSON inputs for array fields */}
             <input
               type="hidden"
@@ -2472,918 +3202,1438 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               )}
             />
 
-            {/* 1. Identity & Narrative */}
-            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
+            {/* Top Toolbar: Section summary & Expand/Collapse All */}
+            <div className="flex items-center justify-between px-1 pb-1 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Introduction
-                </h3>
+                <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                  About Sections
+                </span>
+                <span className="text-[10px] font-mono text-muted/60">
+                  (7 sections)
+                </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
-                  <input
-                    type="text"
-                    name="eyebrow"
-                    value={content.about.eyebrow}
-                    onChange={(e) => handleFieldChange("about", "eyebrow", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Main Heading</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={content.about.title}
-                    onChange={(e) => handleFieldChange("about", "title", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Professional Subtitle</label>
-                  <input
-                    type="text"
-                    name="subtitle"
-                    value={content.about.subtitle}
-                    onChange={(e) => handleFieldChange("about", "subtitle", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={toggleAllAboutSections}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-foreground bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-colors cursor-pointer select-none"
+                title={
+                  ["intro", "narrative", "evolution", "principles", "journey", "focus", "cta"].every(
+                    (k) => aboutOpenSections[k]
+                  )
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+                aria-label={
+                  ["intro", "narrative", "evolution", "principles", "journey", "focus", "cta"].every(
+                    (k) => aboutOpenSections[k]
+                  )
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+              >
+                <ChevronsUpDown className="w-3.5 h-3.5 text-pacific-cyan" />
+                <span className="hidden sm:inline">
+                  {["intro", "narrative", "evolution", "principles", "journey", "focus", "cta"].every(
+                    (k) => aboutOpenSections[k]
+                  )
+                    ? "Collapse All"
+                    : "Expand All"}
+                </span>
+              </button>
             </div>
 
-            {/* 2. ABOUT NARRATIVE */}
-            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  About Narrative
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Eyebrow</label>
-                  <input
-                    type="text"
-                    name="narrativeEyebrow"
-                    value={content.about.narrativeEyebrow || ""}
-                    onChange={(e) => handleFieldChange("about", "narrativeEyebrow", e.target.value)}
-                    placeholder="HOW I THINK"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Primary Statement</label>
-                  <textarea
-                    rows={2}
-                    name="leadText"
-                    value={content.about.leadText}
-                    onChange={(e) => handleFieldChange("about", "leadText", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Supporting Narrative</label>
-                  <textarea
-                    rows={4}
-                    name="narrativeText"
-                    value={content.about.narrativeText}
-                    onChange={(e) => handleFieldChange("about", "narrativeText", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Progression Item 1</label>
-                  <input
-                    type="text"
-                    name="progressionItem1"
-                    value={content.about.progressionItem1 || ""}
-                    onChange={(e) => handleFieldChange("about", "progressionItem1", e.target.value)}
-                    placeholder="INTERFACE"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Progression Item 2</label>
-                  <input
-                    type="text"
-                    name="progressionItem2"
-                    value={content.about.progressionItem2 || ""}
-                    onChange={(e) => handleFieldChange("about", "progressionItem2", e.target.value)}
-                    placeholder="PERFORMANCE"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Progression Item 3</label>
-                  <input
-                    type="text"
-                    name="progressionItem3"
-                    value={content.about.progressionItem3 || ""}
-                    onChange={(e) => handleFieldChange("about", "progressionItem3", e.target.value)}
-                    placeholder="SYSTEMS"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Metadata Item 1</label>
-                  <input
-                    type="text"
-                    name="metadataItem1"
-                    value={content.about.metadataItem1 || ""}
-                    onChange={(e) => handleFieldChange("about", "metadataItem1", e.target.value)}
-                    placeholder="UI"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Metadata Item 2</label>
-                  <input
-                    type="text"
-                    name="metadataItem2"
-                    value={content.about.metadataItem2 || ""}
-                    onChange={(e) => handleFieldChange("about", "metadataItem2", e.target.value)}
-                    placeholder="FRONTEND"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Metadata Item 3</label>
-                  <input
-                    type="text"
-                    name="metadataItem3"
-                    value={content.about.metadataItem3 || ""}
-                    onChange={(e) => handleFieldChange("about", "metadataItem3", e.target.value)}
-                    placeholder="BACKEND"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Metadata Item 4</label>
-                  <input
-                    type="text"
-                    name="metadataItem4"
-                    value={content.about.metadataItem4 || ""}
-                    onChange={(e) => handleFieldChange("about", "metadataItem4", e.target.value)}
-                    placeholder="ARCHITECTURE"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 2. RAWIN EVOLUTION / A RECORD OF THE BUILD */}
-            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                    RAWIN Evolution
-                  </h3>
-                </div>
+            {/* Top-Level Accordion Stack */}
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {/* 1. INTRODUCTION */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
                 <button
                   type="button"
-                  onClick={handleAddMilestone}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/20 text-xs font-mono transition-colors"
+                  onClick={() => toggleAboutSection("intro")}
+                  aria-expanded={Boolean(aboutOpenSections.intro)}
+                  aria-controls="about-section-intro"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Milestone
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Introduction
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Eyebrow badge, main heading, professional subtitle
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {aboutOpenSections.intro ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          aboutOpenSections.intro ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
                 </button>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
-                  <input
-                    type="text"
-                    name="evolutionEyebrow"
-                    value={content.about.evolutionEyebrow || ""}
-                    onChange={(e) => handleFieldChange("about", "evolutionEyebrow", e.target.value)}
-                    placeholder="RAWIN EVOLUTION"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
-                  <input
-                    type="text"
-                    name="evolutionHeading"
-                    value={content.about.evolutionHeading || ""}
-                    onChange={(e) => handleFieldChange("about", "evolutionHeading", e.target.value)}
-                    placeholder="A RECORD OF THE BUILD."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Description</label>
-                  <textarea
-                    rows={2}
-                    name="evolutionDescription"
-                    value={content.about.evolutionDescription || ""}
-                    onChange={(e) => handleFieldChange("about", "evolutionDescription", e.target.value)}
-                    placeholder="Three generations of the digital workspace..."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-              </div>
-
-              {/* Record of the Build Milestone & Era Labels */}
-              <div className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <History className="w-3.5 h-3.5 text-pacific-cyan" />
-                  <span className="text-xs font-mono font-semibold text-foreground uppercase tracking-wider">
-                    Record of the Build Labels
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted uppercase">Milestone 01 Label</label>
-                    <input
-                      type="text"
-                      name="milestone01Label"
-                      value={content.about.milestoneLabels?.milestone01 ?? "2022 Milestone"}
-                      onChange={(e) => handleMilestoneLabelChange("milestone01", e.target.value)}
-                      placeholder="2022 Milestone"
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted uppercase">Milestone 02 Label</label>
-                    <input
-                      type="text"
-                      name="milestone02Label"
-                      value={content.about.milestoneLabels?.milestone02 ?? "2023 Milestone"}
-                      onChange={(e) => handleMilestoneLabelChange("milestone02", e.target.value)}
-                      placeholder="2023 Milestone"
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted uppercase">Milestone 03 Label</label>
-                    <input
-                      type="text"
-                      name="milestone03Label"
-                      value={content.about.milestoneLabels?.milestone03 ?? "2026 Milestone"}
-                      onChange={(e) => handleMilestoneLabelChange("milestone03", e.target.value)}
-                      placeholder="2026 Milestone"
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-mono text-muted uppercase">Current Era Label</label>
-                    <input
-                      type="text"
-                      name="currentEraLabel"
-                      value={content.about.milestoneLabels?.currentEra ?? "CURRENT ERA"}
-                      onChange={(e) => handleMilestoneLabelChange("currentEra", e.target.value)}
-                      placeholder="CURRENT ERA"
-                      className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Milestones List */}
-              <div className="flex flex-col gap-4 mt-2">
-                {(content.about.evolution || []).map((m, idx) => (
-                  <div
-                    key={m.id || idx}
-                    className="flex flex-col gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] relative"
-                  >
-                    <div className="flex items-center justify-between pb-3 border-b border-white/[0.04]">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-pacific-cyan/15 text-pacific-cyan font-semibold">
-                          #{idx + 1} {m.year || "YEAR"}
-                        </span>
-                        <span className="text-xs font-medium text-foreground">
-                          {m.title || "Untitled Milestone"}
-                        </span>
-                        {m.isCurrent && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-electric-indigo/20 text-electric-indigo font-bold tracking-wider">
-                            CURRENT
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveMilestone(idx, "up")}
-                          aria-label="Move milestone up"
-                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === (content.about.evolution || []).length - 1}
-                          onClick={() => handleMoveMilestone(idx, "down")}
-                          aria-label="Move milestone down"
-                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMilestone(idx)}
-                          aria-label="Delete milestone"
-                          className="p-1 rounded hover:bg-red-500/20 text-red-400 transition-colors ml-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                <div
+                  id="about-section-intro"
+                  role="region"
+                  aria-label="Introduction"
+                  className={
+                    aboutOpenSections.intro
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
+                      <input
+                        type="text"
+                        name="eyebrow"
+                        value={content.about.eyebrow}
+                        onChange={(e) => handleFieldChange("about", "eyebrow", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Main Heading</label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={content.about.title}
+                        onChange={(e) => handleFieldChange("about", "title", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Professional Subtitle</label>
+                      <input
+                        type="text"
+                        name="subtitle"
+                        value={content.about.subtitle}
+                        onChange={(e) => handleFieldChange("about", "subtitle", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. ABOUT NARRATIVE */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleAboutSection("narrative")}
+                  aria-expanded={Boolean(aboutOpenSections.narrative)}
+                  aria-controls="about-section-narrative"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Compass className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        About Narrative
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Primary statement, supporting story, progression, metadata
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {aboutOpenSections.narrative ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          aboutOpenSections.narrative ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="about-section-narrative"
+                  role="region"
+                  aria-label="About Narrative"
+                  className={
+                    aboutOpenSections.narrative
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Eyebrow</label>
+                      <input
+                        type="text"
+                        name="narrativeEyebrow"
+                        value={content.about.narrativeEyebrow || ""}
+                        onChange={(e) => handleFieldChange("about", "narrativeEyebrow", e.target.value)}
+                        placeholder="HOW I THINK"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Primary Statement</label>
+                      <textarea
+                        rows={2}
+                        name="leadText"
+                        value={content.about.leadText}
+                        onChange={(e) => handleFieldChange("about", "leadText", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Supporting Narrative</label>
+                      <textarea
+                        rows={4}
+                        name="narrativeText"
+                        value={content.about.narrativeText}
+                        onChange={(e) => handleFieldChange("about", "narrativeText", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Progression Item 1</label>
+                      <input
+                        type="text"
+                        name="progressionItem1"
+                        value={content.about.progressionItem1 || ""}
+                        onChange={(e) => handleFieldChange("about", "progressionItem1", e.target.value)}
+                        placeholder="INTERFACE"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Progression Item 2</label>
+                      <input
+                        type="text"
+                        name="progressionItem2"
+                        value={content.about.progressionItem2 || ""}
+                        onChange={(e) => handleFieldChange("about", "progressionItem2", e.target.value)}
+                        placeholder="PERFORMANCE"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Progression Item 3</label>
+                      <input
+                        type="text"
+                        name="progressionItem3"
+                        value={content.about.progressionItem3 || ""}
+                        onChange={(e) => handleFieldChange("about", "progressionItem3", e.target.value)}
+                        placeholder="SYSTEMS"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Metadata Item 1</label>
+                      <input
+                        type="text"
+                        name="metadataItem1"
+                        value={content.about.metadataItem1 || ""}
+                        onChange={(e) => handleFieldChange("about", "metadataItem1", e.target.value)}
+                        placeholder="UI"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Metadata Item 2</label>
+                      <input
+                        type="text"
+                        name="metadataItem2"
+                        value={content.about.metadataItem2 || ""}
+                        onChange={(e) => handleFieldChange("about", "metadataItem2", e.target.value)}
+                        placeholder="FRONTEND"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Metadata Item 3</label>
+                      <input
+                        type="text"
+                        name="metadataItem3"
+                        value={content.about.metadataItem3 || ""}
+                        onChange={(e) => handleFieldChange("about", "metadataItem3", e.target.value)}
+                        placeholder="BACKEND"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Metadata Item 4</label>
+                      <input
+                        type="text"
+                        name="metadataItem4"
+                        value={content.about.metadataItem4 || ""}
+                        onChange={(e) => handleFieldChange("about", "metadataItem4", e.target.value)}
+                        placeholder="ARCHITECTURE"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. RAWIN EVOLUTION */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleAboutSection("evolution")}
+                  aria-expanded={Boolean(aboutOpenSections.evolution)}
+                  aria-controls="about-section-evolution"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        RAWIN Evolution
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Milestone history, build record labels, evolution items ({content.about.evolution?.length || 0})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {aboutOpenSections.evolution ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          aboutOpenSections.evolution ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="about-section-evolution"
+                  role="region"
+                  aria-label="RAWIN Evolution"
+                  className={
+                    aboutOpenSections.evolution
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-5 sm:gap-6 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {/* Section-level fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
+                      <input
+                        type="text"
+                        name="evolutionEyebrow"
+                        value={content.about.evolutionEyebrow || ""}
+                        onChange={(e) => handleFieldChange("about", "evolutionEyebrow", e.target.value)}
+                        placeholder="RAWIN EVOLUTION"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
+                      <input
+                        type="text"
+                        name="evolutionHeading"
+                        value={content.about.evolutionHeading || ""}
+                        onChange={(e) => handleFieldChange("about", "evolutionHeading", e.target.value)}
+                        placeholder="A RECORD OF THE BUILD."
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Section Description</label>
+                      <textarea
+                        rows={2}
+                        name="evolutionDescription"
+                        value={content.about.evolutionDescription || ""}
+                        onChange={(e) => handleFieldChange("about", "evolutionDescription", e.target.value)}
+                        placeholder="Three generations of the digital workspace..."
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Record of the Build Labels */}
+                  <div className="flex flex-col gap-3 p-3.5 sm:p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <div className="flex items-center gap-2">
+                      <History className="w-3.5 h-3.5 text-pacific-cyan" />
+                      <span className="text-xs font-mono font-semibold text-foreground uppercase tracking-wider">
+                        Record of the Build Labels
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 pt-1">
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-mono text-muted uppercase">Year</label>
+                        <label className="text-[11px] font-mono text-muted uppercase">Milestone 01 Label</label>
                         <input
                           type="text"
-                          value={m.year}
-                          onChange={(e) => handleUpdateMilestone(idx, "year", e.target.value)}
-                          placeholder="2026"
+                          name="milestone01Label"
+                          value={content.about.milestoneLabels?.milestone01 ?? "2022 Milestone"}
+                          onChange={(e) => handleMilestoneLabelChange("milestone01", e.target.value)}
+                          placeholder="2022 Milestone"
                           className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
                         />
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-mono text-muted uppercase">Eyebrow / Status</label>
+                        <label className="text-[11px] font-mono text-muted uppercase">Milestone 02 Label</label>
                         <input
                           type="text"
-                          value={m.eyebrow}
-                          onChange={(e) => handleUpdateMilestone(idx, "eyebrow", e.target.value)}
-                          placeholder="THE CURRENT ITERATION"
+                          name="milestone02Label"
+                          value={content.about.milestoneLabels?.milestone02 ?? "2023 Milestone"}
+                          onChange={(e) => handleMilestoneLabelChange("milestone02", e.target.value)}
+                          placeholder="2023 Milestone"
                           className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
                         />
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-mono text-muted uppercase">Title</label>
+                        <label className="text-[11px] font-mono text-muted uppercase">Milestone 03 Label</label>
                         <input
                           type="text"
-                          value={m.title}
-                          onChange={(e) => handleUpdateMilestone(idx, "title", e.target.value)}
-                          placeholder="RAWIN 3.0"
+                          name="milestone03Label"
+                          value={content.about.milestoneLabels?.milestone03 ?? "2026 Milestone"}
+                          onChange={(e) => handleMilestoneLabelChange("milestone03", e.target.value)}
+                          placeholder="2026 Milestone"
                           className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
                         />
                       </div>
-
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-mono text-muted uppercase">Domain / URL Display</label>
+                        <label className="text-[11px] font-mono text-muted uppercase">Current Era Label</label>
                         <input
                           type="text"
-                          value={m.domain}
-                          onChange={(e) => handleUpdateMilestone(idx, "domain", e.target.value)}
-                          placeholder="rawin.dev"
-                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-mono text-muted uppercase">Target URL</label>
-                        <input
-                          type="text"
-                          value={m.url}
-                          onChange={(e) => handleUpdateMilestone(idx, "url", e.target.value)}
-                          placeholder="https://rawin.dev"
-                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-mono text-muted uppercase">CTA Button Text</label>
-                        <input
-                          type="text"
-                          value={m.ctaText}
-                          onChange={(e) => handleUpdateMilestone(idx, "ctaText", e.target.value)}
-                          placeholder="Current Website"
+                          name="currentEraLabel"
+                          value={content.about.milestoneLabels?.currentEra ?? "CURRENT ERA"}
+                          onChange={(e) => handleMilestoneLabelChange("currentEra", e.target.value)}
+                          placeholder="CURRENT ERA"
                           className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
                         />
                       </div>
+                    </div>
+                  </div>
 
-                      <div className="flex flex-col gap-1.5 sm:col-span-2">
-                        <label className="text-[11px] font-mono text-muted uppercase">Progression Quote</label>
-                        <input
-                          type="text"
-                          value={m.quote}
-                          onChange={(e) => handleUpdateMilestone(idx, "quote", e.target.value)}
-                          placeholder="Architectural leap to Next.js 15 App Router..."
-                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-mono text-muted uppercase">Current Milestone</span>
-                          <span className="text-[10px] text-muted/60">Marks active site milestone</span>
-                        </div>
-                        <NeoToggle
-                          checked={Boolean(m.isCurrent)}
-                          onChange={(val) => handleUpdateMilestone(idx, "isCurrent", val)}
-                          ariaLabel={`Toggle current milestone for ${m.year}`}
-                        />
-                      </div>
+                  {/* Milestones List Header */}
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground">
+                        Milestones
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-pacific-cyan/15 text-pacific-cyan font-bold">
+                        {content.about.evolution?.length || 0}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddMilestone}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/25 text-xs font-mono transition-colors cursor-pointer select-none"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Milestone</span>
+                    </button>
+                  </div>
 
-                      <div className="flex flex-col gap-1.5 sm:col-span-3">
-                        <label className="text-[11px] font-mono text-muted uppercase">Description</label>
-                        <textarea
-                          rows={2}
-                          value={m.description}
-                          onChange={(e) => handleUpdateMilestone(idx, "description", e.target.value)}
-                          placeholder="Full narrative for this milestone..."
-                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors resize-y leading-relaxed"
-                        />
-                      </div>
+                  {/* Milestones Nested Accordion Stack */}
+                  <div className="flex flex-col gap-3">
+                    {(content.about.evolution || []).map((m, idx) => {
+                      const mKey = m.id || `milestone-${idx}`;
+                      const isOpen = Boolean(openMilestones[mKey]);
+                      return (
+                        <div
+                          key={mKey}
+                          className="glass-card rounded-xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]"
+                        >
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => toggleMilestone(mKey)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                toggleMilestone(mKey);
+                              }
+                            }}
+                            aria-expanded={isOpen}
+                            aria-controls={`milestone-panel-${idx}`}
+                            className="w-full p-3 sm:p-3.5 flex items-center justify-between gap-2.5 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-pacific-cyan/15 text-pacific-cyan font-semibold shrink-0">
+                                #{idx + 1} {m.year || "YEAR"}
+                              </span>
+                              <span className="text-xs font-medium text-foreground truncate">
+                                {m.title || "Untitled Milestone"}
+                              </span>
+                              {m.isCurrent && (
+                                <span className="px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-mono bg-electric-indigo/20 text-electric-indigo font-bold tracking-wider shrink-0">
+                                  CURRENT
+                                </span>
+                              )}
+                            </div>
 
-                      <div className="flex flex-col gap-1.5 sm:col-span-3">
-                        <label className="text-[11px] font-mono text-muted uppercase">Technologies (comma-separated)</label>
-                        <input
-                          type="text"
-                          value={Array.isArray(m.technologies) ? m.technologies.join(", ") : ""}
-                          onChange={(e) => {
-                            const tags = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
-                            handleUpdateMilestone(idx, "technologies", tags);
-                          }}
-                          placeholder="Next.js 15, React 19, TypeScript, Tailwind v4"
-                          className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
-                        />
-                      </div>
-
-                      {/* Milestone Image Management */}
-                      <div className="flex flex-col gap-3 sm:col-span-3 p-3 rounded-lg bg-white/[0.01] border border-white/[0.05]">
-                        <span className="text-[11px] font-mono text-muted uppercase font-semibold">Milestone Image</span>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                          <div className="relative w-28 h-18 rounded-md overflow-hidden bg-ink-black/80 border border-white/[0.1] shrink-0 flex items-center justify-center">
-                            {m.preview ? (
-                              <img
-                                src={m.preview}
-                                alt={m.previewAlt || m.title}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <ImageIcon className="w-6 h-6 text-muted/40" />
-                            )}
-                          </div>
-                          <div className="flex-1 flex flex-col gap-2 w-full">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-mono text-foreground transition-colors">
-                                <Upload className="w-3.5 h-3.5 text-pacific-cyan" />
-                                <span>{milestoneLoading === `milestone-${idx}` ? "Uploading..." : "Upload Image"}</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  disabled={milestoneLoading === `milestone-${idx}`}
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handleUploadMilestoneImage(idx, file);
-                                  }}
-                                  className="hidden"
-                                />
-                              </label>
+                            <div className="flex items-center gap-1 shrink-0">
                               <button
                                 type="button"
-                                onClick={() => handleResetMilestoneImage(idx)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-white/[0.05] text-xs font-mono text-muted transition-colors"
+                                disabled={idx === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveMilestone(idx, "up");
+                                }}
+                                aria-label={`Move milestone ${m.year || idx + 1} up`}
+                                title="Move milestone up"
+                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-25 transition-colors cursor-pointer"
                               >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                Reset to Default
+                                <ChevronUp className="w-3.5 h-3.5" />
                               </button>
+                              <button
+                                type="button"
+                                disabled={idx === (content.about.evolution || []).length - 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveMilestone(idx, "down");
+                                }}
+                                aria-label={`Move milestone ${m.year || idx + 1} down`}
+                                title="Move milestone down"
+                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-25 transition-colors cursor-pointer"
+                              >
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMilestone(idx);
+                                }}
+                                aria-label={`Delete milestone ${m.year || idx + 1}`}
+                                title="Delete milestone"
+                                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer ml-0.5"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                              <div className="w-6 h-6 rounded flex items-center justify-center text-muted ml-0.5">
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                    isOpen ? "rotate-180 text-pacific-cyan" : ""
+                                  }`}
+                                />
+                              </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <input
-                                type="text"
-                                value={m.preview}
-                                onChange={(e) => handleUpdateMilestone(idx, "preview", e.target.value)}
-                                placeholder="Image URL / Path"
-                                className="px-2.5 py-1.5 rounded-md bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
-                              />
-                              <input
-                                type="text"
-                                value={m.previewAlt}
-                                onChange={(e) => handleUpdateMilestone(idx, "previewAlt", e.target.value)}
-                                placeholder="Alt text"
-                                className="px-2.5 py-1.5 rounded-md bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                              />
+                          </div>
+
+                          <div
+                            id={`milestone-panel-${idx}`}
+                            role="region"
+                            aria-label={`Milestone ${idx + 1}`}
+                            className={
+                              isOpen
+                                ? "p-3.5 sm:p-5 border-t border-white/[0.06] flex flex-col gap-4 bg-ink-black/20"
+                                : "hidden"
+                            }
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-mono text-muted uppercase">Year</label>
+                                <input
+                                  type="text"
+                                  value={m.year}
+                                  onChange={(e) => handleUpdateMilestone(idx, "year", e.target.value)}
+                                  placeholder="2026"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-mono text-muted uppercase">Eyebrow / Status</label>
+                                <input
+                                  type="text"
+                                  value={m.eyebrow}
+                                  onChange={(e) => handleUpdateMilestone(idx, "eyebrow", e.target.value)}
+                                  placeholder="THE CURRENT ITERATION"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-mono text-muted uppercase">Title</label>
+                                <input
+                                  type="text"
+                                  value={m.title}
+                                  onChange={(e) => handleUpdateMilestone(idx, "title", e.target.value)}
+                                  placeholder="RAWIN 3.0"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-mono text-muted uppercase">Domain / URL Display</label>
+                                <input
+                                  type="text"
+                                  value={m.domain}
+                                  onChange={(e) => handleUpdateMilestone(idx, "domain", e.target.value)}
+                                  placeholder="rawin.dev"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-mono text-muted uppercase">Target URL</label>
+                                <input
+                                  type="text"
+                                  value={m.url}
+                                  onChange={(e) => handleUpdateMilestone(idx, "url", e.target.value)}
+                                  placeholder="https://rawin.dev"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-mono text-muted uppercase">CTA Button Text</label>
+                                <input
+                                  type="text"
+                                  value={m.ctaText}
+                                  onChange={(e) => handleUpdateMilestone(idx, "ctaText", e.target.value)}
+                                  placeholder="Current Website"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                                <label className="text-[11px] font-mono text-muted uppercase">Progression Quote</label>
+                                <input
+                                  type="text"
+                                  value={m.quote}
+                                  onChange={(e) => handleUpdateMilestone(idx, "quote", e.target.value)}
+                                  placeholder="Architectural leap to Next.js 15 App Router..."
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                                <div className="flex flex-col">
+                                  <span className="text-[11px] sm:text-xs font-mono text-muted uppercase">Current Milestone</span>
+                                  <span className="hidden sm:inline text-[10px] text-muted/60">Marks active site milestone</span>
+                                </div>
+                                <NeoToggle
+                                  className="neo-compact-mobile"
+                                  checked={Boolean(m.isCurrent)}
+                                  onChange={(val) => handleUpdateMilestone(idx, "isCurrent", val)}
+                                  ariaLabel={`Toggle current milestone for ${m.year}`}
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5 sm:col-span-3">
+                                <label className="text-[11px] font-mono text-muted uppercase">Description</label>
+                                <textarea
+                                  rows={2}
+                                  value={m.description}
+                                  onChange={(e) => handleUpdateMilestone(idx, "description", e.target.value)}
+                                  placeholder="Full narrative for this milestone..."
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors resize-y leading-relaxed"
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-1.5 sm:col-span-3">
+                                <label className="text-[11px] font-mono text-muted uppercase">
+                                  Technologies (comma-separated)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={Array.isArray(m.technologies) ? m.technologies.join(", ") : ""}
+                                  onChange={(e) => {
+                                    const tags = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+                                    handleUpdateMilestone(idx, "technologies", tags);
+                                  }}
+                                  placeholder="Next.js 15, React 19, TypeScript, Tailwind v4"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                                />
+                              </div>
+
+                              {/* Milestone Image Management: Technical URL/path hidden from UI */}
+                              <div className="flex flex-col gap-3 sm:col-span-3 p-3 sm:p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                                <span className="text-[11px] font-mono text-muted uppercase font-semibold">
+                                  Milestone Image
+                                </span>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5 sm:gap-4">
+                                  {/* Responsive Image Preview: Full width on mobile, thumbnail on desktop */}
+                                  <div className="relative w-full sm:w-28 h-44 sm:h-18 rounded-lg overflow-hidden bg-ink-black/80 border border-white/[0.1] shrink-0 flex items-center justify-center p-1 sm:p-0">
+                                    {m.preview ? (
+                                      <img
+                                        src={m.preview}
+                                        alt={m.previewAlt || m.title || "Milestone preview"}
+                                        className="w-full h-full object-contain sm:object-cover"
+                                      />
+                                    ) : (
+                                      <ImageIcon className="w-6 h-6 text-muted/40" />
+                                    )}
+                                  </div>
+
+                                  {/* Image Controls: Upload + Reset on same row, Alt text below */}
+                                  <div className="flex-1 flex flex-col gap-2.5 w-full">
+                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                      <label className="flex-1 sm:flex-initial cursor-pointer inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 border border-pacific-cyan/25 text-[11px] sm:text-xs font-mono text-pacific-cyan transition-colors select-none text-center whitespace-nowrap min-h-[38px] sm:min-h-0">
+                                        <Upload className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
+                                        <span>
+                                          {milestoneLoading === `milestone-${idx}` ? "Uploading..." : "Upload Image"}
+                                        </span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          disabled={milestoneLoading === `milestone-${idx}`}
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) handleUploadMilestoneImage(idx, file);
+                                          }}
+                                          className="hidden"
+                                        />
+                                      </label>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleResetMilestoneImage(idx)}
+                                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg hover:bg-white/[0.06] border border-white/[0.06] text-[11px] sm:text-xs font-mono text-muted hover:text-foreground transition-colors cursor-pointer select-none text-center whitespace-nowrap min-h-[38px] sm:min-h-0"
+                                      >
+                                        <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                                        <span className="sm:hidden">Reset</span>
+                                        <span className="hidden sm:inline">Reset to Default</span>
+                                      </button>
+                                    </div>
+                                    <div className="flex flex-col gap-1 w-full">
+                                      <label className="text-[10px] font-mono text-muted uppercase">
+                                        Alt Text / Caption
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={m.previewAlt || ""}
+                                        onChange={(e) => handleUpdateMilestone(idx, "previewAlt", e.target.value)}
+                                        placeholder="Milestone illustration alt text"
+                                        className="w-full px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. HOW I BUILD / CORE PRINCIPLES */}
-            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Cpu className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                    How I Build (Core Principles)
-                  </h3>
                 </div>
+              </div>
+
+              {/* 4. HOW I BUILD (CORE PRINCIPLES) */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
                 <button
                   type="button"
-                  onClick={handleAddPrinciple}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/20 text-xs font-mono transition-colors"
+                  onClick={() => toggleAboutSection("principles")}
+                  aria-expanded={Boolean(aboutOpenSections.principles)}
+                  aria-controls="about-section-principles"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Principle
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
-                  <input
-                    type="text"
-                    name="principlesEyebrow"
-                    value={content.about.principlesEyebrow || ""}
-                    onChange={(e) => handleFieldChange("about", "principlesEyebrow", e.target.value)}
-                    placeholder="HOW I BUILD"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
-                  <input
-                    type="text"
-                    name="principlesHeading"
-                    value={content.about.principlesHeading || ""}
-                    onChange={(e) => handleFieldChange("about", "principlesHeading", e.target.value)}
-                    placeholder="ENGINEERING PHILOSOPHY"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Description</label>
-                  <textarea
-                    rows={2}
-                    name="principlesDescription"
-                    value={content.about.principlesDescription || ""}
-                    onChange={(e) => handleFieldChange("about", "principlesDescription", e.target.value)}
-                    placeholder="Core rules that govern every line of code..."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-              </div>
-
-              {/* Principles List */}
-              <div className="flex flex-col gap-3 mt-2">
-                {(content.about.principles || []).map((p, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]"
-                  >
-                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-pacific-cyan font-bold">
-                          {p.number || `0${idx + 1}`}
-                        </span>
-                        <span className="text-xs font-medium text-foreground">
-                          {p.title || "Untitled Principle"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => handleMovePrinciple(idx, "up")}
-                          aria-label="Move principle up"
-                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === (content.about.principles || []).length - 1}
-                          onClick={() => handleMovePrinciple(idx, "down")}
-                          aria-label="Move principle down"
-                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeletePrinciple(idx)}
-                          aria-label="Delete principle"
-                          className="p-1 rounded hover:bg-red-500/20 text-red-400 transition-colors ml-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Cpu className="w-4 h-4" />
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted uppercase">Number</label>
-                        <input
-                          type="text"
-                          value={p.number}
-                          onChange={(e) => handleUpdatePrinciple(idx, "number", e.target.value)}
-                          placeholder="01"
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1 sm:col-span-2">
-                        <label className="text-[10px] font-mono text-muted uppercase">Title</label>
-                        <input
-                          type="text"
-                          value={p.title}
-                          onChange={(e) => handleUpdatePrinciple(idx, "title", e.target.value)}
-                          placeholder="Speed as a Feature"
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted uppercase">Icon</label>
-                        <RawinSelect
-                          name={`principle-icon-${idx}`}
-                          value={p.icon || "zap"}
-                          onChange={(val) => handleUpdatePrinciple(idx, "icon", val)}
-                          options={ICON_SELECT_OPTIONS}
-                          size="xs"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1 sm:col-span-4">
-                        <label className="text-[10px] font-mono text-muted uppercase">Statement / Detail</label>
-                        <input
-                          type="text"
-                          value={p.statement}
-                          onChange={(e) => handleUpdatePrinciple(idx, "statement", e.target.value)}
-                          placeholder="A slow interface is a broken interface..."
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 4. ENGINEERING JOURNEY */}
-            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Engineering Journey Section
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
-                  <input
-                    type="text"
-                    name="journeyEyebrow"
-                    value={content.about.journeyEyebrow || ""}
-                    onChange={(e) => handleFieldChange("about", "journeyEyebrow", e.target.value)}
-                    placeholder="TIMELINE"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
-                  <input
-                    type="text"
-                    name="journeyHeading"
-                    value={content.about.journeyHeading || ""}
-                    onChange={(e) => handleFieldChange("about", "journeyHeading", e.target.value)}
-                    placeholder="ENGINEERING JOURNEY"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Description</label>
-                  <textarea
-                    rows={2}
-                    name="journeyDescription"
-                    value={content.about.journeyDescription || ""}
-                    onChange={(e) => handleFieldChange("about", "journeyDescription", e.target.value)}
-                    placeholder="Milestones along the way..."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 5. CURRENT FOCUS */}
-            <div className="flex flex-col gap-4 pb-8 border-b border-white/[0.06]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Compass className="w-4 h-4 text-pacific-cyan" />
-                  <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                    Current Focus Areas
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddFocusArea}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/20 text-xs font-mono transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Focus Area
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
-                  <input
-                    type="text"
-                    name="focusEyebrow"
-                    value={content.about.focusEyebrow || ""}
-                    onChange={(e) => handleFieldChange("about", "focusEyebrow", e.target.value)}
-                    placeholder="CURRENT FOCUS"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
-                  <input
-                    type="text"
-                    name="focusHeading"
-                    value={content.about.focusHeading || ""}
-                    onChange={(e) => handleFieldChange("about", "focusHeading", e.target.value)}
-                    placeholder="WHERE ATTENTION GOES"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Section Description</label>
-                  <textarea
-                    rows={2}
-                    name="focusDescription"
-                    value={content.about.focusDescription || ""}
-                    onChange={(e) => handleFieldChange("about", "focusDescription", e.target.value)}
-                    placeholder="Areas of active research and architectural exploration..."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-              </div>
-
-              {/* Focus Areas List */}
-              <div className="flex flex-col gap-3 mt-2">
-                {(content.about.focusAreas || []).map((f, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]"
-                  >
-                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
-                      <span className="text-xs font-medium text-foreground">
-                        {f.title || "Untitled Focus Area"}
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        How I Build (Core Principles)
                       </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveFocusArea(idx, "up")}
-                          aria-label="Move focus area up"
-                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={idx === (content.about.focusAreas || []).length - 1}
-                          onClick={() => handleMoveFocusArea(idx, "down")}
-                          aria-label="Move focus area down"
-                          className="p-1 rounded hover:bg-white/[0.06] text-muted disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteFocusArea(idx)}
-                          aria-label="Delete focus area"
-                          className="p-1 rounded hover:bg-red-500/20 text-red-400 transition-colors ml-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                      <div className="flex flex-col gap-1 sm:col-span-3">
-                        <label className="text-[10px] font-mono text-muted uppercase">Title</label>
-                        <input
-                          type="text"
-                          value={f.title}
-                          onChange={(e) => handleUpdateFocusArea(idx, "title", e.target.value)}
-                          placeholder="Edge AI and Local Inference"
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-mono text-muted uppercase">Icon</label>
-                        <RawinSelect
-                          name={`focus-icon-${idx}`}
-                          value={f.icon || "terminal"}
-                          onChange={(val) => handleUpdateFocusArea(idx, "icon", val)}
-                          options={ICON_SELECT_OPTIONS}
-                          size="xs"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1 sm:col-span-4">
-                        <label className="text-[10px] font-mono text-muted uppercase">Description</label>
-                        <input
-                          type="text"
-                          value={f.description}
-                          onChange={(e) => handleUpdateFocusArea(idx, "description", e.target.value)}
-                          placeholder="Investigating hybrid architectures combining local and edge LLMs..."
-                          className="px-3 py-1.5 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
-                        />
-                      </div>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Philosophy, architectural tenets, build principles ({content.about.principles?.length || 0})
+                      </span>
                     </div>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {aboutOpenSections.principles ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          aboutOpenSections.principles ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="about-section-principles"
+                  role="region"
+                  aria-label="How I Build (Core Principles)"
+                  className={
+                    aboutOpenSections.principles
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-5 sm:gap-6 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {/* Section-level fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
+                      <input
+                        type="text"
+                        name="principlesEyebrow"
+                        value={content.about.principlesEyebrow || ""}
+                        onChange={(e) => handleFieldChange("about", "principlesEyebrow", e.target.value)}
+                        placeholder="HOW I BUILD"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
+                      <input
+                        type="text"
+                        name="principlesHeading"
+                        value={content.about.principlesHeading || ""}
+                        onChange={(e) => handleFieldChange("about", "principlesHeading", e.target.value)}
+                        placeholder="ENGINEERING PHILOSOPHY"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Section Description</label>
+                      <textarea
+                        rows={2}
+                        name="principlesDescription"
+                        value={content.about.principlesDescription || ""}
+                        onChange={(e) => handleFieldChange("about", "principlesDescription", e.target.value)}
+                        placeholder="Core rules that govern every line of code..."
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Principles Header */}
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground">
+                        Principles
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-pacific-cyan/15 text-pacific-cyan font-bold">
+                        {content.about.principles?.length || 0}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddPrinciple}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/25 text-xs font-mono transition-colors cursor-pointer select-none"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Principle</span>
+                    </button>
+                  </div>
+
+                  {/* Principles Nested Accordions */}
+                  <div className="flex flex-col gap-3">
+                    {(content.about.principles || []).map((p, idx) => {
+                      const pKey = p.id || `principle-${idx}`;
+                      const isOpen = Boolean(openPrinciples[pKey]);
+                      return (
+                        <div
+                          key={pKey}
+                          className="glass-card rounded-xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]"
+                        >
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => togglePrinciple(pKey)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                togglePrinciple(pKey);
+                              }
+                            }}
+                            aria-expanded={isOpen}
+                            aria-controls={`principle-panel-${idx}`}
+                            className="w-full p-3 sm:p-3.5 flex items-center justify-between gap-2.5 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="font-mono text-xs text-pacific-cyan font-bold shrink-0">
+                                {p.number || `0${idx + 1}`}
+                              </span>
+                              <span className="text-xs font-medium text-foreground truncate">
+                                {p.title || "Untitled Principle"}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMovePrinciple(idx, "up");
+                                }}
+                                aria-label={`Move principle ${p.number || idx + 1} up`}
+                                title="Move principle up"
+                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-25 transition-colors cursor-pointer"
+                              >
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === (content.about.principles || []).length - 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMovePrinciple(idx, "down");
+                                }}
+                                aria-label={`Move principle ${p.number || idx + 1} down`}
+                                title="Move principle down"
+                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-25 transition-colors cursor-pointer"
+                              >
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeletePrinciple(idx);
+                                }}
+                                aria-label={`Delete principle ${p.number || idx + 1}`}
+                                title="Delete principle"
+                                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer ml-0.5"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                              <div className="w-6 h-6 rounded flex items-center justify-center text-muted ml-0.5">
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                    isOpen ? "rotate-180 text-pacific-cyan" : ""
+                                  }`}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div
+                            id={`principle-panel-${idx}`}
+                            role="region"
+                            aria-label={`Principle ${idx + 1}`}
+                            className={
+                              isOpen
+                                ? "p-3.5 sm:p-5 border-t border-white/[0.06] flex flex-col gap-3.5 bg-ink-black/20"
+                                : "hidden"
+                            }
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-mono text-muted uppercase">Number</label>
+                                <input
+                                  type="text"
+                                  value={p.number}
+                                  onChange={(e) => handleUpdatePrinciple(idx, "number", e.target.value)}
+                                  placeholder="01"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors font-mono"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1 sm:col-span-2">
+                                <label className="text-[10px] font-mono text-muted uppercase">Title</label>
+                                <input
+                                  type="text"
+                                  value={p.title}
+                                  onChange={(e) => handleUpdatePrinciple(idx, "title", e.target.value)}
+                                  placeholder="Speed as a Feature"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-mono text-muted uppercase">Icon</label>
+                                <RawinSelect
+                                  name={`principle-icon-${idx}`}
+                                  value={p.icon || "zap"}
+                                  onChange={(val) => handleUpdatePrinciple(idx, "icon", val)}
+                                  options={ICON_SELECT_OPTIONS}
+                                  size="xs"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1 sm:col-span-4">
+                                <label className="text-[10px] font-mono text-muted uppercase">Statement / Detail</label>
+                                <input
+                                  type="text"
+                                  value={p.statement}
+                                  onChange={(e) => handleUpdatePrinciple(idx, "statement", e.target.value)}
+                                  placeholder="A slow interface is a broken interface..."
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. ENGINEERING JOURNEY */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleAboutSection("journey")}
+                  aria-expanded={Boolean(aboutOpenSections.journey)}
+                  aria-controls="about-section-journey"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Globe className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Engineering Journey
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Timeline and journey milestone overview
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {aboutOpenSections.journey ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          aboutOpenSections.journey ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="about-section-journey"
+                  role="region"
+                  aria-label="Engineering Journey"
+                  className={
+                    aboutOpenSections.journey
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
+                      <input
+                        type="text"
+                        name="journeyEyebrow"
+                        value={content.about.journeyEyebrow || ""}
+                        onChange={(e) => handleFieldChange("about", "journeyEyebrow", e.target.value)}
+                        placeholder="TIMELINE"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
+                      <input
+                        type="text"
+                        name="journeyHeading"
+                        value={content.about.journeyHeading || ""}
+                        onChange={(e) => handleFieldChange("about", "journeyHeading", e.target.value)}
+                        placeholder="ENGINEERING JOURNEY"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Section Description</label>
+                      <textarea
+                        rows={2}
+                        name="journeyDescription"
+                        value={content.about.journeyDescription || ""}
+                        onChange={(e) => handleFieldChange("about", "journeyDescription", e.target.value)}
+                        placeholder="Milestones along the way..."
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 6. CURRENT FOCUS AREAS */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleAboutSection("focus")}
+                  aria-expanded={Boolean(aboutOpenSections.focus)}
+                  aria-controls="about-section-focus"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Target className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Current Focus Areas
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Active research areas, architectures, and technologies ({content.about.focusAreas?.length || 0})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {aboutOpenSections.focus ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          aboutOpenSections.focus ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="about-section-focus"
+                  role="region"
+                  aria-label="Current Focus Areas"
+                  className={
+                    aboutOpenSections.focus
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-5 sm:gap-6 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  {/* Section-level fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Section Eyebrow</label>
+                      <input
+                        type="text"
+                        name="focusEyebrow"
+                        value={content.about.focusEyebrow || ""}
+                        onChange={(e) => handleFieldChange("about", "focusEyebrow", e.target.value)}
+                        placeholder="CURRENT FOCUS"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Section Heading</label>
+                      <input
+                        type="text"
+                        name="focusHeading"
+                        value={content.about.focusHeading || ""}
+                        onChange={(e) => handleFieldChange("about", "focusHeading", e.target.value)}
+                        placeholder="WHERE ATTENTION GOES"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Section Description</label>
+                      <textarea
+                        rows={2}
+                        name="focusDescription"
+                        value={content.about.focusDescription || ""}
+                        onChange={(e) => handleFieldChange("about", "focusDescription", e.target.value)}
+                        placeholder="Areas of active research and architectural exploration..."
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Focus Areas Header */}
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono uppercase tracking-wider font-semibold text-foreground">
+                        Focus Areas
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-pacific-cyan/15 text-pacific-cyan font-bold">
+                        {content.about.focusAreas?.length || 0}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddFocusArea}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/25 text-xs font-mono transition-colors cursor-pointer select-none"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Focus Area</span>
+                    </button>
+                  </div>
+
+                  {/* Focus Areas Nested Accordions */}
+                  <div className="flex flex-col gap-3">
+                    {(content.about.focusAreas || []).map((f, idx) => {
+                      const fKey = f.id || `focus-${idx}`;
+                      const isOpen = Boolean(openFocusAreas[fKey]);
+                      return (
+                        <div
+                          key={fKey}
+                          className="glass-card rounded-xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]"
+                        >
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => toggleFocusArea(fKey)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                toggleFocusArea(fKey);
+                              }
+                            }}
+                            aria-expanded={isOpen}
+                            aria-controls={`focus-panel-${idx}`}
+                            className="w-full p-3 sm:p-3.5 flex items-center justify-between gap-2.5 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="text-xs font-medium text-foreground truncate">
+                                {f.title || "Untitled Focus Area"}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveFocusArea(idx, "up");
+                                }}
+                                aria-label={`Move focus area ${idx + 1} up`}
+                                title="Move focus area up"
+                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-25 transition-colors cursor-pointer"
+                              >
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === (content.about.focusAreas || []).length - 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveFocusArea(idx, "down");
+                                }}
+                                aria-label={`Move focus area ${idx + 1} down`}
+                                title="Move focus area down"
+                                className="p-1.5 rounded-lg hover:bg-white/[0.08] text-muted hover:text-foreground disabled:opacity-25 transition-colors cursor-pointer"
+                              >
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteFocusArea(idx);
+                                }}
+                                aria-label={`Delete focus area ${idx + 1}`}
+                                title="Delete focus area"
+                                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer ml-0.5"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                              <div className="w-6 h-6 rounded flex items-center justify-center text-muted ml-0.5">
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                    isOpen ? "rotate-180 text-pacific-cyan" : ""
+                                  }`}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div
+                            id={`focus-panel-${idx}`}
+                            role="region"
+                            aria-label={`Focus Area ${idx + 1}`}
+                            className={
+                              isOpen
+                                ? "p-3.5 sm:p-5 border-t border-white/[0.06] flex flex-col gap-3.5 bg-ink-black/20"
+                                : "hidden"
+                            }
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+                              <div className="flex flex-col gap-1 sm:col-span-3">
+                                <label className="text-[10px] font-mono text-muted uppercase">Title</label>
+                                <input
+                                  type="text"
+                                  value={f.title}
+                                  onChange={(e) => handleUpdateFocusArea(idx, "title", e.target.value)}
+                                  placeholder="Edge AI and Local Inference"
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] font-mono text-muted uppercase">Icon</label>
+                                <RawinSelect
+                                  name={`focus-icon-${idx}`}
+                                  value={f.icon || "terminal"}
+                                  onChange={(val) => handleUpdateFocusArea(idx, "icon", val)}
+                                  options={ICON_SELECT_OPTIONS}
+                                  size="xs"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1 sm:col-span-4">
+                                <label className="text-[10px] font-mono text-muted uppercase">Description</label>
+                                <input
+                                  type="text"
+                                  value={f.description}
+                                  onChange={(e) => handleUpdateFocusArea(idx, "description", e.target.value)}
+                                  placeholder="Investigating hybrid architectures..."
+                                  className="px-3 py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 7. CALL TO ACTION (CTA) */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleAboutSection("cta")}
+                  aria-expanded={Boolean(aboutOpenSections.cta)}
+                  aria-controls="about-section-cta"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Send className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Call To Action (CTA)
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Next steps, resume download, contact button actions
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {aboutOpenSections.cta ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          aboutOpenSections.cta ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="about-section-cta"
+                  role="region"
+                  aria-label="Call To Action (CTA)"
+                  className={
+                    aboutOpenSections.cta
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">CTA Eyebrow</label>
+                      <input
+                        type="text"
+                        name="ctaEyebrow"
+                        value={content.about.ctaEyebrow || ""}
+                        onChange={(e) => handleFieldChange("about", "ctaEyebrow", e.target.value)}
+                        placeholder="NEXT STEP"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">CTA Heading</label>
+                      <input
+                        type="text"
+                        name="ctaHeading"
+                        value={content.about.ctaHeading || ""}
+                        onChange={(e) => handleFieldChange("about", "ctaHeading", e.target.value)}
+                        placeholder="WANT TO BUILD TOGETHER?"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">CTA Description</label>
+                      <textarea
+                        rows={2}
+                        name="ctaDescription"
+                        value={content.about.ctaDescription || ""}
+                        onChange={(e) => handleFieldChange("about", "ctaDescription", e.target.value)}
+                        placeholder="Whether you need a high-performance web application..."
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Resume Button Text</label>
+                      <input
+                        type="text"
+                        name="ctaResumeText"
+                        value={content.about.ctaResumeText || ""}
+                        onChange={(e) => handleFieldChange("about", "ctaResumeText", e.target.value)}
+                        placeholder="View Resume"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Contact Button Text</label>
+                      <input
+                        type="text"
+                        name="ctaContactText"
+                        value={content.about.ctaContactText || ""}
+                        onChange={(e) => handleFieldChange("about", "ctaContactText", e.target.value)}
+                        placeholder="Get In Touch"
+                        className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* 6. ABOUT CTA */}
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <Send className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Call to Action (CTA)
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">CTA Eyebrow</label>
-                  <input
-                    type="text"
-                    name="ctaEyebrow"
-                    value={content.about.ctaEyebrow || ""}
-                    onChange={(e) => handleFieldChange("about", "ctaEyebrow", e.target.value)}
-                    placeholder="NEXT STEP"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">CTA Heading</label>
-                  <input
-                    type="text"
-                    name="ctaHeading"
-                    value={content.about.ctaHeading || ""}
-                    onChange={(e) => handleFieldChange("about", "ctaHeading", e.target.value)}
-                    placeholder="WANT TO BUILD TOGETHER?"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">CTA Description</label>
-                  <textarea
-                    rows={2}
-                    name="ctaDescription"
-                    value={content.about.ctaDescription || ""}
-                    onChange={(e) => handleFieldChange("about", "ctaDescription", e.target.value)}
-                    placeholder="Whether you need a high-performance web application..."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Resume Button Text</label>
-                  <input
-                    type="text"
-                    name="ctaResumeText"
-                    value={content.about.ctaResumeText || ""}
-                    onChange={(e) => handleFieldChange("about", "ctaResumeText", e.target.value)}
-                    placeholder="View Resume"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Contact Button Text</label>
-                  <input
-                    type="text"
-                    name="ctaContactText"
-                    value={content.about.ctaContactText || ""}
-                    onChange={(e) => handleFieldChange("about", "ctaContactText", e.target.value)}
-                    placeholder="Get In Touch"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-              </div>
+            {/* Bottom Save Action for About Content */}
+            <div className="pt-2 sm:pt-4 flex items-center justify-end">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[44px] h-11 px-6 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_20px_rgba(24,155,173,0.35)] disabled:opacity-50 cursor-pointer select-none"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save About Content</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
 
         {activeTab === "contact" && (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4 sm:gap-6">
             {/* Hidden JSON inputs for complex fields */}
             <input
               type="hidden"
               name="socials"
-              value={JSON.stringify(content.contact.socials || { github: "", linkedin: "", twitter: "" })}
+              value={JSON.stringify(content.contact.socials || { github: "", linkedin: "", twitter: "", instagram: "" })}
             />
             <input
               type="hidden"
@@ -3397,246 +4647,473 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               })}
             />
 
-            {/* 1. Contact Details */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
+            {/* Top Toolbar: Section summary and Expand/Collapse All */}
+            <div className="flex items-center justify-between px-1 pb-1 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Contact Details
-                </h3>
+                <span className="text-[11px] font-mono uppercase tracking-widest text-pacific-cyan font-bold">
+                  Contact Sections
+                </span>
+                <span className="text-[10px] font-mono text-muted/60">
+                  (4 sections)
+                </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Primary Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={content.contact.email || ""}
-                    onChange={(e) => handleFieldChange("contact", "email", e.target.value)}
-                    placeholder="rushansiddiqui5262@gmail.com"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground font-mono outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Location / City / Country</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={content.contact.location || ""}
-                    onChange={(e) => handleFieldChange("contact", "location", e.target.value)}
-                    placeholder="Jaunpur, Uttar Pradesh, India"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Phone Number</label>
-                  <input
-                    type="text"
-                    name="phone"
-                    value={content.contact.phone || ""}
-                    onChange={(e) => handleFieldChange("contact", "phone", e.target.value)}
-                    placeholder="+91 79051 09292"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground font-mono outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col justify-between gap-2 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-mono text-muted uppercase font-medium">Show Phone Number</span>
-                      <span className="text-[11px] text-muted/70">Display your phone number publicly.</span>
-                    </div>
+              <button
+                type="button"
+                onClick={toggleAllContactSections}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-foreground bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-colors cursor-pointer select-none"
+                title={
+                  ["details", "socials", "form", "headings"].every((k) => contactOpenSections[k])
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+                aria-label={
+                  ["details", "socials", "form", "headings"].every((k) => contactOpenSections[k])
+                    ? "Collapse all sections"
+                    : "Expand all sections"
+                }
+              >
+                <ChevronsUpDown className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
+                <span className="hidden sm:inline">
+                  {["details", "socials", "form", "headings"].every((k) => contactOpenSections[k])
+                    ? "Collapse All"
+                    : "Expand All"}
+                </span>
+              </button>
+            </div>
 
-                    <div className="flex items-center">
-                      <NeoToggle
-                        checked={Boolean(content.contact.showPhoneNumber)}
-                        onChange={(checked) => handleFieldChange("contact", "showPhoneNumber", checked)}
-                        ariaLabel="Toggle public phone number visibility"
+            {/* Top-Level Accordion Stack */}
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {/* 1. CONTACT DETAILS */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleContactSection("details")}
+                  aria-expanded={Boolean(contactOpenSections.details)}
+                  aria-controls="contact-section-details"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Contact Details
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Email, location, phone number and display toggle
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {contactOpenSections.details ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          contactOpenSections.details ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
                       />
                     </div>
                   </div>
-                  <input
-                    type="hidden"
-                    name="showPhoneNumber"
-                    value={content.contact.showPhoneNumber ? "true" : "false"}
-                  />
+                </button>
+
+                <div
+                  id="contact-section-details"
+                  role="region"
+                  aria-label="Contact Details"
+                  className={
+                    contactOpenSections.details
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Primary Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={content.contact.email || ""}
+                        onChange={(e) => handleFieldChange("contact", "email", e.target.value)}
+                        placeholder="rushansiddiqui5262@gmail.com"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground font-mono outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Location / City / Country</label>
+                      <input
+                        type="text"
+                        name="location"
+                        value={content.contact.location || ""}
+                        onChange={(e) => handleFieldChange("contact", "location", e.target.value)}
+                        placeholder="Jaunpur, Uttar Pradesh, India"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Phone Number</label>
+                      <input
+                        type="text"
+                        name="phone"
+                        value={content.contact.phone || ""}
+                        onChange={(e) => handleFieldChange("contact", "phone", e.target.value)}
+                        placeholder="+91 79051 09292"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground font-mono outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-mono text-muted uppercase font-medium truncate">
+                          Show Phone Number
+                        </span>
+                        <span className="text-[11px] text-muted/70 hidden sm:inline truncate">
+                          Display your phone number publicly.
+                        </span>
+                      </div>
+
+                      <div className="flex items-center shrink-0">
+                        <NeoToggle
+                          className="neo-compact-mobile"
+                          checked={Boolean(content.contact.showPhoneNumber)}
+                          onChange={(checked) => handleFieldChange("contact", "showPhoneNumber", checked)}
+                          ariaLabel="Toggle public phone number visibility"
+                        />
+                      </div>
+                      <input
+                        type="hidden"
+                        name="showPhoneNumber"
+                        value={content.contact.showPhoneNumber ? "true" : "false"}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. SOCIAL CHANNELS */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleContactSection("socials")}
+                  aria-expanded={Boolean(contactOpenSections.socials)}
+                  aria-controls="contact-section-socials"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Globe className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Social Channels
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        GitHub, LinkedIn, X / Twitter, Instagram
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {contactOpenSections.socials ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          contactOpenSections.socials ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="contact-section-socials"
+                  role="region"
+                  aria-label="Social Channels"
+                  className={
+                    contactOpenSections.socials
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <p className="text-xs text-muted leading-relaxed">
+                    Channels appear across the public Contact page and Footer. Leave any URL empty to hide that channel completely.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">GitHub Profile URL</label>
+                      <input
+                        type="text"
+                        value={content.contact.socials?.github || ""}
+                        onChange={(e) => handleContactSocial("github", e.target.value)}
+                        placeholder="https://github.com/rush627"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground font-mono outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">LinkedIn Profile URL</label>
+                      <input
+                        type="text"
+                        value={content.contact.socials?.linkedin || ""}
+                        onChange={(e) => handleContactSocial("linkedin", e.target.value)}
+                        placeholder="https://www.linkedin.com/in/..."
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground font-mono outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">X / Twitter URL</label>
+                      <input
+                        type="text"
+                        value={content.contact.socials?.twitter || ""}
+                        onChange={(e) => handleContactSocial("twitter", e.target.value)}
+                        placeholder="https://x.com/sidd_rushan__"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground font-mono outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Instagram Profile URL</label>
+                      <input
+                        type="text"
+                        value={content.contact.socials?.instagram || ""}
+                        onChange={(e) => handleContactSocial("instagram", e.target.value)}
+                        placeholder="https://www.instagram.com/..."
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground font-mono outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. CONTACT FORM PLACEHOLDERS */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleContactSection("form")}
+                  aria-expanded={Boolean(contactOpenSections.form)}
+                  aria-controls="contact-section-form"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Contact Form Placeholders
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Input examples and placeholder copy
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {contactOpenSections.form ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          contactOpenSections.form ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="contact-section-form"
+                  role="region"
+                  aria-label="Contact Form Placeholders"
+                  className={
+                    contactOpenSections.form
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <p className="text-xs text-muted leading-relaxed">
+                    Customise example placeholder text displayed inside public contact form fields.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Full Name Placeholder</label>
+                      <input
+                        type="text"
+                        value={content.contact.form?.namePlaceholder || ""}
+                        onChange={(e) => handleContactFormPlaceholder("namePlaceholder", e.target.value)}
+                        placeholder="Jane Doe"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Email Address Placeholder</label>
+                      <input
+                        type="text"
+                        value={content.contact.form?.emailPlaceholder || ""}
+                        onChange={(e) => handleContactFormPlaceholder("emailPlaceholder", e.target.value)}
+                        placeholder="jane@example.com"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Mobile Number Placeholder</label>
+                      <input
+                        type="text"
+                        value={content.contact.form?.phonePlaceholder || ""}
+                        onChange={(e) => handleContactFormPlaceholder("phonePlaceholder", e.target.value)}
+                        placeholder="+1 555 0192"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Subject Placeholder</label>
+                      <input
+                        type="text"
+                        value={content.contact.form?.subjectPlaceholder || ""}
+                        onChange={(e) => handleContactFormPlaceholder("subjectPlaceholder", e.target.value)}
+                        placeholder="Project Inquiry / Job Opportunity"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Message Placeholder</label>
+                      <input
+                        type="text"
+                        value={content.contact.form?.messagePlaceholder || ""}
+                        onChange={(e) => handleContactFormPlaceholder("messagePlaceholder", e.target.value)}
+                        placeholder="Describe your goals, project timeline, or questions..."
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. PAGE HEADINGS & CONFIRMATIONS */}
+              <div className="glass-card rounded-xl sm:rounded-2xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+                <button
+                  type="button"
+                  onClick={() => toggleContactSection("headings")}
+                  aria-expanded={Boolean(contactOpenSections.headings)}
+                  aria-controls="contact-section-headings"
+                  className="w-full p-3.5 sm:p-4 sm:px-5 flex items-center justify-between gap-3 text-left hover:bg-white/[0.02] focus-visible:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pacific-cyan/50 transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs sm:text-sm font-mono uppercase tracking-wider font-semibold text-foreground truncate">
+                        Page Headings &amp; Confirmations
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
+                        Badges, titles, descriptions, and success modals
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-muted/40 uppercase hidden sm:inline">
+                      {contactOpenSections.headings ? "Collapse" : "Expand"}
+                    </span>
+                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-muted">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          contactOpenSections.headings ? "rotate-180 text-pacific-cyan" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </button>
+
+                <div
+                  id="contact-section-headings"
+                  role="region"
+                  aria-label="Page Headings & Confirmations"
+                  className={
+                    contactOpenSections.headings
+                      ? "p-4 sm:p-6 border-t border-white/[0.08] flex flex-col gap-4 sm:gap-5 bg-ink-black/25"
+                      : "hidden"
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
+                      <input
+                        type="text"
+                        name="eyebrow"
+                        value={content.contact.eyebrow}
+                        onChange={(e) => handleFieldChange("contact", "eyebrow", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Page Heading</label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={content.contact.title}
+                        onChange={(e) => handleFieldChange("contact", "title", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                      <label className="text-xs font-mono text-muted uppercase">Introduction Description</label>
+                      <textarea
+                        rows={3}
+                        name="description"
+                        value={content.contact.description}
+                        onChange={(e) => handleFieldChange("contact", "description", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Success Modal Title</label>
+                      <input
+                        type="text"
+                        name="successTitle"
+                        value={content.contact.successTitle}
+                        onChange={(e) => handleFieldChange("contact", "successTitle", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-mono text-muted uppercase">Success Message Confirmation</label>
+                      <textarea
+                        rows={2}
+                        name="successMessage"
+                        value={content.contact.successMessage}
+                        onChange={(e) => handleFieldChange("contact", "successMessage", e.target.value)}
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-xs sm:text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* 2. Social Channels */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Social Channels
-                </h3>
-              </div>
-              <p className="text-xs text-muted">
-                Links are used on the Contact page, Footer, and across the site. Leave a channel URL empty to hide that social icon from public display.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">GitHub Profile URL</label>
-                  <input
-                    type="text"
-                    value={content.contact.socials?.github || ""}
-                    onChange={(e) => handleContactSocial("github", e.target.value)}
-                    placeholder="https://github.com/rush627"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground font-mono outline-none transition-colors text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">LinkedIn Profile URL</label>
-                  <input
-                    type="text"
-                    value={content.contact.socials?.linkedin || ""}
-                    onChange={(e) => handleContactSocial("linkedin", e.target.value)}
-                    placeholder="https://www.linkedin.com/in/..."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground font-mono outline-none transition-colors text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">X / Twitter URL</label>
-                  <input
-                    type="text"
-                    value={content.contact.socials?.twitter || ""}
-                    onChange={(e) => handleContactSocial("twitter", e.target.value)}
-                    placeholder="https://x.com/sidd_rushan__"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground font-mono outline-none transition-colors text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Contact Form Placeholders */}
-            <div className="flex flex-col gap-4 pb-6 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Contact Form Placeholders
-                </h3>
-              </div>
-              <p className="text-xs text-muted">
-                Control the dynamic example placeholder text shown inside the public Contact form inputs.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Full Name Placeholder</label>
-                  <input
-                    type="text"
-                    value={content.contact.form?.namePlaceholder || ""}
-                    onChange={(e) => handleContactFormPlaceholder("namePlaceholder", e.target.value)}
-                    placeholder="Jane Doe"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Email Address Placeholder</label>
-                  <input
-                    type="text"
-                    value={content.contact.form?.emailPlaceholder || ""}
-                    onChange={(e) => handleContactFormPlaceholder("emailPlaceholder", e.target.value)}
-                    placeholder="jane@example.com"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Mobile Number Placeholder</label>
-                  <input
-                    type="text"
-                    value={content.contact.form?.phonePlaceholder || ""}
-                    onChange={(e) => handleContactFormPlaceholder("phonePlaceholder", e.target.value)}
-                    placeholder="+1 555 0192"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Subject Placeholder</label>
-                  <input
-                    type="text"
-                    value={content.contact.form?.subjectPlaceholder || ""}
-                    onChange={(e) => handleContactFormPlaceholder("subjectPlaceholder", e.target.value)}
-                    placeholder="Project Inquiry / Job Opportunity"
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Message Placeholder</label>
-                  <input
-                    type="text"
-                    value={content.contact.form?.messagePlaceholder || ""}
-                    onChange={(e) => handleContactFormPlaceholder("messagePlaceholder", e.target.value)}
-                    placeholder="Describe your goals, project timeline, or questions..."
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Page Headings & Confirmations */}
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-pacific-cyan" />
-                <h3 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Page Headings &amp; Confirmations
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Eyebrow Badge</label>
-                  <input
-                    type="text"
-                    name="eyebrow"
-                    value={content.contact.eyebrow}
-                    onChange={(e) => handleFieldChange("contact", "eyebrow", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Page Heading</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={content.contact.title}
-                    onChange={(e) => handleFieldChange("contact", "title", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:col-span-2">
-                  <label className="text-xs font-mono text-muted uppercase">Introduction Description</label>
-                  <textarea
-                    rows={3}
-                    name="description"
-                    value={content.contact.description}
-                    onChange={(e) => handleFieldChange("contact", "description", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Success Modal Title</label>
-                  <input
-                    type="text"
-                    name="successTitle"
-                    value={content.contact.successTitle}
-                    onChange={(e) => handleFieldChange("contact", "successTitle", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Success Message Confirmation</label>
-                  <textarea
-                    rows={2}
-                    name="successMessage"
-                    value={content.contact.successMessage}
-                    onChange={(e) => handleFieldChange("contact", "successMessage", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
-                  />
-                </div>
-              </div>
+            {/* Bottom Save Action for Contact Content */}
+            <div className="pt-2 sm:pt-4 flex items-center justify-end">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[44px] h-11 px-6 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 border border-transparent transition-all shadow-[0_0_20px_rgba(24,155,173,0.35)] disabled:opacity-50 cursor-pointer select-none"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Contact &amp; Social Content</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}

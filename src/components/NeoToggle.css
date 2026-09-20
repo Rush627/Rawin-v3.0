@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Neo Toggle — CSS Implementation
+   Neo Toggle - CSS Implementation
    Compact, technical, futuristic toggle with spectrum analyzer & telemetry
    ========================================================================== */
 
@@ -394,3 +394,66 @@
     height: 8px !important;
   }
 }
+
+/* ==========================================================================
+   Mobile Compact Variant (smartphone milestone editor)
+   Desktop (>= 640px) remains completely unchanged
+   ========================================================================== */
+
+@media (max-width: 639px) {
+  .neo-toggle-container.neo-compact-mobile .neo-toggle {
+    gap: 8px;
+    min-height: 38px;
+  }
+
+  .neo-toggle-container.neo-compact-mobile .neo-track {
+    width: 54px;
+    height: 28px;
+    border-radius: 14px;
+  }
+
+  .neo-toggle-container.neo-compact-mobile .neo-thumb {
+    width: 22px;
+    height: 22px;
+    top: 2px;
+    left: 2px;
+  }
+
+  .neo-toggle-container.neo-compact-mobile.is-checked .neo-thumb {
+    transform: translateX(26px);
+  }
+
+  .neo-toggle-container.neo-compact-mobile .neo-thumb-core {
+    inset: 1.5px;
+  }
+
+  .neo-toggle-container.neo-compact-mobile .neo-thumb-icon {
+    width: 10px;
+    height: 10px;
+  }
+
+  .neo-toggle-container.neo-compact-mobile .neo-spectrum-analyzer {
+    left: 7px;
+    gap: 1.5px;
+    height: 10px;
+  }
+
+  .neo-toggle-container.neo-compact-mobile .neo-spectrum-bar {
+    width: 1.5px;
+  }
+
+  .neo-toggle-container.neo-compact-mobile .neo-status {
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+
+  .neo-toggle-container.neo-compact-mobile .neo-status-indicator {
+    gap: 4px;
+  }
+
+  .neo-toggle-container.neo-compact-mobile .neo-status-dot {
+    width: 5px;
+    height: 5px;
+  }
+}
+

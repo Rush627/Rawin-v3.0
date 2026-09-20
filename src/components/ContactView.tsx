@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import emailjs from "@emailjs/browser";
-import { GithubIcon, LinkedinIcon, TwitterIcon } from "@/components/SocialIcons";
+import { getActiveSocialLinks } from "@/components/SocialIcons";
 import type { ContactContent, GlobalContent } from "@/lib/site-content";
 import DesktopContactView from "@/components/DesktopContactView";
 import MobileContactView from "@/components/MobileContactView";
@@ -154,26 +154,7 @@ export default function ContactView({ content, global }: ContactViewProps) {
     }
   };
 
-  const socials = [
-    {
-      id: "github",
-      name: "GitHub",
-      url: content.socials?.github || "",
-      icon: GithubIcon,
-    },
-    {
-      id: "linkedin",
-      name: "LinkedIn",
-      url: content.socials?.linkedin || "",
-      icon: LinkedinIcon,
-    },
-    {
-      id: "twitter",
-      name: "X / Twitter",
-      url: content.socials?.twitter || "",
-      icon: TwitterIcon,
-    },
-  ].filter((s) => s.url.trim().length > 0);
+  const socials = getActiveSocialLinks(content.socials);
 
   const sharedProps = {
     formData,

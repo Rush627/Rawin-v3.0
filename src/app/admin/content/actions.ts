@@ -46,7 +46,6 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "heroPrimaryCtaText",
     "heroSecondaryCtaText",
     "featuredHeading",
-    "featuredDescription",
   ],
   about: [
     "eyebrow",
@@ -469,11 +468,13 @@ export async function updateSectionAction(
           const github = String(parsed.github || "").trim();
           const linkedin = String(parsed.linkedin || "").trim();
           const twitter = String(parsed.twitter || "").trim();
+          const instagram = String(parsed.instagram || "").trim();
 
           const channels = [
             { name: "GitHub", url: github },
             { name: "LinkedIn", url: linkedin },
             { name: "X / Twitter", url: twitter },
+            { name: "Instagram", url: instagram },
           ];
 
           for (const channel of channels) {
@@ -496,6 +497,7 @@ export async function updateSectionAction(
             github: github.slice(0, 250),
             linkedin: linkedin.slice(0, 250),
             twitter: twitter.slice(0, 250),
+            instagram: instagram.slice(0, 250),
           };
         } catch {
           return { error: "Invalid JSON for social channels." };

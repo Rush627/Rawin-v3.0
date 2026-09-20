@@ -36,3 +36,50 @@ export function InstagramIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export interface SocialLinkItem {
+  id: "github" | "linkedin" | "twitter" | "instagram";
+  name: string;
+  url: string;
+  icon: (props: SVGProps<SVGSVGElement>) => React.JSX.Element;
+}
+
+export function getActiveSocialLinks(
+  socials?: {
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+  } | null
+): SocialLinkItem[] {
+  if (!socials) return [];
+
+  const candidates: SocialLinkItem[] = [
+    {
+      id: "github",
+      name: "GitHub",
+      url: (socials.github || "").trim(),
+      icon: GithubIcon,
+    },
+    {
+      id: "linkedin",
+      name: "LinkedIn",
+      url: (socials.linkedin || "").trim(),
+      icon: LinkedinIcon,
+    },
+    {
+      id: "twitter",
+      name: "X / Twitter",
+      url: (socials.twitter || "").trim(),
+      icon: TwitterIcon,
+    },
+    {
+      id: "instagram",
+      name: "Instagram",
+      url: (socials.instagram || "").trim(),
+      icon: InstagramIcon,
+    },
+  ];
+
+  return candidates.filter((item) => item.url.length > 0);
+}

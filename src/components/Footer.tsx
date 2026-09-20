@@ -6,11 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useReducedMotion } from "framer-motion";
 import { ArrowUp, ArrowUpRight } from "lucide-react";
-import {
-  GithubIcon,
-  LinkedinIcon,
-  TwitterIcon,
-} from "@/components/SocialIcons";
+import { getActiveSocialLinks } from "@/components/SocialIcons";
 
 import type { GlobalContent, ContactContent } from "@/lib/site-content";
 import MobileClosingAndFooter from "@/components/MobileClosingAndFooter";
@@ -286,12 +282,13 @@ export default function Footer({
   // Dynamic CMS email and social channels
   const emailAddress =
     contact?.email || content?.contactEmail || "rushansiddiqui5262@gmail.com";
-  const githubUrl = contact?.socials?.github ?? "https://github.com/rush627";
-  const linkedinUrl =
-    contact?.socials?.linkedin ??
-    "https://www.linkedin.com/in/rushan-s-8ab3b3338";
-  const twitterUrl =
-    contact?.socials?.twitter ?? "https://x.com/sidd_rushan__";
+  const activeSocialLinks = getActiveSocialLinks(
+    contact?.socials || {
+      github: "https://github.com/rush627",
+      linkedin: "https://www.linkedin.com/in/rushan-s-8ab3b3338",
+      twitter: "https://x.com/sidd_rushan__",
+    }
+  );
 
   // CMS Availability indicator color mapping
   const statusColor = content?.availabilityStatusColor || "green";
@@ -532,36 +529,22 @@ export default function Footer({
                   CONNECT
                 </h4>
                 <div className="flex flex-col gap-2.5 text-sm text-muted">
-                  <a
-                    href={githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 hover:text-foreground transition-colors group"
-                    aria-label="GitHub Profile"
-                  >
-                    <GithubIcon className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
-                    <span>GitHub</span>
-                  </a>
-                  <a
-                    href={linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 hover:text-foreground transition-colors group"
-                    aria-label="LinkedIn Profile"
-                  >
-                    <LinkedinIcon className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
-                    <span>LinkedIn</span>
-                  </a>
-                  <a
-                    href={twitterUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 hover:text-foreground transition-colors group"
-                    aria-label="X (Twitter) Profile"
-                  >
-                    <TwitterIcon className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
-                    <span>X / Twitter</span>
-                  </a>
+                  {activeSocialLinks.map((social) => {
+                    const Icon = social.icon;
+                    return (
+                      <a
+                        key={social.id}
+                        href={social.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 hover:text-foreground transition-colors group"
+                        aria-label={`${social.name} Profile`}
+                      >
+                        <Icon className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+                        <span>{social.name}</span>
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             </div>

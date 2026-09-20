@@ -24,7 +24,7 @@ export interface HomeContent {
   heroPrimaryCtaText: string;
   heroSecondaryCtaText: string;
   featuredHeading: string;
-  featuredDescription: string;
+  featuredDescription?: string;
 }
 
 export interface EvolutionMilestoneItem {
@@ -113,6 +113,7 @@ export interface ContactSocials {
   github: string;
   linkedin: string;
   twitter: string;
+  instagram?: string;
 }
 
 export interface ContactFormPlaceholders {
@@ -375,7 +376,6 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     heroPrimaryCtaText: "Explore Case Studies",
     heroSecondaryCtaText: "Let's Connect",
     featuredHeading: "Featured Case Studies",
-    featuredDescription: "Selected Work",
   },
   about: {
     eyebrow: "ABOUT",
@@ -554,6 +554,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       github: "https://github.com/rush627",
       linkedin: "https://www.linkedin.com/in/rushan-s-8ab3b3338",
       twitter: "https://x.com/sidd_rushan__",
+      instagram: "",
     },
     form: {
       namePlaceholder: "Jane Doe",
@@ -1018,6 +1019,10 @@ export function mergeWithDefaults(doc: any): SiteContent {
       doc.contact?.socials?.twitter !== undefined
         ? doc.contact.socials.twitter
         : DEFAULT_SITE_CONTENT.contact.socials.twitter,
+    instagram:
+      doc.contact?.socials?.instagram !== undefined
+        ? doc.contact.socials.instagram
+        : (DEFAULT_SITE_CONTENT.contact.socials.instagram || ""),
   };
 
   const canonicalForm: ContactFormPlaceholders = {
@@ -1065,7 +1070,6 @@ export function mergeWithDefaults(doc: any): SiteContent {
       heroPrimaryCtaText: doc.home?.heroPrimaryCtaText || DEFAULT_SITE_CONTENT.home.heroPrimaryCtaText,
       heroSecondaryCtaText: doc.home?.heroSecondaryCtaText || DEFAULT_SITE_CONTENT.home.heroSecondaryCtaText,
       featuredHeading: doc.home?.featuredHeading || DEFAULT_SITE_CONTENT.home.featuredHeading,
-      featuredDescription: doc.home?.featuredDescription || DEFAULT_SITE_CONTENT.home.featuredDescription,
     },
     about: {
       eyebrow:

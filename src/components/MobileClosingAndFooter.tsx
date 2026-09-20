@@ -5,11 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import {
-  GithubIcon,
-  LinkedinIcon,
-  TwitterIcon,
-} from "@/components/SocialIcons";
+import { getActiveSocialLinks } from "@/components/SocialIcons";
 import type { GlobalContent, ContactContent } from "@/lib/site-content";
 
 interface MobileClosingAndFooterProps {
@@ -182,12 +178,13 @@ export default function MobileClosingAndFooter({
 
   const emailAddress =
     contact?.email || content?.contactEmail || "rushansiddiqui5262@gmail.com";
-  const githubUrl = contact?.socials?.github ?? "https://github.com/rush627";
-  const linkedinUrl =
-    contact?.socials?.linkedin ??
-    "https://www.linkedin.com/in/rushan-s-8ab3b3338";
-  const twitterUrl =
-    contact?.socials?.twitter ?? "https://x.com/sidd_rushan__";
+  const activeSocialLinks = getActiveSocialLinks(
+    contact?.socials || {
+      github: "https://github.com/rush627",
+      linkedin: "https://www.linkedin.com/in/rushan-s-8ab3b3338",
+      twitter: "https://x.com/sidd_rushan__",
+    }
+  );
 
   const resolvedCopyright =
     footerCopyright ||
@@ -412,33 +409,21 @@ export default function MobileClosingAndFooter({
 
         {/* Compact Social Channels (Above Copyright) */}
         <div className="flex items-center justify-center gap-5 text-muted/60 pt-7 sm:pt-9 mb-3.5">
-          <a
-            href={githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="GitHub Profile"
-            className="p-1.5 rounded-lg hover:text-foreground hover:bg-white/[0.04] transition-colors"
-          >
-            <GithubIcon className="w-4 h-4" />
-          </a>
-          <a
-            href={linkedinUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="LinkedIn Profile"
-            className="p-1.5 rounded-lg hover:text-foreground hover:bg-white/[0.04] transition-colors"
-          >
-            <LinkedinIcon className="w-4 h-4" />
-          </a>
-          <a
-            href={twitterUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="X Profile"
-            className="p-1.5 rounded-lg hover:text-foreground hover:bg-white/[0.04] transition-colors"
-          >
-            <TwitterIcon className="w-4 h-4" />
-          </a>
+          {activeSocialLinks.map((social) => {
+            const Icon = social.icon;
+            return (
+              <a
+                key={social.id}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${social.name} Profile`}
+                className="p-1.5 rounded-lg hover:text-foreground hover:bg-white/[0.04] transition-colors"
+              >
+                <Icon className="w-4 h-4" />
+              </a>
+            );
+          })}
         </div>
 
         {/* Dynamic CMS Copyright Text (Guaranteed Single Line across 375px+ phones) */}

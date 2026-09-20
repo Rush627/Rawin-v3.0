@@ -262,7 +262,15 @@ export default function MobileContactView({
             <span className="text-[10px] font-mono uppercase tracking-widest text-muted/50">
               SOCIAL CHANNELS
             </span>
-            <div className="flex items-center gap-2 w-full">
+            <div
+              className={`grid gap-2 w-full ${
+                socials.length >= 4
+                  ? "grid-cols-2 min-[420px]:grid-cols-4"
+                  : socials.length === 3
+                  ? "grid-cols-3"
+                  : "grid-cols-2"
+              }`}
+            >
               {socials.map((social) => {
                 const Icon = social.icon;
                 return (
@@ -272,10 +280,10 @@ export default function MobileContactView({
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`Visit Rushan Siddiqui on ${social.name}`}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] hover:border-pacific-cyan/30 flex items-center justify-center gap-2 text-foreground/85 hover:text-pacific-cyan transition-all active:scale-[0.98]"
+                    className="py-2.5 px-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] hover:border-pacific-cyan/30 flex items-center justify-center gap-1.5 text-foreground/85 hover:text-pacific-cyan transition-all active:scale-[0.98] min-w-0"
                   >
                     <Icon className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
-                    <span className="text-xs font-medium">
+                    <span className="text-xs font-medium truncate">
                       {social.name}
                     </span>
                   </a>
