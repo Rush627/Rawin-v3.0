@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { getSecretKey } from "@/lib/auth";
-
-const SESSION_COOKIE_NAME = "rawin_admin_session";
+import { getSecretKey, SESSION_COOKIE_NAME } from "@/lib/auth-token";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
