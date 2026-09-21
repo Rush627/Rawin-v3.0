@@ -133,6 +133,13 @@ function FeaturedArticle({ post, isFeatured }: { post: BlogPost; isFeatured: boo
               {post.title}
             </h2>
 
+            {/* Byline */}
+            {post.author && post.author.trim() && (
+              <p className="text-xs sm:text-sm font-mono text-muted/80 tracking-wide">
+                By <span className="text-foreground/90 font-medium">{post.author.trim()}</span>
+              </p>
+            )}
+
             {/* Excerpt */}
             {post.excerpt && (
               <p className="text-xs sm:text-sm text-muted/80 leading-relaxed font-sans line-clamp-3">
@@ -225,6 +232,13 @@ function ArticleCard({ post, index }: { post: BlogPost; index: number }) {
             <h3 className="text-base sm:text-lg font-bold font-space text-foreground leading-snug tracking-tight group-hover:text-pacific-cyan transition-colors duration-200 line-clamp-2 sm:line-clamp-3">
               {post.title}
             </h3>
+
+            {/* Byline */}
+            {post.author && post.author.trim() && (
+              <p className="text-[11px] sm:text-xs font-mono text-muted/80 tracking-wide">
+                By <span className="text-foreground/90 font-medium">{post.author.trim()}</span>
+              </p>
+            )}
 
             {/* Excerpt */}
             {post.excerpt && (

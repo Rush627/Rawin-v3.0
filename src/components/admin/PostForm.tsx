@@ -200,7 +200,7 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
                   Article Details
                 </span>
                 <span className="text-[10px] sm:text-[11px] font-mono text-muted/60 truncate">
-                  Title, URL slug, read time, and excerpt
+                  Title, URL slug, read time, excerpt, and author
                 </span>
               </div>
             </div>
@@ -273,6 +273,19 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
                 defaultValue={initialData?.excerpt || ""}
                 placeholder="Brief summary of the article..."
                 className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-[16px] sm:text-sm text-foreground outline-none transition-colors resize-y min-h-[80px] w-full"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] sm:text-xs font-mono text-muted uppercase">
+                Author
+              </label>
+              <input
+                type="text"
+                name="author"
+                defaultValue={initialData?.author || ""}
+                placeholder="e.g. Rushan Siddiqui"
+                className="px-3.5 sm:px-4 py-2 sm:py-2.5 min-h-[42px] sm:min-h-[40px] rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-[16px] sm:text-sm text-foreground outline-none transition-colors w-full"
               />
             </div>
           </div>

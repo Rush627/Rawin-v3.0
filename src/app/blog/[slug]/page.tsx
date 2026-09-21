@@ -23,9 +23,11 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     };
   }
 
+  const authorName = post.author && post.author.trim() ? post.author.trim() : null;
+
   return {
-    title: `${post.title} | Rushan Siddiqui`,
-    description: post.excerpt || `Technical article on ${post.tags.join(", ")} by Rushan Siddiqui.`,
+    title: authorName ? `${post.title} | ${authorName}` : `${post.title} | RAWIN`,
+    description: post.excerpt || `Technical article on ${post.tags.join(", ")}${authorName ? ` by ${authorName}` : ""}.`,
     openGraph: {
       title: post.title,
       description: post.excerpt,
@@ -105,6 +107,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-muted/60 pt-1">
+          {post.author && post.author.trim() && (
+            <>
+              <span className="text-muted/80">
+                By <span className="text-foreground/90 font-medium">{post.author.trim()}</span>
+              </span>
+              <span className="text-white/20" aria-hidden="true">&middot;</span>
+            </>
+          )}
           <span className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-pacific-cyan/60" />
             {formatDateLong(post.publishedAt)}
@@ -154,18 +164,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </section>
 
       {/* ─── Footer strip ─── */}
-      <footer className="pt-8 sm:pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <footer className="pt-8 sm:pt-10 border-t border-white/[0.08] flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-1 min-w-0">
+          {post.author && post.author.trim() && (
+            <p className="text-xs sm:text-sm font-mono text-muted/80 tracking-wide truncate">
+              Written by <span className="text-foreground/90 font-medium">{post.author.trim()}</span>
+            </p>
+          )}
+          <div className="text-[11px] font-mono text-muted/40 tracking-wider uppercase">
+            RAWIN &middot; DEV LOG
+          </div>
+        </div>
+
         <Link
           href="/blog"
-          className="inline-flex items-center gap-2 text-xs font-mono text-muted/60 hover:text-pacific-cyan transition-colors group"
+          className="inline-flex items-center gap-2 text-xs font-mono text-muted/60 hover:text-pacific-cyan transition-colors group shrink-0 ml-auto"
+          aria-label="Return to blog articles"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Return to all articles</span>
+          <span>Return</span>
         </Link>
-
-        <div className="text-[11px] font-mono text-muted/40 tracking-wider uppercase">
-          RAWIN · DEV LOG
-        </div>
       </footer>
     </article>
   );

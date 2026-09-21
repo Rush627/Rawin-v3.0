@@ -39,6 +39,7 @@ export async function createPostAction(
 
   const title = (formData.get("title") as string || "").trim();
   let slug = (formData.get("slug") as string || "").trim();
+  const author = (formData.get("author") as string || "").trim();
   const excerpt = (formData.get("excerpt") as string || "").trim();
   const content = (formData.get("content") as string || "").trim();
   const coverImage = (formData.get("coverImage") as string || "").trim();
@@ -99,9 +100,14 @@ export async function createPostAction(
     }
   }
 
+  if (author.length > 100) {
+    return { error: "Author name must not exceed 100 characters." };
+  }
+
   const input: CreateBlogPostInput = {
     slug,
     title,
+    author: author || undefined,
     excerpt,
     content,
     tags,
@@ -157,6 +163,7 @@ export async function updatePostAction(
 
   const title = (formData.get("title") as string || "").trim();
   let slug = (formData.get("slug") as string || "").trim();
+  const author = (formData.get("author") as string || "").trim();
   const excerpt = (formData.get("excerpt") as string || "").trim();
   const content = (formData.get("content") as string || "").trim();
   const coverImage = (formData.get("coverImage") as string || "").trim();
@@ -217,9 +224,14 @@ export async function updatePostAction(
     }
   }
 
+  if (author.length > 100) {
+    return { error: "Author name must not exceed 100 characters." };
+  }
+
   const input: UpdateBlogPostInput = {
     slug,
     title,
+    author: author || "",
     excerpt,
     content,
     tags,

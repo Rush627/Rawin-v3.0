@@ -9,6 +9,7 @@ export interface BlogPost {
   _id?: string;
   slug: string;
   title: string;
+  author?: string;
   excerpt: string;
   content: string;
   coverImage?: string;
@@ -55,6 +56,7 @@ function mapBlogDoc(doc: any): BlogPost {
     _id: doc._id ? doc._id.toString() : undefined,
     slug: doc.slug || "",
     title: doc.title || "",
+    author: doc.author && typeof doc.author === "string" && doc.author.trim() ? doc.author.trim() : undefined,
     excerpt: doc.excerpt || "",
     content: doc.content || "",
     coverImage: doc.coverImage && doc.coverImage.trim() ? doc.coverImage.trim() : undefined,
@@ -207,6 +209,7 @@ export async function createPost(data: CreateBlogPostInput): Promise<BlogPost | 
     const docToInsert = {
       ...data,
       slug: normalizedSlug,
+      author: data.author && typeof data.author === "string" ? data.author.trim() : undefined,
       publishedAt: publishedDate,
       createdAt: now,
       updatedAt: now,
@@ -217,6 +220,7 @@ export async function createPost(data: CreateBlogPostInput): Promise<BlogPost | 
       _id: result.insertedId.toString(),
       ...data,
       slug: normalizedSlug,
+      author: data.author && typeof data.author === "string" ? data.author.trim() : undefined,
       publishedAt: publishedDate ? publishedDate.toISOString() : undefined,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
@@ -242,6 +246,10 @@ export async function updatePost(id: string, data: UpdateBlogPostInput): Promise
       ...data,
       updatedAt: now,
     };
+
+    if (data.author !== undefined) {
+      updateFields.author = typeof data.author === "string" ? data.author.trim() : "";
+    }
 
     if (data.slug) {
       updateFields.slug = data.slug.trim().toLowerCase();
