@@ -229,8 +229,8 @@ export async function saveLaunchExperienceAction(
 
   const rawDuration = typeof data.duration === "number" ? data.duration : parseFloat(String(data.duration));
   const duration = Number.isFinite(rawDuration)
-    ? Math.min(Math.max(1.0, Math.round(rawDuration * 10) / 10), 8.0)
-    : 2.0;
+    ? Math.min(Math.max(5.0, Math.round(rawDuration * 10) / 10), 20.0)
+    : 12.0;
 
   const showFrequency = ["once", "session", "visit"].includes(String(data.showFrequency))
     ? (data.showFrequency as "once" | "session" | "visit")

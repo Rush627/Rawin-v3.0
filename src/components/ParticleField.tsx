@@ -1,24 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-
-interface Particle {
-  x: number;
-  y: number;
-  ox: number;
-  oy: number;
-  vx: number;
-  vy: number;
-  size: number;
-  baseAlpha: number;
-  alpha: number;
-  r: number;
-  g: number;
-  b: number;
-  letterX?: number;
-  letterY?: number;
-  isBurst?: boolean;
-}
+import {
+  type FieldParticle as Particle,
+  PARTICLE_VS_SOURCE,
+  PARTICLE_FS_SOURCE,
+  createShader,
+} from "@/lib/particles/field-particle-engine";
 
 interface PageProtectedRect {
   pageLeft: number;
@@ -417,52 +405,8 @@ export default function ParticleField() {
       });
 
       if (gl) {
-        const vsSource = `
-          attribute vec2 a_position;
-          attribute float a_size;
-          attribute float a_alpha;
-          attribute vec3 a_color;
-          uniform vec2 u_resolution;
-          varying float v_alpha;
-          varying vec3 v_color;
-          void main() {
-            vec2 zeroToOne = a_position / u_resolution;
-            vec2 clipSpace = (zeroToOne * 2.0 - 1.0) * vec2(1.0, -1.0);
-            gl_Position = vec4(clipSpace, 0.0, 1.0);
-            gl_PointSize = a_size;
-            v_alpha = a_alpha;
-            v_color = a_color;
-          }
-        `;
-
-        const fsSource = `
-          precision mediump float;
-          varying float v_alpha;
-          varying vec3 v_color;
-          void main() {
-            vec2 coord = gl_PointCoord - vec2(0.5);
-            float dist = length(coord);
-            if (dist > 0.5) discard;
-            float soft = smoothstep(0.5, 0.05, dist);
-            gl_FragColor = vec4(v_color, v_alpha * soft);
-          }
-        `;
-
-        const createShader = (type: number, source: string) => {
-          if (!gl) return null;
-          const s = gl.createShader(type);
-          if (!s) return null;
-          gl.shaderSource(s, source);
-          gl.compileShader(s);
-          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-            gl.deleteShader(s);
-            return null;
-          }
-          return s;
-        };
-
-        const vs = createShader(gl.VERTEX_SHADER, vsSource);
-        const fs = createShader(gl.FRAGMENT_SHADER, fsSource);
+        const vs = createShader(gl, gl.VERTEX_SHADER, PARTICLE_VS_SOURCE);
+        const fs = createShader(gl, gl.FRAGMENT_SHADER, PARTICLE_FS_SOURCE);
 
         if (vs && fs) {
           program = gl.createProgram();

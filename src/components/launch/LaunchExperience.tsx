@@ -23,8 +23,12 @@ export default function LaunchExperience({
   const checkedRef = useRef(false);
 
   useEffect(() => {
+    const isUrlPreview =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("launch");
+
     // If preview mode, always render immediately regardless of storage or dates
-    if (isPreview) {
+    if (isPreview || isUrlPreview) {
       setShouldRender(true);
       return;
     }
@@ -116,16 +120,15 @@ export default function LaunchExperience({
     onComplete?.();
   };
 
-  if (!shouldRender || !launch) {
+  if (!shouldRender) {
     return null;
   }
 
-  // Preset routing: defaults to "signal-wake"
   return (
     <SignalWakeAnimation
-      primaryMessage={launch.primaryMessage || "RAWIN v3.0"}
-      secondaryMessage={launch.secondaryMessage || "A new iteration is live."}
-      duration={launch.duration || 2.0}
+      primaryMessage={launch?.primaryMessage || "RAWIN v3.0"}
+      secondaryMessage={launch?.secondaryMessage || "A new iteration is live."}
+      duration={launch?.duration || 12.0}
       onComplete={handleAnimationComplete}
       isReducedMotion={isReducedMotion}
     />

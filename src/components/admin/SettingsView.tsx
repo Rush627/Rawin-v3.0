@@ -40,11 +40,12 @@ const LAUNCH_ANIMATION_OPTIONS: RawinSelectOption[] = [
 ];
 
 const LAUNCH_DURATION_OPTIONS: RawinSelectOption[] = [
-  { value: "1.5", label: "1.5s", badge: "Fast" },
-  { value: "2.0", label: "2.0s", badge: "Default" },
-  { value: "2.5", label: "2.5s", badge: "Balanced" },
-  { value: "3.0", label: "3.0s", badge: "Cinematic" },
-  { value: "4.0", label: "4.0s", badge: "Deliberate" },
+  { value: "10.0", label: "10.0s", badge: "Fast" },
+  { value: "11.0", label: "11.0s" },
+  { value: "12.0", label: "12.0s", badge: "Default" },
+  { value: "13.0", label: "13.0s" },
+  { value: "14.0", label: "14.0s", badge: "Cinematic" },
+  { value: "15.0", label: "15.0s", badge: "Extended" },
 ];
 
 const LAUNCH_FREQUENCY_OPTIONS: RawinSelectOption[] = [
@@ -190,7 +191,7 @@ export default function SettingsView({
     "signal-wake"
   );
   const [launchDuration, setLaunchDuration] = useState<number>(
-    initialLaunchExperience?.duration || 2.0
+    initialLaunchExperience?.duration || 12.0
   );
   const [launchFrequency, setLaunchFrequency] = useState<"once" | "session" | "visit">(
     initialLaunchExperience?.showFrequency || "once"
@@ -728,7 +729,7 @@ export default function SettingsView({
                 <RawinSelect
                   id="launch-duration"
                   name="launchDuration"
-                  value={Number.isFinite(launchDuration) ? launchDuration.toFixed(1) : "2.0"}
+                  value={Number.isFinite(launchDuration) ? launchDuration.toFixed(1) : "12.0"}
                   onChange={(val) => setLaunchDuration(parseFloat(val))}
                   options={LAUNCH_DURATION_OPTIONS}
                 />
@@ -1559,7 +1560,7 @@ export default function SettingsView({
                   <RawinSelect
                     id="mobile-launch-duration"
                     name="mobileLaunchDuration"
-                    value={Number.isFinite(launchDuration) ? launchDuration.toFixed(1) : "2.0"}
+                    value={Number.isFinite(launchDuration) ? launchDuration.toFixed(1) : "12.0"}
                     onChange={(val) => setLaunchDuration(parseFloat(val))}
                     options={LAUNCH_DURATION_OPTIONS}
                     className="w-full min-w-0 max-w-full"

@@ -971,7 +971,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     primaryMessage: "RAWIN v3.0",
     secondaryMessage: "A new iteration is live.",
     animation: "signal-wake",
-    duration: 2.0,
+    duration: 12.0,
     showFrequency: "once",
     startDate: "2026-09-21",
     endDate: "2026-10-12",
