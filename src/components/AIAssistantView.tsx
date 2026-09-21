@@ -13,8 +13,8 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
-import OrbitGalaxyBackground from "@/components/orbit/OrbitGalaxyBackground";
-import RawinOrbitOrb, { type OrbitVisualState } from "@/components/RawinOrbitOrb";
+import OrbitWavesBackground from "@/components/orbit/OrbitWavesBackground";
+import OrbitGlassOrb from "@/components/orbit/OrbitGlassOrb";
 import type { OrbitState } from "@/components/OrbitMark";
 import type { AIContent } from "@/lib/site-content";
 import type { OrbitMessage } from "@/lib/aura/types";
@@ -423,10 +423,6 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
   const isOrbitalActive =
     orbitState === "generating" || orbitState === "streaming";
 
-  const orbVisualState: OrbitVisualState = isOrbitalActive
-    ? "talking"
-    : "listening";
-
   return (
     <main
       ref={containerRef}
@@ -436,10 +432,10 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
       {/* 
         ========================================================================
         RAWIN ORBIT AMBIENT BACKGROUND
-        Interactive Galaxy starfield WebGL canvas
+        React Bits GradientWaves WebGL background with responsive GPU optimization
         ========================================================================
       */}
-      <OrbitGalaxyBackground />
+      <OrbitWavesBackground />
 
       {/* 
         ========================================================================
@@ -450,12 +446,12 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
           Right: New Session / Balance spacer
         MOBILE & TABLET (<lg):
           Left: Back to Home
-          Right: Orbit icon + RAWIN ORBIT (+ New Session when active)
+          Right: RAWIN ORBIT (+ New Session when active)
         ========================================================================
       */}
       <header className="w-full shrink-0 border-b border-white/[0.06] bg-ink-black/80 backdrop-blur-md z-30 px-3.5 sm:px-6 lg:px-12 py-2 sm:py-2.5 lg:py-3">
         <div className="w-full max-w-[1360px] mx-auto flex items-center justify-between gap-3 relative">
-          {/* LEFT: Back to Home (Remains on LEFT for all viewports) */}
+          {/* LEFT: Back to Home — full label on desktop, compact on mobile */}
           <div className="flex items-center shrink-0">
             <Link
               href="/"
@@ -463,33 +459,32 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               title="Return to RAWIN portfolio"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-pacific-cyan transition-transform group-hover:-translate-x-1 shrink-0" />
-              <span className="tracking-wide">Back to Home</span>
+              {/* Mobile: compact "Home" | Desktop: full "Back to Home" */}
+              <span className="tracking-wide lg:hidden">Home</span>
+              <span className="tracking-wide hidden lg:inline">Back to Home</span>
             </Link>
           </div>
 
           {/* DESKTOP ONLY CENTER: RAWIN ORBIT Identity + State (Hidden on mobile & tablet) */}
-          <div className="hidden lg:flex items-center gap-3">
-            <RawinOrbitOrb variant="header" state={orbVisualState} />
-            <div className="flex items-center gap-2.5">
-              <RawinOrbitBrandText title={content?.title} className="font-space font-bold text-sm tracking-wider" />
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] font-mono text-muted">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    orbitState === "error"
-                      ? "bg-rose-400"
-                      : isOrbitalActive
-                      ? "bg-pacific-cyan animate-ping"
-                      : "bg-emerald-400"
-                  }`}
-                />
-                <span>
-                  {orbitState === "error"
-                    ? "ALERT"
+          <div className="hidden lg:flex items-center gap-2.5">
+            <RawinOrbitBrandText title={content?.title} className="font-space font-bold text-sm tracking-wider" />
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] font-mono text-muted">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  orbitState === "error"
+                    ? "bg-rose-400"
                     : isOrbitalActive
-                    ? "ACTIVE"
-                    : "ONLINE"}
-                </span>
-              </div>
+                    ? "bg-pacific-cyan animate-ping"
+                    : "bg-emerald-400"
+                }`}
+              />
+              <span>
+                {orbitState === "error"
+                  ? "ALERT"
+                  : isOrbitalActive
+                  ? "ACTIVE"
+                  : "ONLINE"}
+              </span>
             </div>
           </div>
 
@@ -510,13 +505,12 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
 
           {/* 
             RIGHT SECTION:
-            On Mobile & Tablet: Displays Orbit icon + RAWIN ORBIT identity on the RIGHT.
+            On Mobile & Tablet: Displays RAWIN ORBIT identity on the RIGHT.
             On Desktop: Displays New Session button or balancing spacer.
           */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Mobile & Tablet Header Brand Identity (RIGHT-ALIGNED) */}
             <div className="flex lg:hidden items-center gap-2">
-              <RawinOrbitOrb variant="header" state={orbVisualState} />
               <RawinOrbitBrandText title={content?.title} className="font-space font-bold text-xs tracking-wider" />
             </div>
 
@@ -545,20 +539,20 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
           ========================================================================
           STATE A: INITIAL EMPTY / LANDING STATE
           Compact, application-like layout: ORB > TITLE > DESCRIPTION > PROMPTS.
-          Substantially reduced on mobile/tablet to let the Galaxy & interface breathe.
+          Substantially reduced on mobile/tablet to let the interface breathe.
           ========================================================================
         */
-        <div className="flex-1 min-h-0 w-full flex flex-col justify-center items-center overflow-hidden px-3.5 sm:px-6 lg:px-12 pt-2 sm:pt-3 lg:pt-4 pb-3 sm:pb-4 lg:pb-16 relative z-10 select-text">
+        <div className="flex-1 min-h-0 w-full flex flex-col justify-center items-center overflow-hidden lg:overflow-hidden overflow-y-auto px-3.5 sm:px-6 lg:px-12 pt-2 sm:pt-3 lg:pt-4 pb-3 sm:pb-4 lg:pb-16 relative z-10 select-text">
           <div className="w-full max-w-md sm:max-w-lg lg:max-w-2xl mx-auto flex flex-col items-center justify-center text-center my-auto">
-            {/* Central Hero Orb */}
+            {/* Central Hero Glass Light Sphere */}
             <div
-              className="mb-1.5 sm:mb-2 lg:mb-3 shrink-0 flex items-center justify-center pointer-events-none select-none"
+              className="mb-2 sm:mb-3 lg:mb-4 shrink-0 flex items-center justify-center pointer-events-none select-none"
               aria-hidden="true"
             >
-              <RawinOrbitOrb variant="hero" state={orbVisualState} />
+              <OrbitGlassOrb size="hero" state={isOrbitalActive ? "responding" : "idle"} />
             </div>
 
-            {/* RAWIN ORBIT Title - Ice Blue monochrome identity */}
+            {/* RAWIN ORBIT Title */}
             <h1 className="text-base sm:text-lg lg:text-3xl font-bold font-space tracking-wide lg:tracking-tight mb-1 lg:mb-1.5 flex items-center justify-center">
               <RawinOrbitBrandText title={content?.title} />
             </h1>
@@ -607,7 +601,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               className="w-full flex justify-center items-center shrink-0 pt-0.5 pb-2 sm:pb-3 lg:pb-4 pointer-events-none select-none"
               aria-hidden="true"
             >
-              <RawinOrbitOrb variant="hero" state={orbVisualState} />
+              <OrbitGlassOrb size="compact" state={isOrbitalActive ? "responding" : "idle"} />
             </div>
 
             <div className="w-full flex flex-col gap-3 sm:gap-4 lg:gap-6 pb-2 sm:pb-4">
@@ -641,11 +635,9 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                     key={m.id}
                     className="w-full flex justify-start items-start"
                   >
-                    <div className="flex items-start gap-2 sm:gap-3 lg:gap-4 max-w-[95%] sm:max-w-[88%] lg:max-w-[78%]">
-                      {/* Left Badge: Small Orbit Core */}
-                      <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 rounded-md sm:rounded-lg lg:rounded-xl flex items-center justify-center shrink-0 mt-0.5 bg-surface border border-white/[0.1] shadow-sm overflow-hidden">
-                        <RawinOrbitOrb variant="message" state={orbVisualState} />
-                      </div>
+                    <div className="flex items-start gap-2.5 sm:gap-3 lg:gap-3.5 max-w-[95%] sm:max-w-[88%] lg:max-w-[78%]">
+                      {/* Left Avatar: Circular Orbit Glass Sphere (No Square Container) */}
+                      <OrbitGlassOrb size="avatar" state={isOrbitalActive ? "responding" : "idle"} className="shrink-0 mt-0.5" />
 
                       <div className="flex flex-col gap-0.5 sm:gap-1 min-w-0 flex-1 text-left">
                         <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono text-pacific-cyan">
@@ -667,10 +659,9 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               {/* In-Flight Streaming Message (LEFT ALIGNED) */}
               {isOrbitalActive && streamingContent && (
                 <div className="w-full flex justify-start items-start">
-                  <div className="flex items-start gap-2 sm:gap-3 lg:gap-4 max-w-[95%] sm:max-w-[88%] lg:max-w-[78%]">
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 rounded-md sm:rounded-lg lg:rounded-xl flex items-center justify-center shrink-0 mt-0.5 bg-surface border border-white/[0.1] shadow-sm overflow-hidden">
-                      <RawinOrbitOrb variant="message" state={orbVisualState} />
-                    </div>
+                  <div className="flex items-start gap-2.5 sm:gap-3 lg:gap-3.5 max-w-[95%] sm:max-w-[88%] lg:max-w-[78%]">
+                    {/* Left Avatar: Circular Orbit Glass Sphere (No Square Container) */}
+                    <OrbitGlassOrb size="avatar" state={isOrbitalActive ? "responding" : "idle"} className="shrink-0 mt-0.5" />
 
                     <div className="flex flex-col gap-0.5 sm:gap-1 min-w-0 flex-1 text-left">
                       <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono text-pacific-cyan">
@@ -691,9 +682,8 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               {orbitState === "generating" && !streamingContent && (
                 <div className="w-full flex justify-start items-center">
                   <div className="flex items-center gap-2 sm:gap-2.5 max-w-[90%]">
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 rounded-md sm:rounded-lg lg:rounded-xl flex items-center justify-center shrink-0 bg-surface border border-white/[0.1] shadow-sm overflow-hidden">
-                      <RawinOrbitOrb variant="message" state={orbVisualState} />
-                    </div>
+                    {/* Left Avatar: Circular Orbit Glass Sphere (No Square Container) */}
+                    <OrbitGlassOrb size="avatar" state={isOrbitalActive ? "responding" : "idle"} className="shrink-0" />
                     <div className="glass-card px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg lg:rounded-xl border border-white/[0.08] flex items-center gap-1.5 text-[10px] sm:text-xs font-mono text-muted">
                       <span>Orbit is reasoning...</span>
                     </div>
@@ -772,10 +762,6 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               onChange={handleTextareaInput}
               onKeyDown={handleKeyDown}
               onFocus={() => {
-                if (typeof window !== "undefined") {
-                  window.scrollTo(0, 0);
-                  document.body.scrollTop = 0;
-                }
                 if (window.innerWidth < 1024 && containerRef.current) {
                   containerRef.current.style.setProperty("--orbit-composer-pb", "0.5rem");
                 }

@@ -1,0 +1,374 @@
+/* ============================================================
+   ORBIT GLASS ORB - Siri-style aurora liquid glass sphere
+   Architecture: dark glass shell + screen-blend aurora blobs
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   ROOT WRAPPER
+   ---------------------------------------------------------- */
+.orbit-orb-root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* ----------------------------------------------------------
+   OUTER ATMOSPHERIC HALO
+   Diffuse glow that bleeds outside the sphere boundary
+   ---------------------------------------------------------- */
+.orbit-orb-halo {
+  position: absolute;
+  inset: -24%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(24, 155, 173, 0.18) 0%,
+    rgba(175, 190, 205, 0.10) 40%,
+    rgba(252, 190, 100, 0.06) 65%,
+    transparent 80%
+  );
+  filter: blur(10px);
+  transition: opacity 1.2s ease;
+  will-change: opacity;
+}
+
+.orbit-orb--idle .orbit-orb-halo {
+  opacity: 0.55;
+  animation: halo-breathe 6s ease-in-out infinite alternate;
+}
+
+.orbit-orb--responding .orbit-orb-halo {
+  opacity: 1.0;
+  animation: halo-pulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes halo-breathe {
+  from { opacity: 0.40; transform: scale(0.94); }
+  to   { opacity: 0.70; transform: scale(1.04); }
+}
+
+@keyframes halo-pulse {
+  from { opacity: 0.80; transform: scale(1.0); }
+  to   { opacity: 1.0;  transform: scale(1.10); }
+}
+
+/* ----------------------------------------------------------
+   GLASS SHELL
+   Dark translucent obsidian glass base.
+   backdrop-filter lets FaultyTerminal show through.
+   isolation: isolate contains screen-blend inside the sphere.
+   ---------------------------------------------------------- */
+.orbit-orb-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  isolation: isolate;
+
+  /* Dark obsidian glass - very translucent so aurora glows through */
+  background: radial-gradient(
+    circle at 38% 32%,
+    rgba(18, 20, 38, 0.30) 0%,
+    rgba(10, 11, 22, 0.55) 55%,
+    rgba(5, 5, 14, 0.78) 100%
+  );
+
+  /* Frosted glass - terminal visible through it */
+  backdrop-filter: blur(3px) saturate(1.3);
+  -webkit-backdrop-filter: blur(3px) saturate(1.3);
+
+  /* Glass physical edge */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.7),
+    0 0 0 0.5px rgba(255, 255, 255, 0.07);
+
+  transition: box-shadow 1.0s ease;
+}
+
+.orbit-orb--responding .orbit-orb-shell {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.8),
+    0 0 0 0.5px rgba(24, 155, 173, 0.20),
+    0 0 18px rgba(24, 155, 173, 0.16),
+    0 0 32px rgba(252, 190, 100, 0.08);
+}
+
+/* ----------------------------------------------------------
+   AURORA INTERIOR
+   Single blur applied here (GPU-efficient: one filter call).
+   All child blobs are screen-blended inside this container.
+   ---------------------------------------------------------- */
+.orbit-orb-aurora {
+  position: absolute;
+  inset: -20%;        /* oversized so blobs can drift fully */
+  border-radius: 50%;
+  filter: blur(12px);
+  transition: filter 1.0s ease;
+}
+
+/* On hero/compact, use a slightly larger blur for smoother volume */
+.orbit-orb-root:not([class*="w-[28"]):not([class*="w-[32"]) .orbit-orb-aurora {
+  filter: blur(14px);
+}
+
+.orbit-orb--responding .orbit-orb-aurora {
+  filter: blur(10px) brightness(1.35);
+}
+
+/* ----------------------------------------------------------
+   AURORA BLOBS - the Siri color cloud system
+   Each blob is a radial-gradient ellipse.
+   mix-blend-mode: screen makes overlaps add luminosity
+   (exactly how Apple achieves the multi-color aurora glow).
+   ---------------------------------------------------------- */
+.orbit-blob {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+
+/* BLOB A: Silver/cool grey - foundational monochrome aurora layer */
+.orbit-blob-a {
+  width: 130%;
+  height: 115%;
+  top: -10%;
+  left: -15%;
+  background: radial-gradient(
+    ellipse at 45% 45%,
+    rgba(180, 195, 210, 0.88) 0%,
+    rgba(145, 162, 178, 0.65) 38%,
+    rgba(100, 115, 130, 0.25) 65%,
+    transparent 80%
+  );
+}
+
+/* BLOB B: Pacific cyan - primary RAWIN signature color */
+.orbit-blob-b {
+  width: 115%;
+  height: 100%;
+  top: 5%;
+  right: -15%;
+  background: radial-gradient(
+    ellipse at 55% 50%,
+    rgba(24, 210, 228, 0.95) 0%,
+    rgba(24, 155, 173, 0.72) 35%,
+    rgba(14, 100, 120, 0.22) 65%,
+    transparent 80%
+  );
+}
+
+/* BLOB C: Ice silver/white - cool luminous counter drift */
+.orbit-blob-c {
+  width: 105%;
+  height: 110%;
+  bottom: -15%;
+  right: -5%;
+  background: radial-gradient(
+    ellipse at 50% 60%,
+    rgba(215, 228, 240, 0.85) 0%,
+    rgba(175, 192, 208, 0.60) 38%,
+    rgba(130, 148, 165, 0.22) 65%,
+    transparent 80%
+  );
+}
+
+/* BLOB D: Apricot amber (#FCD49E) - warm accent, RAWIN brand */
+.orbit-blob-d {
+  width: 95%;
+  height: 100%;
+  bottom: -10%;
+  left: -5%;
+  background: radial-gradient(
+    ellipse at 45% 55%,
+    rgba(252, 200, 120, 0.78) 0%,
+    rgba(245, 175, 80, 0.52) 38%,
+    rgba(210, 140, 50, 0.18) 65%,
+    transparent 80%
+  );
+}
+
+/* BLOB E: Bright cyan/silver luminous core highlight */
+.orbit-blob-e {
+  width: 65%;
+  height: 65%;
+  top: 12%;
+  left: 18%;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(210, 240, 248, 0.88) 0%,
+    rgba(100, 210, 228, 0.58) 40%,
+    transparent 75%
+  );
+}
+
+/* ----------------------------------------------------------
+   IDLE STATE ANIMATIONS
+   Slow, meditative, organic drift. Each blob moves at a
+   slightly different speed and direction for natural feel.
+   ---------------------------------------------------------- */
+.orbit-orb--idle .orbit-blob-a {
+  animation: drift-a-idle 13s ease-in-out infinite alternate;
+}
+.orbit-orb--idle .orbit-blob-b {
+  animation: drift-b-idle 10s ease-in-out infinite alternate;
+}
+.orbit-orb--idle .orbit-blob-c {
+  animation: drift-c-idle 15s ease-in-out infinite alternate;
+}
+.orbit-orb--idle .orbit-blob-d {
+  animation: drift-d-idle 11s ease-in-out infinite alternate;
+}
+.orbit-orb--idle .orbit-blob-e {
+  animation: drift-e-idle 8s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a-idle {
+  0%   { transform: translate(0, 0)         rotate(0deg)   scale(1.0); }
+  30%  { transform: translate(8%, -7%)      rotate(8deg)   scale(1.05); }
+  65%  { transform: translate(-6%, 6%)      rotate(-5deg)  scale(0.96); }
+  100% { transform: translate(5%, 4%)       rotate(12deg)  scale(1.03); }
+}
+@keyframes drift-b-idle {
+  0%   { transform: translate(0, 0)         rotate(0deg)   scale(1.0); }
+  40%  { transform: translate(-9%, 5%)      rotate(-10deg) scale(0.97); }
+  100% { transform: translate(7%, -8%)      rotate(8deg)   scale(1.04); }
+}
+@keyframes drift-c-idle {
+  0%   { transform: translate(0, 0)         rotate(0deg)   scale(1.0); }
+  35%  { transform: translate(6%, 8%)       rotate(6deg)   scale(1.06); }
+  70%  { transform: translate(-8%, -5%)     rotate(-8deg)  scale(0.94); }
+  100% { transform: translate(4%, -6%)      rotate(10deg)  scale(1.02); }
+}
+@keyframes drift-d-idle {
+  0%   { transform: translate(0, 0)         rotate(0deg)   scale(1.0); }
+  50%  { transform: translate(-7%, -8%)     rotate(-12deg) scale(1.08); }
+  100% { transform: translate(9%, 6%)       rotate(6deg)   scale(0.95); }
+}
+@keyframes drift-e-idle {
+  0%   { transform: translate(0, 0)         scale(1.0); opacity: 0.70; }
+  50%  { transform: translate(-6%, 4%)      scale(1.12); opacity: 0.88; }
+  100% { transform: translate(5%, -5%)      scale(0.90); opacity: 0.62; }
+}
+
+/* ----------------------------------------------------------
+   RESPONDING STATE ANIMATIONS
+   ~3-4x faster, more energetic, higher amplitude movement.
+   ---------------------------------------------------------- */
+.orbit-orb--responding .orbit-blob-a {
+  animation: drift-a-active 3.2s ease-in-out infinite alternate;
+}
+.orbit-orb--responding .orbit-blob-b {
+  animation: drift-b-active 2.6s ease-in-out infinite alternate;
+}
+.orbit-orb--responding .orbit-blob-c {
+  animation: drift-c-active 3.8s ease-in-out infinite alternate;
+}
+.orbit-orb--responding .orbit-blob-d {
+  animation: drift-d-active 2.9s ease-in-out infinite alternate;
+}
+.orbit-orb--responding .orbit-blob-e {
+  animation: drift-e-active 2.0s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a-active {
+  0%   { transform: translate(0, 0)         rotate(0deg)   scale(1.0); }
+  50%  { transform: translate(12%, -10%)    rotate(15deg)  scale(1.10); }
+  100% { transform: translate(-10%, 8%)     rotate(-12deg) scale(0.93); }
+}
+@keyframes drift-b-active {
+  0%   { transform: translate(0, 0)         rotate(0deg)   scale(1.0); }
+  50%  { transform: translate(-13%, 9%)     rotate(-14deg) scale(0.94); }
+  100% { transform: translate(11%, -12%)    rotate(12deg)  scale(1.08); }
+}
+@keyframes drift-c-active {
+  0%   { transform: translate(0, 0)         rotate(0deg)   scale(1.0); }
+  50%  { transform: translate(10%, 12%)     rotate(10deg)  scale(1.12); }
+  100% { transform: translate(-12%, -8%)    rotate(-15deg) scale(0.90); }
+}
+@keyframes drift-d-active {
+  0%   { transform: translate(0, 0)         rotate(0deg)   scale(1.0); }
+  50%  { transform: translate(-10%, -12%)   rotate(-16deg) scale(1.14); }
+  100% { transform: translate(13%, 8%)      rotate(10deg)  scale(0.92); }
+}
+@keyframes drift-e-active {
+  0%   { transform: translate(0, 0)         scale(1.0);  opacity: 0.88; }
+  50%  { transform: translate(-8%, 6%)      scale(1.22); opacity: 1.0; }
+  100% { transform: translate(8%, -7%)      scale(0.85); opacity: 0.75; }
+}
+
+/* ----------------------------------------------------------
+   GLASS LENS OVERLAY
+   Top-left specular highlight that makes it look like glass.
+   Stays sharp (no blur) to create the lens effect.
+   ---------------------------------------------------------- */
+.orbit-orb-lens {
+  position: absolute;
+  top: 3%;
+  left: 8%;
+  width: 56%;
+  height: 40%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 35% 30%,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.10) 45%,
+    transparent 75%
+  );
+  transform: rotate(-22deg);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ----------------------------------------------------------
+   HAIRLINE RIM
+   Very thin inner ring, simulates glass edge refraction.
+   ---------------------------------------------------------- */
+.orbit-orb-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 0.5px solid rgba(255, 255, 255, 0.10);
+  pointer-events: none;
+  z-index: 3;
+  /* Subtle inner glow on the rim to suggest glass edge */
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+}
+
+.orbit-orb--responding .orbit-orb-rim {
+  border-color: rgba(24, 155, 173, 0.18);
+}
+
+/* ----------------------------------------------------------
+   AVATAR SIZE - simplified blur for performance (28-34px)
+   ---------------------------------------------------------- */
+[data-orb-size="avatar"] .orbit-orb-aurora {
+  filter: blur(5px);
+}
+
+[data-orb-size="avatar"].orbit-orb--responding .orbit-orb-aurora {
+  filter: blur(4px) brightness(1.3);
+}
+
+/* ----------------------------------------------------------
+   REDUCED MOTION
+   ---------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .orbit-blob,
+  .orbit-orb-halo {
+    animation: none !important;
+    transition: none !important;
+  }
+  .orbit-orb--responding .orbit-orb-aurora {
+    filter: blur(10px) brightness(1.2);
+  }
+}
+

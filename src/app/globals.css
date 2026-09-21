@@ -369,11 +369,11 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
-/* Prevent iOS Safari automatic viewport zoom on mobile form controls in Admin portal */
+/* Prevent iOS Safari automatic viewport zoom on mobile form controls across public website and admin portal */
 @media (max-width: 639px) {
-  [data-admin-portal] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
-  [data-admin-portal] textarea,
-  [data-admin-portal] select {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+  textarea,
+  select {
     font-size: 16px !important;
   }
 }
@@ -399,5 +399,29 @@ html:not(.custom-cursor-active) [data-error-view] a,
 html:not(.custom-cursor-active) [data-error-overlay] a {
   cursor: pointer !important;
 }
+
+/* Technical Trace Field animations */
+@keyframes technicalBeaconDrift {
+  0%, 100% {
+    transform: translateX(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(24px);
+    opacity: 0.95;
+  }
+}
+
+.technical-trace-beacon {
+  animation: technicalBeaconDrift 10s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .technical-trace-beacon {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 
 
