@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 
 const ROLES = [
-  "UI/UX Designer",
   "Full Stack Developer",
+  "UI/UX Designer",
   "Creative Technologist",
 ];
 
@@ -15,7 +15,7 @@ const DELETE_DELAY = 200;     // Pause before typing next role
 
 export default function HeroRoleTyping() {
   const [roleIndex, setRoleIndex] = useState(0);
-  const [currentText, setCurrentText] = useState(ROLES[0]);
+  const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function HeroRoleTyping() {
         suppressHydrationWarning
         className="text-lg sm:text-2xl md:text-3xl font-medium text-muted/90 font-space tracking-tight leading-tight"
       >
-        {currentText || ROLES[0]}
+        {currentText || "\u00A0"}
       </span>
       <span
         className="inline-block w-[2px] sm:w-[2.5px] h-5 sm:h-7 ml-1 bg-pacific-cyan animate-pulse rounded-full"
