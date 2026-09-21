@@ -228,7 +228,7 @@ export async function createAdminSession(email: string): Promise<void> {
     // If accessing over plain HTTP on a local or private LAN host (e.g. physical phone connecting to
     // http://192.168.29.190:3000), we must not set the Secure cookie flag; otherwise physical mobile
     // browsers will reject or refuse to transmit the cookie over HTTP per RFC 6265bis.
-    // In real production HTTPS (e.g. https://rushan-siddiqui.com), isHttps or public domain host guarantees isSecure=true.
+    // In real production HTTPS (e.g. https://rawin.world), isHttps or public domain host guarantees isSecure=true.
     if (!isHttps && isLocalOrLanHost(host)) {
       isSecure = false;
     }

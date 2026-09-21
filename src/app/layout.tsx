@@ -42,12 +42,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const content = await getSiteContent();
   const faviconUrl = content.assets?.favicon?.url || "/favicon.png";
   const profilePhotoUrl = content.assets?.profilePhoto?.url || "/images/profile.png";
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").trim() || "https://rawin.world";
 
   return {
-    metadataBase: new URL("https://rushan-siddiqui.com"),
+    metadataBase: new URL(siteUrl),
     title: "RAWIN | Rushan Siddiqui : Full Stack Developer",
     description:
       "Portfolio of Rushan Siddiqui, Full Stack Developer crafting modern, minimal, high-performance web applications and digital experiences.",
+    alternates: {
+      canonical: "/",
+    },
     icons: {
       icon: [
         { url: faviconUrl },
@@ -60,7 +64,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "RAWIN | Rushan Siddiqui : Full Stack Developer",
       description:
         "Full Stack Developer specializing in high-performance web applications, fluid interfaces, and scalable architectures.",
-      url: "https://rushan-siddiqui.com",
+      url: siteUrl,
       siteName: "RAWIN",
       images: [
         {

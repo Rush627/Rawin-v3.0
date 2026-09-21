@@ -40,7 +40,7 @@ export const PROJECTS: ProjectCaseStudy[] = [
     engineeringFocus: ["Performance", "Scalable Architecture", "Product UX"],
     metrics: [],
     image: "/images/profile.png",
-    liveUrl: "https://rushan-siddiqui.com",
+    liveUrl: "https://rawin.world",
     githubUrl: "https://github.com/rush627",
     year: "2026",
   },

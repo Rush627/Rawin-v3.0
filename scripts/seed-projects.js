@@ -89,7 +89,7 @@ const INITIAL_PROJECTS = [
     engineeringFocus: ["Performance", "Scalable Architecture", "Product UX"],
     displayOrder: 1,
     previewImage: "/images/profile.png",
-    liveUrl: "https://rushan-siddiqui.com",
+    liveUrl: "https://rawin.world",
     githubUrl: "https://github.com/rush627",
     caseStudyAvailable: true,
     year: "2026",
@@ -147,17 +147,17 @@ const INITIAL_PROJECTS = [
     year: "2025",
   },
   {
-    slug: "aura-ai-copilot",
-    title: "Aura Cognitive Assistant",
-    shortName: "AURA",
-    tagline: "Context-aware AI conversational assistant powered by Cloudflare Workers",
+    slug: "rawin-orbit",
+    title: "Rawin Orbit",
+    shortName: "ORBIT",
+    tagline: "Intelligent conversational system powered by Cloudflare Workers AI and dynamic portfolio knowledge",
     description:
-      "A lightweight conversational copilot embedded into web portfolios and docs, utilizing edge LLMs for zero-cold-start natural language responses.",
+      "A specialized AI intelligence system built for RAWIN, utilizing edge LLMs for zero-cold-start natural language responses and deep portfolio grounding.",
     problem:
       "Standard client-side chat widgets are heavy, sluggish, and often rely on expensive or rate-limited external APIs.",
     solution:
-      "Integrated Cloudflare AI with serverless streaming edge functions, client-side session memory, and a clean glassmorphic modal UI.",
-    role: "Full Stack Engineer",
+      "Integrated Cloudflare Workers AI with serverless streaming edge functions, client-side session memory, and an orbital interface.",
+    role: "Full Stack Developer",
     outcome:
       "Zero server maintenance, fast edge inference, and private session management.",
     featured: false,
