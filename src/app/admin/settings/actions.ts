@@ -4,7 +4,11 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { getAdminSession, verifyAdminCredentials, destroyAdminSession } from "@/lib/auth";
 import { getDatabase } from "@/lib/mongodb";
-import { updateSiteSection, type MaintenanceContent } from "@/lib/site-content";
+import {
+  updateSiteSection,
+  type MaintenanceContent,
+  type LaunchExperienceContent,
+} from "@/lib/site-content";
 
 export interface PasswordChangeState {
   success?: boolean;
@@ -198,3 +202,86 @@ export async function updateMaintenanceAction(
     message,
   });
 }
+
+export interface LaunchExperienceActionState {
+  success?: boolean;
+  error?: string;
+  message?: string;
+  launchExperience?: LaunchExperienceContent;
+}
+
+export async function saveLaunchExperienceAction(
+  data: Partial<LaunchExperienceContent>
+): Promise<LaunchExperienceActionState> {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Administrator session required." };
+  }
+
+  const enabled = Boolean(data.enabled);
+  const primaryMessage = typeof data.primaryMessage === "string" && data.primaryMessage.trim()
+    ? data.primaryMessage.trim().slice(0, 100)
+    : "RAWIN v3.0";
+  const secondaryMessage = typeof data.secondaryMessage === "string"
+    ? data.secondaryMessage.trim().slice(0, 200)
+    : "A new iteration is live.";
+  const animation = "signal-wake" as const;
+
+  const rawDuration = typeof data.duration === "number" ? data.duration : parseFloat(String(data.duration));
+  const duration = Number.isFinite(rawDuration)
+    ? Math.min(Math.max(1.0, Math.round(rawDuration * 10) / 10), 8.0)
+    : 2.0;
+
+  const showFrequency = ["once", "session", "visit"].includes(String(data.showFrequency))
+    ? (data.showFrequency as "once" | "session" | "visit")
+    : "once";
+
+  const startDate = typeof data.startDate === "string" && data.startDate.trim()
+    ? data.startDate.trim()
+    : null;
+  const endDate = typeof data.endDate === "string" && data.endDate.trim()
+    ? data.endDate.trim()
+    : null;
+
+  if (startDate && endDate && new Date(endDate).getTime() < new Date(startDate).getTime()) {
+    return { error: "End date cannot precede start date." };
+  }
+
+  const launchVersion = typeof data.launchVersion === "string" && data.launchVersion.trim()
+    ? data.launchVersion.trim().replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 50) || "2026-v3-launch"
+    : "2026-v3-launch";
+
+  const payload: LaunchExperienceContent = {
+    enabled,
+    primaryMessage,
+    secondaryMessage,
+    animation,
+    duration,
+    showFrequency,
+    startDate,
+    endDate,
+    launchVersion,
+  };
+
+  try {
+    const success = await updateSiteSection("launchExperience", payload);
+    if (!success) {
+      return { error: "Failed to persist launch experience settings. Please try again." };
+    }
+
+    revalidatePath("/", "layout");
+    revalidatePath("/admin/settings");
+
+    return {
+      success: true,
+      message: enabled
+        ? "Launch Experience enabled and updated."
+        : "Launch Experience settings saved (currently disabled).",
+      launchExperience: payload,
+    };
+  } catch (err) {
+    console.error("[Settings] Launch Experience update error:", err);
+    return { error: "An unexpected error occurred while saving Launch Experience settings." };
+  }
+}
+

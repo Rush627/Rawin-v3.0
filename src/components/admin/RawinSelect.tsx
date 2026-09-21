@@ -190,8 +190,8 @@ export default function RawinSelect({
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block ${
-        isSmall && !isExtraSmall ? "w-auto min-w-[120px]" : "w-full"
+      className={`relative ${
+        isSmall && !isExtraSmall ? "inline-block w-auto min-w-[120px]" : "block w-full min-w-0 max-w-full box-border"
       } ${isOpen ? "z-[60]" : ""} ${className}`}
       onKeyDown={handleKeyDown}
     >
@@ -215,14 +215,14 @@ export default function RawinSelect({
             setHighlightedIndex(currentIndex >= 0 ? currentIndex : 0);
           }
         }}
-        className={`w-full flex items-center justify-between gap-2 transition-colors duration-150 cursor-pointer select-none outline-none ${
+        className={`w-full min-w-0 max-w-full box-border flex items-center justify-between gap-2 transition-colors duration-150 cursor-pointer select-none outline-none ${
           fontMono ? "font-mono" : "font-sans"
         } ${
           isExtraSmall
             ? "px-3 py-1.5 text-xs rounded-lg bg-ink-black/60 border border-white/[0.08] hover:border-white/20 text-foreground shadow-sm"
             : isSmall
             ? "px-2.5 py-1 text-xs rounded-lg bg-ink-black/80 border border-white/[0.12] hover:border-white/25 text-muted hover:text-foreground shadow-sm"
-            : "px-4 py-2.5 text-sm rounded-xl bg-ink-black/70 border border-white/[0.12] hover:border-white/25 text-foreground shadow-sm"
+            : "px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm min-h-[40px] rounded-xl bg-ink-black/70 border border-white/[0.12] hover:border-white/25 text-foreground shadow-sm"
         } ${
           error
             ? "border-rose-500/60 ring-1 ring-rose-500/30"
@@ -231,17 +231,17 @@ export default function RawinSelect({
             : "focus-visible:border-pacific-cyan focus-visible:ring-1 focus-visible:ring-pacific-cyan/40"
         } ${disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}
       >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
           {selectedOption?.icon && (
             <span className="shrink-0 text-pacific-cyan flex items-center">
               {selectedOption.icon}
             </span>
           )}
-          <span className="truncate text-left font-medium">
+          <span className="truncate text-left font-medium min-w-0 flex-1">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           {selectedOption?.badge && (
-            <span className="ml-1.5 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-muted border border-white/[0.08]">
+            <span className="shrink-0 ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-muted border border-white/[0.08] whitespace-nowrap">
               {selectedOption.badge}
             </span>
           )}
@@ -263,7 +263,7 @@ export default function RawinSelect({
           className={`absolute left-0 ${
             openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"
           } z-[70] rounded-xl bg-ink-black/95 backdrop-blur-xl border border-white/[0.12] shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_24px_rgba(24,155,173,0.1)] p-1.5 flex flex-col gap-0.5 max-h-60 overflow-y-auto ${
-            isSmall && !isExtraSmall ? "min-w-[150px] text-xs" : "w-full min-w-[170px] text-xs"
+            isSmall && !isExtraSmall ? "min-w-[150px] text-xs" : "w-full min-w-0 max-w-full text-xs"
           } animate-in fade-in zoom-in-95 duration-100`}
         >
           {options.map((option, idx) => {

@@ -307,6 +307,18 @@ export interface MaintenanceContent {
   endsAt?: string | null;
 }
 
+export interface LaunchExperienceContent {
+  enabled: boolean;
+  primaryMessage: string;
+  secondaryMessage: string;
+  animation: "signal-wake";
+  duration: number;
+  showFrequency: "once" | "session" | "visit";
+  startDate?: string | null;
+  endDate?: string | null;
+  launchVersion: string;
+}
+
 export type AssetKey = "profilePhoto" | "logo" | "favicon";
 
 export interface SiteContent {
@@ -321,6 +333,7 @@ export interface SiteContent {
   ai: AIContent;
   assets: SiteAssets;
   maintenance: MaintenanceContent;
+  launchExperience: LaunchExperienceContent;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -334,7 +347,8 @@ export type ContentSectionKey =
   | "uses"
   | "ai"
   | "assets"
-  | "maintenance";
+  | "maintenance"
+  | "launchExperience";
 
 export const DEFAULT_SITE_CONTENT: SiteContent = {
   key: "main",
@@ -952,6 +966,17 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     message: "We'll be back shortly.",
     endsAt: null,
   },
+  launchExperience: {
+    enabled: false,
+    primaryMessage: "RAWIN v3.0",
+    secondaryMessage: "A new iteration is live.",
+    animation: "signal-wake",
+    duration: 2.0,
+    showFrequency: "once",
+    startDate: "2026-09-21",
+    endDate: "2026-10-12",
+    launchVersion: "2026-v3-launch",
+  },
 };
 
 const COLLECTION_NAME = "site_content";
@@ -1370,6 +1395,41 @@ export function mergeWithDefaults(doc: any): SiteContent {
             ? doc.maintenance.endsAt
             : null;
       })(),
+    },
+    launchExperience: {
+      enabled:
+        typeof doc.launchExperience?.enabled === "boolean"
+          ? doc.launchExperience.enabled
+          : DEFAULT_SITE_CONTENT.launchExperience.enabled,
+      primaryMessage:
+        typeof doc.launchExperience?.primaryMessage === "string" && doc.launchExperience.primaryMessage.trim()
+          ? doc.launchExperience.primaryMessage.trim()
+          : DEFAULT_SITE_CONTENT.launchExperience.primaryMessage,
+      secondaryMessage:
+        typeof doc.launchExperience?.secondaryMessage === "string"
+          ? doc.launchExperience.secondaryMessage.trim()
+          : DEFAULT_SITE_CONTENT.launchExperience.secondaryMessage,
+      animation: "signal-wake",
+      duration:
+        typeof doc.launchExperience?.duration === "number" && doc.launchExperience.duration > 0
+          ? doc.launchExperience.duration
+          : DEFAULT_SITE_CONTENT.launchExperience.duration,
+      showFrequency:
+        ["once", "session", "visit"].includes(doc.launchExperience?.showFrequency)
+          ? doc.launchExperience.showFrequency
+          : DEFAULT_SITE_CONTENT.launchExperience.showFrequency,
+      startDate:
+        typeof doc.launchExperience?.startDate === "string" && doc.launchExperience.startDate.trim()
+          ? doc.launchExperience.startDate.trim()
+          : (doc.launchExperience?.startDate === null ? null : DEFAULT_SITE_CONTENT.launchExperience.startDate),
+      endDate:
+        typeof doc.launchExperience?.endDate === "string" && doc.launchExperience.endDate.trim()
+          ? doc.launchExperience.endDate.trim()
+          : (doc.launchExperience?.endDate === null ? null : DEFAULT_SITE_CONTENT.launchExperience.endDate),
+      launchVersion:
+        typeof doc.launchExperience?.launchVersion === "string" && doc.launchExperience.launchVersion.trim()
+          ? doc.launchExperience.launchVersion.trim()
+          : DEFAULT_SITE_CONTENT.launchExperience.launchVersion,
     },
     createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt,
     updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt,

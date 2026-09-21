@@ -21,14 +21,37 @@ import {
   Clock,
   Loader2,
   ChevronDown,
+  Sparkles,
+  Play,
 } from "lucide-react";
 import NeoToggle from "@/components/NeoToggle";
+import RawinSelect, { type RawinSelectOption } from "./RawinSelect";
 import {
   changePasswordAction,
   saveAvailabilityAction,
+  saveLaunchExperienceAction,
   type PasswordChangeState,
 } from "@/app/admin/settings/actions";
-import type { MaintenanceContent } from "@/lib/site-content";
+import type { MaintenanceContent, LaunchExperienceContent } from "@/lib/site-content";
+import LaunchExperience from "@/components/launch/LaunchExperience";
+
+const LAUNCH_ANIMATION_OPTIONS: RawinSelectOption[] = [
+  { value: "signal-wake", label: "Signal Wake" },
+];
+
+const LAUNCH_DURATION_OPTIONS: RawinSelectOption[] = [
+  { value: "1.5", label: "1.5s", badge: "Fast" },
+  { value: "2.0", label: "2.0s", badge: "Default" },
+  { value: "2.5", label: "2.5s", badge: "Balanced" },
+  { value: "3.0", label: "3.0s", badge: "Cinematic" },
+  { value: "4.0", label: "4.0s", badge: "Deliberate" },
+];
+
+const LAUNCH_FREQUENCY_OPTIONS: RawinSelectOption[] = [
+  { value: "once", label: "Once per browser", badge: "Default" },
+  { value: "session", label: "Every session" },
+  { value: "visit", label: "Every visit" },
+];
 
 const DURATION_OPTIONS = [
   { label: "10 min", minutes: 10 },
@@ -88,6 +111,7 @@ interface SettingsViewProps {
     nodeEnv: string;
   };
   initialMaintenance: MaintenanceContent;
+  initialLaunchExperience?: LaunchExperienceContent;
 }
 
 export default function SettingsView({
@@ -98,6 +122,7 @@ export default function SettingsView({
   sessionSecurity,
   securityConfig,
   initialMaintenance,
+  initialLaunchExperience,
 }: SettingsViewProps) {
   const router = useRouter();
   const [showCurrent, setShowCurrent] = useState(false);
@@ -150,6 +175,88 @@ export default function SettingsView({
     const interval = setInterval(updateTicker, 1000);
     return () => clearInterval(interval);
   }, [endsAt]);
+
+  // Launch Experience state
+  const [isLaunchEnabled, setIsLaunchEnabled] = useState(
+    Boolean(initialLaunchExperience?.enabled)
+  );
+  const [launchPrimaryMessage, setLaunchPrimaryMessage] = useState(
+    initialLaunchExperience?.primaryMessage || "RAWIN v3.0"
+  );
+  const [launchSecondaryMessage, setLaunchSecondaryMessage] = useState(
+    initialLaunchExperience?.secondaryMessage || "A new iteration is live."
+  );
+  const [launchAnimation, setLaunchAnimation] = useState<"signal-wake">(
+    "signal-wake"
+  );
+  const [launchDuration, setLaunchDuration] = useState<number>(
+    initialLaunchExperience?.duration || 2.0
+  );
+  const [launchFrequency, setLaunchFrequency] = useState<"once" | "session" | "visit">(
+    initialLaunchExperience?.showFrequency || "once"
+  );
+  const [launchStartDate, setLaunchStartDate] = useState(
+    initialLaunchExperience?.startDate || ""
+  );
+  const [launchEndDate, setLaunchEndDate] = useState(
+    initialLaunchExperience?.endDate || ""
+  );
+  const [launchVersion, setLaunchVersion] = useState(
+    initialLaunchExperience?.launchVersion || "2026-v3-launch"
+  );
+  const [isSavingLaunch, setIsSavingLaunch] = useState(false);
+  const [launchFeedback, setLaunchFeedback] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [showLaunchPreview, setShowLaunchPreview] = useState(false);
+
+  useEffect(() => {
+    if (!launchFeedback) return;
+    const timer = setTimeout(() => setLaunchFeedback(null), 5000);
+    return () => clearTimeout(timer);
+  }, [launchFeedback]);
+
+  const handleSaveLaunchExperience = async () => {
+    setIsSavingLaunch(true);
+    setLaunchFeedback(null);
+
+    const res = await saveLaunchExperienceAction({
+      enabled: isLaunchEnabled,
+      primaryMessage: launchPrimaryMessage,
+      secondaryMessage: launchSecondaryMessage,
+      animation: launchAnimation,
+      duration: launchDuration,
+      showFrequency: launchFrequency,
+      startDate: launchStartDate ? launchStartDate : null,
+      endDate: launchEndDate ? launchEndDate : null,
+      launchVersion: launchVersion,
+    });
+
+    setIsSavingLaunch(false);
+
+    if (res.error) {
+      setLaunchFeedback({ type: "error", text: res.error });
+    } else {
+      setLaunchFeedback({
+        type: "success",
+        text: res.message || "Launch Experience saved successfully.",
+      });
+      router.refresh();
+    }
+  };
+
+  const previewLaunchConfig: LaunchExperienceContent = {
+    enabled: true,
+    primaryMessage: launchPrimaryMessage,
+    secondaryMessage: launchSecondaryMessage,
+    animation: launchAnimation,
+    duration: launchDuration,
+    showFrequency: launchFrequency,
+    startDate: launchStartDate || null,
+    endDate: launchEndDate || null,
+    launchVersion: launchVersion,
+  };
 
   const executeSave = async (
     newMode: "offline" | "maintenance" | "off",
@@ -483,6 +590,243 @@ export default function SettingsView({
             <span>Reset to Live Public Site</span>
           </button>
         </div>
+
+        <div className="h-px bg-white/[0.08]" />
+
+        {/* 3. Launch Experience (Directly below Maintenance Mode) */}
+        <div className="flex flex-col gap-6 pt-2">
+          {/* Section Header + Status Pill */}
+          <div className="flex items-center justify-between gap-4 pb-2 border-b border-white/[0.06]">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold font-space text-foreground">
+                  Launch Experience
+                </h3>
+                <p className="text-xs text-muted font-mono">
+                  Temporary intro sequence before the public homepage
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {isSavingLaunch && (
+                <span className="flex items-center gap-1.5 text-xs text-pacific-cyan font-mono">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving...</span>
+                </span>
+              )}
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium ${
+                  isLaunchEnabled
+                    ? "text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/25"
+                    : "text-muted/60 bg-white/[0.04] border border-white/[0.08]"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isLaunchEnabled ? "bg-pacific-cyan animate-pulse" : "bg-muted/40"
+                  }`}
+                />
+                <span>{isLaunchEnabled ? "LAUNCH ACTIVE" : "DISABLED"}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Inline Feedback Toast */}
+          {launchFeedback && (
+            <div
+              className={`flex items-center gap-2.5 p-3.5 rounded-xl text-xs font-mono font-medium transition-all ${
+                launchFeedback.type === "success"
+                  ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                  : "bg-red-500/10 border border-red-500/20 text-red-400"
+              }`}
+            >
+              {launchFeedback.type === "success" ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+              )}
+              <span>{launchFeedback.text}</span>
+            </div>
+          )}
+
+          {/* Master Enable Row */}
+          <div className="flex items-center justify-between gap-4 p-5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.15] transition-all">
+            <div className="flex items-center gap-3.5">
+              <div className="w-9 h-9 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                <Play className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold font-space text-foreground">
+                  Enable Launch Experience
+                </span>
+                <span className="text-xs text-muted/60 font-mono">
+                  Master switch governing public entry sequence
+                </span>
+              </div>
+            </div>
+            <NeoToggle
+              checked={isLaunchEnabled}
+              onChange={(checked) => setIsLaunchEnabled(checked)}
+              ariaLabel="Enable or disable launch experience"
+              disabled={isSavingLaunch}
+            />
+          </div>
+
+          {/* Form Fields Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Primary Message */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-mono font-medium text-muted uppercase tracking-wider">
+                Launch Message (Primary)
+              </label>
+              <input
+                type="text"
+                value={launchPrimaryMessage}
+                onChange={(e) => setLaunchPrimaryMessage(e.target.value.slice(0, 100))}
+                placeholder="RAWIN v3.0"
+                className="w-full rounded-xl bg-ink-black/60 border border-white/[0.1] px-4 py-2.5 text-sm text-foreground placeholder:text-muted/40 font-sans focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 transition-all"
+              />
+            </div>
+
+            {/* Secondary Message */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-mono font-medium text-muted uppercase tracking-wider">
+                Secondary Message
+              </label>
+              <input
+                type="text"
+                value={launchSecondaryMessage}
+                onChange={(e) => setLaunchSecondaryMessage(e.target.value.slice(0, 200))}
+                placeholder="A new iteration is live."
+                className="w-full rounded-xl bg-ink-black/60 border border-white/[0.1] px-4 py-2.5 text-sm text-foreground placeholder:text-muted/40 font-sans focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 transition-all"
+              />
+            </div>
+
+            {/* Animation & Duration */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono font-medium text-muted uppercase tracking-wider">
+                  Animation
+                </label>
+                <RawinSelect
+                  id="launch-animation"
+                  name="launchAnimation"
+                  value={launchAnimation}
+                  onChange={(val) => setLaunchAnimation(val as "signal-wake")}
+                  options={LAUNCH_ANIMATION_OPTIONS}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono font-medium text-muted uppercase tracking-wider">
+                  Duration
+                </label>
+                <RawinSelect
+                  id="launch-duration"
+                  name="launchDuration"
+                  value={Number.isFinite(launchDuration) ? launchDuration.toFixed(1) : "2.0"}
+                  onChange={(val) => setLaunchDuration(parseFloat(val))}
+                  options={LAUNCH_DURATION_OPTIONS}
+                />
+              </div>
+            </div>
+
+            {/* Show Frequency */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-mono font-medium text-muted uppercase tracking-wider">
+                Show Frequency
+              </label>
+              <RawinSelect
+                id="launch-frequency"
+                name="launchFrequency"
+                value={launchFrequency}
+                onChange={(val) => setLaunchFrequency(val as "once" | "session" | "visit")}
+                options={LAUNCH_FREQUENCY_OPTIONS}
+              />
+            </div>
+
+            {/* Start Date & End Date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono font-medium text-muted uppercase tracking-wider">
+                  Start Date (Optional)
+                </label>
+                <input
+                  type="date"
+                  value={launchStartDate}
+                  onChange={(e) => setLaunchStartDate(e.target.value)}
+                  className="w-full rounded-xl bg-ink-black/60 border border-white/[0.1] px-3.5 py-2.5 text-sm text-foreground font-sans focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono font-medium text-muted uppercase tracking-wider">
+                  End Date (Optional)
+                </label>
+                <input
+                  type="date"
+                  value={launchEndDate}
+                  onChange={(e) => setLaunchEndDate(e.target.value)}
+                  className="w-full rounded-xl bg-ink-black/60 border border-white/[0.1] px-3.5 py-2.5 text-sm text-foreground font-sans focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Launch Version */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-mono font-medium text-muted uppercase tracking-wider">
+                  Launch Version
+                </label>
+                <span className="text-[11px] font-mono text-muted/60">
+                  Resets visitor seen state
+                </span>
+              </div>
+              <input
+                type="text"
+                value={launchVersion}
+                onChange={(e) => setLaunchVersion(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
+                placeholder="2026-v3-launch"
+                className="w-full rounded-xl bg-ink-black/60 border border-white/[0.1] px-4 py-2.5 text-sm text-foreground placeholder:text-muted/40 font-mono focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Action Row: Preview & Save */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.06]">
+            <button
+              type="button"
+              onClick={() => setShowLaunchPreview(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-mono font-semibold text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer"
+            >
+              <Play className="w-3.5 h-3.5 text-pacific-cyan" />
+              <span>Preview</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSaveLaunchExperience}
+              disabled={isSavingLaunch}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-space font-semibold tracking-wide bg-pacific-cyan hover:bg-pacific-cyan/90 text-ink-black transition-all cursor-pointer shadow-[0_0_20px_rgba(24,155,173,0.3)] disabled:opacity-50"
+            >
+              {isSavingLaunch ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Save Launch Experience</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 1. Admin Password Change Section */}
@@ -790,7 +1134,11 @@ export default function SettingsView({
       {/* Smartphone Presentation (< sm) -- Purpose-built, compact, premium control panel */}
       <div className="flex sm:hidden flex-col gap-3.5">
         {/* 1. Website Availability Accordion */}
-        <div className="glass-card rounded-xl border border-white/[0.08] overflow-hidden transition-colors hover:border-white/[0.12]">
+        <div
+          className={`glass-card rounded-xl border border-white/[0.08] transition-colors hover:border-white/[0.12] ${
+            isMobileAvailabilityOpen ? "overflow-visible" : "overflow-hidden"
+          }`}
+        >
           <button
             type="button"
             onClick={() => setIsMobileAvailabilityOpen(!isMobileAvailabilityOpen)}
@@ -855,7 +1203,7 @@ export default function SettingsView({
             id="mobile-availability-panel"
             role="region"
             aria-label="Website Availability Controls"
-            className={isMobileAvailabilityOpen ? "p-4 pt-2 border-t border-white/[0.06] flex flex-col gap-3.5" : "hidden"}
+            className={isMobileAvailabilityOpen ? "p-4 pt-2 border-t border-white/[0.06] flex flex-col gap-3.5 w-full min-w-0 max-w-full box-border" : "hidden"}
           >
             {/* Inline Feedback Toast */}
             {feedback && (
@@ -1073,6 +1421,239 @@ export default function SettingsView({
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Reset to Live Public Site</span>
               </button>
+            </div>
+
+            {/* Divider */}
+            <div className="h-px bg-white/[0.06] my-1" />
+
+            {/* 3. Purpose-Built Smartphone Launch Experience */}
+            <div className="flex flex-col gap-3.5 pt-1 w-full min-w-0 max-w-full box-border">
+              {/* Header: Compact, Technical, Controlled */}
+              <div className="flex items-center justify-between gap-2.5 w-full min-w-0 max-w-full box-border">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan shrink-0">
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-semibold font-space text-foreground truncate">
+                      Launch Experience
+                    </span>
+                    <span className="text-[10px] font-mono text-muted/60 truncate">
+                      Public entry sequence
+                    </span>
+                  </div>
+                </div>
+
+                <span
+                  className={`text-[9px] font-mono font-semibold px-2 py-0.5 rounded-full shrink-0 tracking-wider ${
+                    isLaunchEnabled
+                      ? "text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/25"
+                      : "text-muted/60 bg-white/[0.04] border border-white/[0.06]"
+                  }`}
+                >
+                  {isLaunchEnabled ? "ACTIVE" : "STANDBY"}
+                </span>
+              </div>
+
+              {/* Mobile Launch Feedback Banner */}
+              {launchFeedback && (
+                <div
+                  className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-mono font-medium transition-all w-full min-w-0 max-w-full box-border ${
+                    launchFeedback.type === "success"
+                      ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                      : "bg-red-500/10 border border-red-500/20 text-red-400"
+                  }`}
+                >
+                  {launchFeedback.type === "success" ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  ) : (
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  )}
+                  <span className="break-words min-w-0 flex-1">{launchFeedback.text}</span>
+                </div>
+              )}
+
+              {/* Dedicated Mobile Enable Control Card */}
+              <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] w-full min-w-0 max-w-full box-border">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-semibold font-space text-foreground truncate">
+                    Enable
+                  </span>
+                  <span className="text-[10px] font-mono text-muted/60 truncate">
+                    Toggle launch screen
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isLaunchEnabled}
+                  aria-label="Toggle launch screen"
+                  disabled={isSavingLaunch}
+                  onClick={() => setIsLaunchEnabled(!isLaunchEnabled)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/50 disabled:opacity-50 ${
+                    isLaunchEnabled
+                      ? "bg-pacific-cyan shadow-[0_0_12px_rgba(24,155,173,0.35)]"
+                      : "bg-white/[0.12]"
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-ink-black shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      isLaunchEnabled ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Dedicated Full-Width Single Column Form Controls */}
+              <div className="flex flex-col gap-3 w-full min-w-0 max-w-full box-border">
+                {/* 1. Launch Message */}
+                <div className="flex flex-col gap-1.5 w-full min-w-0 max-w-full box-border">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-muted font-medium">
+                    Launch Message
+                  </label>
+                  <input
+                    type="text"
+                    value={launchPrimaryMessage}
+                    onChange={(e) => setLaunchPrimaryMessage(e.target.value.slice(0, 100))}
+                    placeholder="RAWIN v3.0"
+                    className="w-full min-w-0 max-w-full box-border rounded-xl bg-ink-black/60 border border-white/[0.1] px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted/40 font-mono min-h-[40px] focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 transition-colors"
+                  />
+                </div>
+
+                {/* 2. Secondary Message */}
+                <div className="flex flex-col gap-1.5 w-full min-w-0 max-w-full box-border">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-muted font-medium">
+                    Secondary Message
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={launchSecondaryMessage}
+                    onChange={(e) => setLaunchSecondaryMessage(e.target.value.slice(0, 200))}
+                    placeholder="A new iteration is live."
+                    className="w-full min-w-0 max-w-full box-border rounded-xl bg-ink-black/60 border border-white/[0.1] px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted/40 font-sans focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 resize-none min-h-[56px] transition-colors"
+                  />
+                </div>
+
+                {/* 3. Animation (Dedicated full-width row) */}
+                <div className="flex flex-col gap-1.5 w-full min-w-0 max-w-full box-border">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-muted font-medium">
+                    Animation
+                  </label>
+                  <RawinSelect
+                    id="mobile-launch-animation"
+                    name="mobileLaunchAnimation"
+                    value={launchAnimation}
+                    onChange={(val) => setLaunchAnimation(val as "signal-wake")}
+                    options={LAUNCH_ANIMATION_OPTIONS}
+                    className="w-full min-w-0 max-w-full"
+                  />
+                </div>
+
+                {/* 4. Duration (Dedicated full-width row) */}
+                <div className="flex flex-col gap-1.5 w-full min-w-0 max-w-full box-border">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-muted font-medium">
+                    Duration
+                  </label>
+                  <RawinSelect
+                    id="mobile-launch-duration"
+                    name="mobileLaunchDuration"
+                    value={Number.isFinite(launchDuration) ? launchDuration.toFixed(1) : "2.0"}
+                    onChange={(val) => setLaunchDuration(parseFloat(val))}
+                    options={LAUNCH_DURATION_OPTIONS}
+                    className="w-full min-w-0 max-w-full"
+                  />
+                </div>
+
+                {/* 5. Show Frequency (Dedicated full-width row) */}
+                <div className="flex flex-col gap-1.5 w-full min-w-0 max-w-full box-border">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-muted font-medium">
+                    Show Frequency
+                  </label>
+                  <RawinSelect
+                    id="mobile-launch-frequency"
+                    name="mobileLaunchFrequency"
+                    value={launchFrequency}
+                    onChange={(val) => setLaunchFrequency(val as "once" | "session" | "visit")}
+                    options={LAUNCH_FREQUENCY_OPTIONS}
+                    className="w-full min-w-0 max-w-full"
+                  />
+                </div>
+
+                {/* 6. Start Date (Dedicated full-width row) */}
+                <div className="flex flex-col gap-1.5 w-full min-w-0 max-w-full box-border">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-muted font-medium">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={launchStartDate}
+                    onChange={(e) => setLaunchStartDate(e.target.value)}
+                    className="w-full min-w-0 max-w-full box-border appearance-none [-webkit-appearance:none] rounded-xl bg-ink-black/60 border border-white/[0.1] px-3.5 py-2.5 text-xs text-foreground font-mono min-h-[40px] focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 [color-scheme:dark] transition-colors"
+                  />
+                </div>
+
+                {/* 7. End Date (Dedicated full-width row) */}
+                <div className="flex flex-col gap-1.5 w-full min-w-0 max-w-full box-border">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-muted font-medium">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={launchEndDate}
+                    onChange={(e) => setLaunchEndDate(e.target.value)}
+                    className="w-full min-w-0 max-w-full box-border appearance-none [-webkit-appearance:none] rounded-xl bg-ink-black/60 border border-white/[0.1] px-3.5 py-2.5 text-xs text-foreground font-mono min-h-[40px] focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 [color-scheme:dark] transition-colors"
+                  />
+                </div>
+
+                {/* 8. Launch Version (Dedicated full-width row) */}
+                <div className="flex flex-col gap-1.5 w-full min-w-0 max-w-full box-border">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-muted font-medium">
+                    Launch Version
+                  </label>
+                  <input
+                    type="text"
+                    value={launchVersion}
+                    onChange={(e) => setLaunchVersion(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
+                    placeholder="2026-v3-launch"
+                    className="w-full min-w-0 max-w-full box-border rounded-xl bg-ink-black/60 border border-white/[0.1] px-3.5 py-2.5 text-xs text-foreground font-mono min-h-[40px] focus:outline-none focus:border-pacific-cyan/50 focus:ring-1 focus:ring-pacific-cyan/50 transition-colors"
+                  />
+                </div>
+
+                {/* Dedicated Mobile Action Buttons (Stacked Vertically) */}
+                <div className="flex flex-col gap-2.5 pt-1.5 w-full min-w-0 max-w-full box-border">
+                  {/* Preview Animation (Secondary) */}
+                  <button
+                    type="button"
+                    onClick={() => setShowLaunchPreview(true)}
+                    className="w-full min-w-0 max-w-full box-border py-2.5 px-4 rounded-xl text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] flex items-center justify-center gap-2 min-h-[42px] cursor-pointer transition-colors active:scale-[0.99]"
+                  >
+                    <Play className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
+                    <span className="truncate">Preview Animation</span>
+                  </button>
+
+                  {/* Save Launch Changes (Primary) */}
+                  <button
+                    type="button"
+                    onClick={handleSaveLaunchExperience}
+                    disabled={isSavingLaunch}
+                    className="w-full min-w-0 max-w-full box-border py-2.5 px-4 rounded-xl text-xs font-space font-semibold tracking-wide bg-pacific-cyan text-ink-black flex items-center justify-center gap-2 min-h-[42px] cursor-pointer shadow-[0_0_15px_rgba(24,155,173,0.3)] hover:brightness-110 active:scale-[0.99] disabled:opacity-50 transition-all"
+                  >
+                    {isSavingLaunch ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                        <span className="truncate">Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Save Launch Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1420,6 +2001,25 @@ export default function SettingsView({
           </div>
         </div>
       </div>
+
+      {/* Live Admin Preview Modal */}
+      {showLaunchPreview && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#101019]">
+          <LaunchExperience
+            launch={previewLaunchConfig}
+            isPreview={true}
+            onComplete={() => setShowLaunchPreview(false)}
+          />
+          <button
+            type="button"
+            onClick={() => setShowLaunchPreview(false)}
+            className="fixed top-5 right-5 z-[10001] px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-mono text-xs border border-white/20 backdrop-blur-md transition-all cursor-pointer shadow-lg flex items-center gap-1.5"
+          >
+            <span>Close Preview</span>
+            <span className="text-white/60">[Esc]</span>
+          </button>
+        </div>
+      )}
     </>
   );
 }

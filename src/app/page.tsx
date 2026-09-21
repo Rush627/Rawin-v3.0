@@ -24,6 +24,7 @@ import { getFeaturedProjects } from "@/lib/projects";
 import { getSiteContent } from "@/lib/site-content";
 import { TECH_ARSENAL } from "@/data/techArsenal";
 import { TIMELINE, VALUE_PROPOSITIONS } from "@/data/experience";
+import LaunchExperience from "@/components/launch/LaunchExperience";
 
 export const revalidate = 0;
 
@@ -35,7 +36,9 @@ export default async function HomePage() {
   const homeContent = siteContent.home;
 
   return (
-    <div className="w-full flex flex-col gap-24 sm:gap-28 md:gap-36 pt-28 sm:pt-32 md:pt-36 pb-12 px-4 sm:px-6 max-w-6xl mx-auto">
+    <>
+      <LaunchExperience launch={siteContent.launchExperience} />
+      <div className="w-full flex flex-col gap-24 sm:gap-28 md:gap-36 pt-28 sm:pt-32 md:pt-36 pb-12 px-4 sm:px-6 max-w-6xl mx-auto">
       {/* ------------------------------------------------------------- */}
       {/* SECTION 1: HERO                                               */}
       {/* ------------------------------------------------------------- */}
@@ -310,6 +313,7 @@ export default async function HomePage() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 

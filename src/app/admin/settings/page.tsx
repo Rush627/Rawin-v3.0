@@ -90,6 +90,7 @@ export default async function AdminSettingsPage() {
         sessionSecurity={sessionSecurity}
         securityConfig={securityConfig}
         initialMaintenance={siteContent.maintenance}
+        initialLaunchExperience={siteContent.launchExperience}
       />
     </div>
   );

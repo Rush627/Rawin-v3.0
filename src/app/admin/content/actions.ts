@@ -146,6 +146,17 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "message",
     "endsAt",
   ],
+  launchExperience: [
+    "enabled",
+    "primaryMessage",
+    "secondaryMessage",
+    "animation",
+    "duration",
+    "showFrequency",
+    "startDate",
+    "endDate",
+    "launchVersion",
+  ],
 };
 
 const LONG_FIELDS = new Set([
