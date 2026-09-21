@@ -22,7 +22,6 @@ export interface OrbitSecurityMetadataRecord {
   lastUpdated?: string;
 }
 
-const DEFAULT_INITIAL_CODE = "9559";
 const BCRYPT_SALT_ROUNDS = 12;
 const VERIFICATION_COLLECTION = "orbit_security";
 const VERIFICATION_KEY = "owner_verification";
@@ -58,8 +57,9 @@ export function checkVerificationRateLimit(identifier: string): boolean {
 /**
  * Retrieves the stored bcrypt hash for the Rushan verification code.
  * Fail-closed behavior:
- * - First-time initialization creates the initial 9559 hash (cost 12) and marks system initialized.
- * - Once initialized, if the record is missing or DB is unavailable, returns null (verification fails closed).
+ * - Reads owner_verification from MongoDB.
+ * - If not yet initialized, reads process.env.ORBIT_OWNER_VERIFICATION_CODE at runtime.
+ * - If no environment variable is set or record is missing after initialization, fails closed (returns null).
  */
 export async function getOwnerVerificationHash(): Promise<string | null> {
   try {
@@ -79,15 +79,23 @@ export async function getOwnerVerificationHash(): Promise<string | null> {
     const metadata = await col.findOne<OrbitSecurityMetadataRecord>({ key: METADATA_KEY });
     if (metadata && metadata.initialized) {
       // System was previously initialized, but owner_verification record is missing.
-      // Fail closed: do NOT silently recreate default code.
+      // Fail closed: do NOT silently recreate code.
       console.warn(
         "[Orbit Security] Owner verification record is missing after initialization. Failing closed."
       );
       return null;
     }
 
-    // First-time initialization only: create initial default hash and mark system initialized
-    const initialHash = await bcrypt.hash(DEFAULT_INITIAL_CODE, BCRYPT_SALT_ROUNDS);
+    // First-time initialization only: check environment variable
+    const envCode = (process.env.ORBIT_OWNER_VERIFICATION_CODE || "").trim();
+    if (!envCode || envCode.length < 4 || envCode.length > 32) {
+      console.warn(
+        "[Orbit Security] ORBIT_OWNER_VERIFICATION_CODE not configured for initial bootstrap. Failing closed."
+      );
+      return null;
+    }
+
+    const initialHash = await bcrypt.hash(envCode, BCRYPT_SALT_ROUNDS);
     const now = new Date().toISOString();
 
     await Promise.all([

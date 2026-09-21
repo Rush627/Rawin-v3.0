@@ -48,12 +48,12 @@ export default async function AdminSettingsPage() {
     sameSite: "Lax",
     secure: process.env.NODE_ENV === "production",
     maxAgeDays: 7,
-    hasSecret: !!process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32,
+    hasSecret: Boolean(process.env.SESSION_SECRET && process.env.SESSION_SECRET.trim().length >= 32),
   };
 
   const securityConfig = {
-    hasSessionSecret: !!process.env.SESSION_SECRET,
-    hasPasswordHash: !!process.env.ADMIN_PASSWORD_HASH,
+    hasSessionSecret: Boolean(process.env.SESSION_SECRET && process.env.SESSION_SECRET.trim().length > 0),
+    hasPasswordHash: Boolean(process.env.ADMIN_PASSWORD_HASH && process.env.ADMIN_PASSWORD_HASH.trim().length > 0),
     nodeEnv: process.env.NODE_ENV || "development",
   };
 
