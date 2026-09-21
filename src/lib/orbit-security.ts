@@ -87,7 +87,10 @@ export async function getOwnerVerificationHash(): Promise<string | null> {
     }
 
     // First-time initialization only: check environment variable
-    const envCode = (process.env.ORBIT_OWNER_VERIFICATION_CODE || "").trim();
+    const env = (typeof process !== "undefined" && process.env)
+      ? (process.env as Record<string, string | undefined>)
+      : {};
+    const envCode = (env["ORBIT_OWNER_VERIFICATION_CODE"] || "").trim();
     if (!envCode || envCode.length < 4 || envCode.length > 32) {
       console.warn(
         "[Orbit Security] ORBIT_OWNER_VERIFICATION_CODE not configured for initial bootstrap. Failing closed."

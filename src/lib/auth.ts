@@ -84,9 +84,12 @@ export async function verifyAdminCredentials(
   }
 
   // 2. Check environment credentials fallback
-  const envEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
-  const envPassword = process.env.ADMIN_PASSWORD || "";
-  const envPasswordHash = process.env.ADMIN_PASSWORD_HASH || "";
+  const env = (typeof process !== "undefined" && process.env)
+    ? (process.env as Record<string, string | undefined>)
+    : {};
+  const envEmail = (env["ADMIN_EMAIL"] || "").trim().toLowerCase();
+  const envPassword = env["ADMIN_PASSWORD"] || "";
+  const envPasswordHash = env["ADMIN_PASSWORD_HASH"] || "";
 
   if (envEmail && email === envEmail) {
     let matches = false;

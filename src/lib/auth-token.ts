@@ -3,7 +3,10 @@ export const SESSION_EXPIRATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 // Key secret for HMAC-SHA256 signature (min 32 bytes)
 export function getSecretKey(): Uint8Array {
-  const secret = (process.env.SESSION_SECRET || "").trim();
+  const env = (typeof process !== "undefined" && process.env)
+    ? (process.env as Record<string, string | undefined>)
+    : {};
+  const secret = (env["SESSION_SECRET"] || "").trim();
 
   if (!secret) {
     throw new Error(

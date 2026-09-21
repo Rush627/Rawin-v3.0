@@ -12,6 +12,7 @@ export const metadata = {
   description: "Administrator security, session configuration, and system status.",
 };
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function AdminSettingsPage() {
@@ -42,18 +43,24 @@ export default async function AdminSettingsPage() {
     console.warn("[Settings] Status probe notice:", err);
   }
 
+  const env = (typeof process !== "undefined" && process.env)
+    ? (process.env as Record<string, string | undefined>)
+    : {};
+  const sessionSecretVal = (env["SESSION_SECRET"] || "").trim();
+  const passwordHashVal = (env["ADMIN_PASSWORD_HASH"] || "").trim();
+
   const sessionSecurity = {
     cookieName: SESSION_COOKIE_NAME,
     httpOnly: true,
     sameSite: "Lax",
     secure: process.env.NODE_ENV === "production",
     maxAgeDays: 7,
-    hasSecret: Boolean(process.env.SESSION_SECRET && process.env.SESSION_SECRET.trim().length >= 32),
+    hasSecret: sessionSecretVal.length >= 32,
   };
 
   const securityConfig = {
-    hasSessionSecret: Boolean(process.env.SESSION_SECRET && process.env.SESSION_SECRET.trim().length > 0),
-    hasPasswordHash: Boolean(process.env.ADMIN_PASSWORD_HASH && process.env.ADMIN_PASSWORD_HASH.trim().length > 0),
+    hasSessionSecret: sessionSecretVal.length > 0,
+    hasPasswordHash: passwordHashVal.length > 0,
     nodeEnv: process.env.NODE_ENV || "development",
   };
 
