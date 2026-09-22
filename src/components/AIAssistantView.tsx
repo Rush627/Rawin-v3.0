@@ -451,17 +451,18 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
       */}
       <header className="w-full shrink-0 border-b border-white/[0.06] bg-ink-black/80 backdrop-blur-md z-30 px-3.5 sm:px-6 lg:px-12 py-2 sm:py-2.5 lg:py-3">
         <div className="w-full max-w-[1360px] mx-auto flex items-center justify-between gap-3 relative">
-          {/* LEFT: Back to Home — full label on desktop, compact on mobile */}
+          {/* LEFT: Back to Home button — full label on desktop, compact on mobile */}
           <div className="flex items-center shrink-0">
             <Link
               href="/"
-              className="group inline-flex items-center gap-1.5 sm:gap-2 text-xs font-mono text-muted hover:text-foreground transition-all cursor-pointer py-1 px-1.5 -ml-1.5 rounded-lg hover:bg-white/[0.04]"
+              className="group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl bg-gradient-to-b from-[#141420]/90 via-[#0e0e17]/95 to-[#0b0b12]/90 border border-white/10 hover:border-pacific-cyan/40 text-xs font-mono text-muted/90 hover:text-foreground transition-all duration-200 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.05)] hover:shadow-[0_0_16px_rgba(24,155,173,0.16),inset_0_1px_1px_rgba(255,255,255,0.08)] active:scale-[0.97] min-h-[32px] sm:min-h-[34px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/50 focus-visible:border-pacific-cyan/50"
               title="Return to RAWIN portfolio"
+              aria-label="Return to RAWIN homepage"
             >
-              <ArrowLeft className="w-3.5 h-3.5 text-pacific-cyan transition-transform group-hover:-translate-x-1 shrink-0" />
+              <ArrowLeft className="w-3.5 h-3.5 text-pacific-cyan transition-transform duration-200 group-hover:-translate-x-1 shrink-0" />
               {/* Mobile: compact "Home" | Desktop: full "Back to Home" */}
-              <span className="tracking-wide lg:hidden">Home</span>
-              <span className="tracking-wide hidden lg:inline">Back to Home</span>
+              <span className="tracking-wide lg:hidden font-medium">Home</span>
+              <span className="tracking-wide hidden lg:inline font-medium">Back to Home</span>
             </Link>
           </div>
 

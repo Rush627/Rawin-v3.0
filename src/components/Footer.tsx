@@ -9,7 +9,8 @@ import { ArrowUp, ArrowUpRight } from "lucide-react";
 import { getActiveSocialLinks } from "@/components/SocialIcons";
 
 import type { GlobalContent, ContactContent } from "@/lib/site-content";
-import MobileClosingAndFooter from "@/components/MobileClosingAndFooter";
+import MobileClosingSection from "@/components/MobileClosingSection";
+import MobileFooter from "@/components/MobileFooter";
 
 interface FooterProps {
   content?: Partial<GlobalContent>;
@@ -266,14 +267,15 @@ export default function Footer({
           </footer>
         </div>
 
-        {/* Smartphone/tablet Contact footer : Dedicated shared smartphone footer */}
+        {/* Smartphone/tablet Contact footer : Dedicated shared smartphone footer (No closing section) */}
         <div className="block lg:hidden w-full">
-          <MobileClosingAndFooter
+          <MobileFooter
             content={content}
             contact={contact}
             logo={logo}
             footerCopyright={footerCopyright}
             currentYear={currentYear}
+            hasTopBorder={true}
           />
         </div>
       </>
@@ -568,15 +570,22 @@ export default function Footer({
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* MOBILE & TABLET (<1024px) : NEW NEXT STUDIO & PAPER PROTOTYPE */}
+      {/* MOBILE & TABLET (<1024px)                                     */}
       {/* ------------------------------------------------------------- */}
       <div className="block lg:hidden w-full">
-        <MobileClosingAndFooter
+        {/* Dedicated Smartphone Closing Animation (/, /about, /projects, /uses, /resume) */}
+        {!isBlogListing && (
+          <MobileClosingSection emailAddress={emailAddress} />
+        )}
+
+        {/* Dedicated Smartphone Footer (Continuous marquee, socials, copyright, signature) */}
+        <MobileFooter
           content={content}
           contact={contact}
           logo={logo}
           footerCopyright={footerCopyright}
           currentYear={currentYear}
+          hasTopBorder={isBlogListing}
         />
       </div>
     </>

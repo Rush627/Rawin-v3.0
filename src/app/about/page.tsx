@@ -326,10 +326,18 @@ export default async function AboutPage() {
       <div className="hidden lg:block w-full">
         <BorderGlow borderRadius={16} className="w-full">
           <section
-            className="glass-card rounded-2xl p-8 sm:p-10 border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+            className="relative glass-card rounded-2xl p-8 sm:p-10 border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 overflow-hidden"
             data-particle-protected
           >
-            <div className="flex flex-col gap-2">
+            {/* Subtle oversized typographic background watermark — partially clipped N at right boundary */}
+            <div
+              aria-hidden="true"
+              className="absolute -bottom-8 lg:-bottom-12 -right-10 lg:-right-14 xl:-right-16 text-[10rem] lg:text-[12rem] xl:text-[14rem] font-black font-space text-white/[0.03] select-none pointer-events-none tracking-tighter leading-none whitespace-nowrap z-0"
+            >
+              RAWIN
+            </div>
+
+            <div className="relative z-10 flex flex-col gap-2">
               <span className="text-xs font-mono font-semibold tracking-wider text-pacific-cyan uppercase">
                 {aboutContent.ctaEyebrow || "LET'S BUILD TOGETHER"}
               </span>
@@ -341,7 +349,7 @@ export default async function AboutPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <div className="relative z-10 flex flex-wrap items-center gap-3 shrink-0">
               <Link
                 href="/resume"
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-sm hover:bg-pacific-cyan/90 transition-all shadow-[0_0_20px_rgba(24,155,173,0.3)]"
@@ -373,13 +381,13 @@ export default async function AboutPage() {
       </div>
 
       {/* Section link to projects */}
-      <div className="flex justify-center -mt-6">
+      <div className="flex justify-center -mt-6 sm:-mt-8 lg:-mt-10">
         <Link
           href="/projects"
-          className="inline-flex items-center gap-2 text-sm font-mono text-muted hover:text-pacific-cyan transition-colors"
+          className="group inline-flex items-center justify-center gap-2 sm:gap-2.5 px-5 py-2.5 sm:px-6 sm:py-2.5 rounded-xl bg-gradient-to-b from-[#141420]/90 via-[#0e0e17]/95 to-[#0b0b12]/90 border border-white/10 hover:border-pacific-cyan/45 text-xs sm:text-sm font-mono tracking-wide text-muted/90 hover:text-foreground transition-all duration-200 cursor-pointer shadow-[0_2px_12px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.06)] hover:shadow-[0_0_24px_rgba(24,155,173,0.18),inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-[0.98] min-h-[44px] sm:min-h-[42px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/50 focus-visible:border-pacific-cyan/50"
         >
-          <span>View Case Studies</span>
-          <ArrowRight className="w-4 h-4" />
+          <span className="font-medium">View Projects</span>
+          <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pacific-cyan transition-transform duration-200 group-hover:translate-x-1 shrink-0" />
         </Link>
       </div>
     </div>

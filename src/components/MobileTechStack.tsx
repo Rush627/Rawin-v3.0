@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import type { TechCategory } from "@/data/techArsenal";
 
 interface MobileTechStackProps {
@@ -60,175 +60,62 @@ function TechCategoryCardContent({ category }: { category: TechCategory }) {
   );
 }
 
+/**
+ * Native CSS Sticky Stacking Smartphone Tech Stack (<1024px)
+ * 
+ * - ZERO JavaScript scroll listeners
+ * - ZERO requestAnimationFrame loops
+ * - ZERO getBoundingClientRect calculations
+ * - ZERO IntersectionObserver / ResizeObserver
+ * - Native browser CSS sticky positioning handles stacking & unstacking
+ * - Progressive top offset (calc(4.75rem + index * 0.85rem)) creates clean layered tabs
+ * - Fluid natural document scroll flow
+ */
 export default function MobileTechStack({ categories }: MobileTechStackProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  // High-performance scroll tracking loop: directly updates DOM styles via rAF with zero React re-renders
+  // Lightweight debug marker (only when ?ios-debug=1 is explicitly requested)
   useEffect(() => {
-    // Strictly isolate to mobile/tablet (< 1024px). Never execute on desktop.
-    if (typeof window === "undefined" || window.innerWidth >= 1024) return;
-    if (categories.length <= 1) return;
-
-    const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (isReducedMotion) return;
-
-    const container = containerRef.current;
-    if (!container) return;
-
-    let cachedContainerTop = 0;
-    let cachedStickyTop = window.innerWidth < 640 ? 72 : 80;
-    let rafId: number | null = null;
-
-    const SCROLL_STEP = 380;
-    const totalTravel = (categories.length - 1) * SCROLL_STEP;
-
-    const updateStack = () => {
-      rafId = null;
-      if (!container) return;
-
-      const rect = container.getBoundingClientRect();
-      const stickyTop = window.innerWidth < 640 ? 72 : 80;
-      const tabOffset = window.innerWidth < 640 ? 18 : 22;
-      const scrolledIn = stickyTop - rect.top;
-
-      let progress = 0;
-      if (scrolledIn <= 0) {
-        progress = 0;
-      } else if (scrolledIn >= totalTravel) {
-        progress = 1;
-      } else {
-        progress = scrolledIn / totalTravel;
-      }
-
-      const step = progress * (categories.length - 1);
-      const activeIdx = Math.min(Math.floor(step), categories.length - 2);
-      const fraction = step - activeIdx;
-
-      for (let i = 0; i < categories.length; i++) {
-        const el = cardRefs.current[i];
-        if (!el) continue;
-
-        if (i < activeIdx) {
-          // Resting in stacked deck behind: shows visible top tab
-          const depth = activeIdx - i;
-          const translateY = -depth * tabOffset;
-          const scale = Math.max(0.90, 1 - depth * 0.025);
-          el.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
-          el.style.opacity = `${Math.max(0.55, 1 - depth * 0.15)}`;
-          el.style.visibility = "visible";
-          el.style.pointerEvents = "none";
-        } else if (i === activeIdx) {
-          // Active card: shifts slightly to tab position as incoming card covers it
-          const translateY = -fraction * tabOffset;
-          const scale = 1 - fraction * 0.025;
-          el.style.transform = `translate3d(0, ${translateY}px, 0) scale(${scale})`;
-          el.style.opacity = "1";
-          el.style.visibility = "visible";
-          el.style.pointerEvents = fraction < 0.4 ? "auto" : "none";
-        } else if (i === activeIdx + 1) {
-          // Incoming card: moves up into the visual stacking zone over active card
-          const translateY = (1 - fraction) * 105;
-          el.style.transform = `translate3d(0, ${translateY}%, 0) scale(1)`;
-          el.style.opacity = "1";
-          el.style.visibility = "visible";
-          el.style.pointerEvents = fraction > 0.6 ? "auto" : "none";
-        } else {
-          // Waiting below viewport
-          el.style.transform = "translate3d(0, 110%, 0) scale(1)";
-          el.style.opacity = "0";
-          el.style.visibility = "hidden";
-          el.style.pointerEvents = "none";
-        }
-      }
-    };
-
-    updateStack();
-
-    const onScroll = () => {
-      if (rafId === null) {
-        rafId = requestAnimationFrame(updateStack);
-      }
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-    };
-  }, [categories]);
+    if (typeof window !== "undefined" && window.location.search.includes("ios-debug=1")) {
+      console.log("[IOS_DEBUG] MOBILE_TECH_STACK_MOUNT", {
+        cardCount: categories?.length ?? 0,
+        timestamp: Date.now(),
+      });
+    }
+  }, [categories?.length]);
 
   if (!categories || categories.length === 0) {
     return null;
   }
 
-  if (categories.length === 1) {
-    return (
-      <div className="flex flex-col gap-5 w-full">
-        {categories.map((category) => (
-          <div key={category.title} className="w-full" data-card-item>
-            <TechCategoryCardContent category={category} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  const SCROLL_STEP = 380;
-  const totalTravel = (categories.length - 1) * SCROLL_STEP;
-  const totalContainerHeight = 500 + totalTravel + 60;
-
   return (
     <div
-      ref={containerRef}
       data-mobile-tech-stack
-      className="relative w-full"
-      style={{ minHeight: `${totalContainerHeight}px` }}
+      className="relative w-full flex flex-col pt-2 pb-10"
     >
-      {/* Sticky Stack Stage: stays in visual view while scrolling through section */}
-      <div
-        ref={stageRef}
-        className="sticky top-[72px] sm:top-[80px] w-full pt-6 sm:pt-8 pb-4"
-        style={{ minHeight: "500px" }}
-      >
-        <div className="relative w-full">
-          {categories.map((category, index) => {
-            const isFirst = index === 0;
+      {categories.map((category, index) => {
+        const isLast = index === categories.length - 1;
+        // Progressive sticky top offset: Card 1 at ~4.75rem (76px), Card 2 at ~5.6rem (90px),
+        // Card 3 at ~6.45rem (103px), Card 4 at ~7.3rem (117px).
+        // Each card has higher z-index (10 + index), layering over earlier cards while leaving
+        // the top rim of earlier cards visible as binder tabs.
+        const stickyTop = `calc(4.75rem + ${index * 0.85}rem)`;
+        const zIndex = 10 + index;
 
-            return (
-              <div
-                key={category.title}
-                ref={(el) => {
-                  cardRefs.current[index] = el;
-                }}
-                data-card-item
-                className={`w-full will-change-transform ${
-                  isFirst
-                    ? "relative"
-                    : "absolute top-0 left-0 right-0"
-                }`}
-                style={{
-                  zIndex: 10 + index,
-                  transform: isFirst
-                    ? "none"
-                    : "translate3d(0, 105%, 0)",
-                  opacity: 1,
-                  visibility: "visible",
-                  pointerEvents: isFirst ? "auto" : "none",
-                }}
-              >
-                <TechCategoryCardContent category={category} />
-              </div>
-            );
-          })}
-        </div>
-      </div>
+        return (
+          <div
+            key={category.title}
+            data-card-item
+            data-category={category.title}
+            className="sticky w-full"
+            style={{
+              top: stickyTop,
+              zIndex,
+              marginBottom: isLast ? "0rem" : "5rem",
+            }}
+          >
+            <TechCategoryCardContent category={category} />
+          </div>
+        );
+      })}
     </div>
   );
 }
