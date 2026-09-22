@@ -13,13 +13,18 @@ const DELETING_SPEED = 28;    // Smooth deletion
 const PAUSE_DURATION = 1500;  // Pause when role is fully typed
 const DELETE_DELAY = 200;     // Pause before typing next role
 
-export default function HeroRoleTyping() {
+interface HeroRoleTypingProps {
+  phrases?: string[];
+}
+
+export default function HeroRoleTyping({ phrases }: HeroRoleTypingProps = {}) {
+  const activeRoles = phrases && phrases.length > 0 ? phrases : ROLES;
   const [roleIndex, setRoleIndex] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const currentFullRole = ROLES[roleIndex];
+    const currentFullRole = activeRoles[roleIndex] || activeRoles[0];
     let timer: ReturnType<typeof setTimeout>;
 
     if (!isDeleting) {
@@ -40,19 +45,19 @@ export default function HeroRoleTyping() {
       } else {
         timer = setTimeout(() => {
           setIsDeleting(false);
-          setRoleIndex((prev) => (prev + 1) % ROLES.length);
+          setRoleIndex((prev) => (prev + 1) % activeRoles.length);
         }, DELETE_DELAY);
       }
     }
 
     return () => clearTimeout(timer);
-  }, [currentText, isDeleting, roleIndex]);
+  }, [currentText, isDeleting, roleIndex, activeRoles]);
 
   return (
     <div
       className="inline-flex items-center justify-center min-h-[2.5rem] sm:min-h-[3rem] select-none"
       aria-live="polite"
-      aria-label={`Role: ${ROLES[roleIndex]}`}
+      aria-label={`Role: ${activeRoles[roleIndex]}`}
     >
       <span
         suppressHydrationWarning

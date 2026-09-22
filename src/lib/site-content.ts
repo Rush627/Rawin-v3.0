@@ -25,6 +25,7 @@ export interface HomeContent {
   heroSecondaryCtaText: string;
   featuredHeading: string;
   featuredDescription?: string;
+  heroTypingPhrases?: string[];
 }
 
 export interface EvolutionMilestoneItem {
@@ -390,6 +391,11 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     heroPrimaryCtaText: "Explore Case Studies",
     heroSecondaryCtaText: "Let's Connect",
     featuredHeading: "Featured Case Studies",
+    heroTypingPhrases: [
+      "Full Stack Developer",
+      "Creative Technologies",
+      "UI/UX Designer",
+    ],
   },
   about: {
     eyebrow: "ABOUT",
@@ -1095,6 +1101,12 @@ export function mergeWithDefaults(doc: any): SiteContent {
       heroPrimaryCtaText: doc.home?.heroPrimaryCtaText || DEFAULT_SITE_CONTENT.home.heroPrimaryCtaText,
       heroSecondaryCtaText: doc.home?.heroSecondaryCtaText || DEFAULT_SITE_CONTENT.home.heroSecondaryCtaText,
       featuredHeading: doc.home?.featuredHeading || DEFAULT_SITE_CONTENT.home.featuredHeading,
+      heroTypingPhrases:
+        Array.isArray(doc.home?.heroTypingPhrases) && doc.home.heroTypingPhrases.length > 0
+          ? doc.home.heroTypingPhrases
+              .map((p: any) => String(p).trim())
+              .filter(Boolean)
+          : DEFAULT_SITE_CONTENT.home.heroTypingPhrases,
     },
     about: {
       eyebrow:

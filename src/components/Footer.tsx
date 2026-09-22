@@ -200,6 +200,7 @@ export default function Footer({
     };
 
     const onScroll = () => {
+      if (typeof window !== "undefined" && window.innerWidth < 1024) return;
       if (rafId === null) {
         rafId = requestAnimationFrame(() => {
           updateStory();

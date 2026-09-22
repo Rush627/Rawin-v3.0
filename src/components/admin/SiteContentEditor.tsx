@@ -62,6 +62,12 @@ import RawinSelect, { type RawinSelectOption } from "./RawinSelect";
 import NeoToggle from "@/components/NeoToggle";
 import OrbitKnowledgeManager from "./OrbitKnowledgeManager";
 import type { OrbitKnowledgeItem } from "@/lib/orbit-knowledge";
+const DEFAULT_HERO_TYPING_PHRASES = [
+  "Full Stack Developer",
+  "Creative Technologies",
+  "UI/UX Designer",
+];
+
 import type {
   SiteContent,
   ContentSectionKey,
@@ -1554,6 +1560,71 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
         about: {
           ...prev.about,
           focusAreas: reindexed,
+        },
+      };
+    });
+  };
+
+  // Hero Typing Phrases Handlers
+  const handleAddHeroPhrase = () => {
+    setContent((prev) => {
+      const current = [...(prev.home?.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || [])];
+      current.push("New Hero Phrase");
+      return {
+        ...prev,
+        home: {
+          ...prev.home,
+          heroTypingPhrases: current,
+        },
+      };
+    });
+  };
+
+  const handleUpdateHeroPhrase = (index: number, value: string) => {
+    setContent((prev) => {
+      const current = [...(prev.home?.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || [])];
+      current[index] = value;
+      return {
+        ...prev,
+        home: {
+          ...prev.home,
+          heroTypingPhrases: current,
+        },
+      };
+    });
+  };
+
+  const handleDeleteHeroPhrase = (index: number) => {
+    setContent((prev) => {
+      const current = [...(prev.home?.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || [])];
+      if (current.length <= 1) {
+        setFeedback({ error: "At least one Hero typing phrase is required." });
+        return prev;
+      }
+      current.splice(index, 1);
+      return {
+        ...prev,
+        home: {
+          ...prev.home,
+          heroTypingPhrases: current,
+        },
+      };
+    });
+  };
+
+  const handleMoveHeroPhrase = (index: number, direction: "up" | "down") => {
+    setContent((prev) => {
+      const current = [...(prev.home?.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || [])];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= current.length) return prev;
+      const temp = current[index];
+      current[index] = current[targetIndex];
+      current[targetIndex] = temp;
+      return {
+        ...prev,
+        home: {
+          ...prev.home,
+          heroTypingPhrases: current,
         },
       };
     });
@@ -3142,6 +3213,13 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
 
         {activeTab === "home" && (
           <>
+            <input
+              type="hidden"
+              name="heroTypingPhrases"
+              value={JSON.stringify(
+                content.home.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || []
+              )}
+            />
             {/* Desktop Presentation (>= sm) */}
             <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="flex flex-col gap-2">
@@ -3230,6 +3308,83 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                   onChange={(e) => handleFieldChange("home", "featuredHeading", e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
                 />
+              </div>
+
+              {/* Desktop Hero Typing Phrases */}
+              <div className="flex flex-col gap-3 sm:col-span-2 pt-2 border-t border-white/[0.08]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-mono text-muted uppercase">Hero Typing Phrases</label>
+                    <span className="text-[10px] font-mono text-pacific-cyan bg-pacific-cyan/[0.08] border border-pacific-cyan/20 px-2 py-0.5 rounded-full">
+                      {(content.home.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || []).length} phrases
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddHeroPhrase}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/25 text-xs font-mono transition-colors cursor-pointer select-none"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Phrase</span>
+                  </button>
+                </div>
+                <p className="text-[11px] font-mono text-muted/70">
+                  Phrases cycled in the hero role typing animation. Sequentially typed and deleted with smooth timing.
+                </p>
+
+                <div className="flex flex-col gap-2.5">
+                  {(content.home.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || []).map((phrase, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2.5 sm:p-3 rounded-xl bg-ink-black/40 border border-white/[0.06] flex items-center justify-between gap-3 group hover:border-white/[0.12] transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span className="text-[10px] sm:text-[11px] font-mono text-pacific-cyan bg-pacific-cyan/[0.08] border border-pacific-cyan/20 px-2 py-1 rounded shrink-0 font-medium">
+                          #{idx + 1}
+                        </span>
+                        <input
+                          type="text"
+                          value={phrase}
+                          onChange={(e) => handleUpdateHeroPhrase(idx, e.target.value)}
+                          placeholder="e.g. Full Stack Developer"
+                          className="flex-1 min-w-0 px-3 py-1.5 sm:py-2 rounded-lg bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan text-xs sm:text-sm text-foreground outline-none transition-colors"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMoveHeroPhrase(idx, "up")}
+                          aria-label="Move phrase up"
+                          title="Move phrase up"
+                          className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer transition-colors"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === (content.home.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || []).length - 1}
+                          onClick={() => handleMoveHeroPhrase(idx, "down")}
+                          aria-label="Move phrase down"
+                          title="Move phrase down"
+                          className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-muted hover:text-foreground disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent cursor-pointer transition-colors"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteHeroPhrase(idx)}
+                          aria-label="Delete phrase"
+                          title="Delete phrase"
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/30 transition-colors cursor-pointer ml-0.5"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -3360,6 +3515,76 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         className="w-full min-h-[96px] sm:min-h-[110px] px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all resize-y leading-relaxed font-sans placeholder:text-muted/40"
                         placeholder="Building fast, thoughtful web applications..."
                       />
+                    </div>
+
+                    {/* Hero Typing Phrases Mobile Sub-section */}
+                    <div className="flex flex-col gap-2.5 pt-2 border-t border-white/[0.06]">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                            Typing Phrases
+                          </label>
+                          <span className="text-[9px] font-mono text-pacific-cyan bg-pacific-cyan/[0.08] border border-pacific-cyan/20 px-1.5 py-0.5 rounded-full font-medium">
+                            {(content.home.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || []).length}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddHeroPhrase}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-pacific-cyan/10 hover:bg-pacific-cyan/20 text-pacific-cyan border border-pacific-cyan/25 text-[11px] font-mono transition-colors cursor-pointer select-none"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add</span>
+                        </button>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        {(content.home.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || []).map((phrase, idx) => (
+                          <div
+                            key={idx}
+                            className="p-2 rounded-xl bg-ink-black/60 border border-white/[0.06] flex items-center justify-between gap-2"
+                          >
+                            <span className="text-[10px] font-mono text-pacific-cyan bg-pacific-cyan/[0.08] border border-pacific-cyan/20 px-1.5 py-0.5 rounded shrink-0 font-medium">
+                              #{idx + 1}
+                            </span>
+                            <input
+                              type="text"
+                              value={phrase}
+                              onChange={(e) => handleUpdateHeroPhrase(idx, e.target.value)}
+                              placeholder="e.g. Full Stack Developer"
+                              className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-ink-black/80 border border-white/[0.08] focus:border-pacific-cyan text-xs text-foreground outline-none transition-colors"
+                            />
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveHeroPhrase(idx, "up")}
+                                aria-label="Move phrase up"
+                                className="p-1 rounded-md bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
+                              >
+                                <ChevronUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === (content.home.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || []).length - 1}
+                                onClick={() => handleMoveHeroPhrase(idx, "down")}
+                                aria-label="Move phrase down"
+                                className="p-1 rounded-md bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
+                              >
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteHeroPhrase(idx)}
+                                aria-label="Delete phrase"
+                                className="p-1 rounded-md bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 cursor-pointer"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 

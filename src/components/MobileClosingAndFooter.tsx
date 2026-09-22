@@ -38,23 +38,146 @@ export default function MobileClosingAndFooter({
   const impossibleRef = useRef<HTMLDivElement | null>(null);
   const ctaRef = useRef<HTMLDivElement | null>(null);
 
-  // High-performance scroll tracking loop operating strictly outside React render cycle
+  // Helper to reset elements to their pristine Scene 1 baseline
+  const resetToInitialScene = () => {
+    if (badgeRef.current) {
+      badgeRef.current.style.opacity = "1";
+      badgeRef.current.style.transform = "translate3d(0, 0, 0)";
+    }
+    if (timeToRef.current) {
+      timeToRef.current.style.opacity = "1";
+      timeToRef.current.style.transform = "translate3d(0, 0, 0)";
+    }
+    if (levelUpRef.current) {
+      levelUpRef.current.style.opacity = "1";
+      levelUpRef.current.style.transform = "translate3d(0, 0, 0)";
+    }
+    if (eyebrowRef.current) {
+      eyebrowRef.current.style.opacity = "0";
+      eyebrowRef.current.style.transform = "translate3d(0, 30px, 0)";
+    }
+    if (impossibleRef.current) {
+      impossibleRef.current.style.opacity = "0";
+      impossibleRef.current.style.transform = "translate3d(0, 45px, 0) scale3d(0.95, 0.95, 1)";
+    }
+    if (ctaRef.current) {
+      ctaRef.current.style.opacity = "0";
+      ctaRef.current.style.transform = "translate3d(0, 35px, 0) scale3d(0.96, 0.96, 1)";
+      ctaRef.current.style.pointerEvents = "none";
+    }
+  };
+
+  // Route-safe, high-performance scroll tracking loop operating strictly outside React render cycle
   useEffect(() => {
-    if (shouldReduceMotion || typeof window === "undefined") return;
+    if (isExcludedStory || shouldReduceMotion || typeof window === "undefined") {
+      return;
+    }
 
-    let rafId: number | null = null;
+    const isDebug = window.location.search.includes("ios-debug=1");
+    if (isDebug) {
+      console.log("[IOS_DEBUG] MOBILE_CLOSING_MOUNT", {
+        pathname,
+        scrollY: window.scrollY,
+        viewportHeight: window.innerHeight,
+        documentHeight: document.documentElement.scrollHeight,
+        timestamp: Date.now(),
+      });
+    }
 
-    const updateStory = () => {
+    // Immediately establish Scene 1 baseline on mount and route transitions
+    resetToInitialScene();
+
+    let initialRaf1: number | null = null;
+    let initialRaf2: number | null = null;
+    let scrollRafId: number | null = null;
+    let initialMeasured = false;
+    let initialMeasureTime: number | null = null;
+    let latestScrollCalcTime: number | null = null;
+    let lastDebugScrollLog = 0;
+    let lastLoggedProgress = -1;
+
+    const updateStory = (isInitial = false) => {
       const container = scrollContainerRef.current;
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
       const viewportH = window.innerHeight || document.documentElement.clientHeight || 800;
       const totalScroll = rect.height - viewportH;
-      if (totalScroll <= 0) return;
+      if (totalScroll <= 0) {
+        resetToInitialScene();
+        return;
+      }
 
       const currentScroll = -rect.top;
       const p = Math.max(0, Math.min(1, currentScroll / totalScroll));
+      latestScrollCalcTime = Date.now();
+
+      if (isInitial) {
+        initialMeasured = true;
+        initialMeasureTime = Date.now();
+        if (isDebug) {
+          console.log("[IOS_DEBUG] MOBILE_CLOSING_INITIAL_MEASURE", {
+            pathname,
+            scrollY: window.scrollY,
+            rect: { top: Math.round(rect.top), height: Math.round(rect.height), bottom: Math.round(rect.bottom) },
+            viewportHeight: viewportH,
+            documentHeight: document.documentElement.scrollHeight,
+            totalScroll: Math.round(totalScroll),
+            progress: Number(p.toFixed(3)),
+            layoutReady: rect.height > viewportH,
+            timestamp: initialMeasureTime,
+          });
+        }
+      } else if (isDebug) {
+        const now = performance.now();
+        if (now - lastDebugScrollLog > 500 || Math.abs(p - lastLoggedProgress) > 0.1) {
+          lastDebugScrollLog = now;
+          lastLoggedProgress = p;
+          console.log("[IOS_DEBUG] MOBILE_CLOSING_SCROLL_CALC", {
+            pathname,
+            scrollY: window.scrollY,
+            rectTop: Math.round(rect.top),
+            progress: Number(p.toFixed(3)),
+            opacityTimeTo: timeToRef.current?.style.opacity,
+            transformTimeTo: timeToRef.current?.style.transform,
+            opacityLevelUp: levelUpRef.current?.style.opacity,
+            transformLevelUp: levelUpRef.current?.style.transform,
+            opacityEyebrow: eyebrowRef.current?.style.opacity,
+            opacityCta: ctaRef.current?.style.opacity,
+          });
+        }
+      }
+
+      if (isDebug) {
+        (window as unknown as { __IOS_CLOSING_DEBUG__?: unknown }).__IOS_CLOSING_DEBUG__ = {
+          currentRoute: pathname,
+          scrollY: window.scrollY,
+          sectionBoundingRect: {
+            top: Math.round(rect.top),
+            bottom: Math.round(rect.bottom),
+            height: Math.round(rect.height),
+            width: Math.round(rect.width),
+          },
+          calculatedProgress: Number(p.toFixed(3)),
+          currentOpacity: {
+            timeTo: timeToRef.current?.style.opacity || "1",
+            levelUp: levelUpRef.current?.style.opacity || "1",
+            eyebrow: eyebrowRef.current?.style.opacity || "0",
+            cta: ctaRef.current?.style.opacity || "0",
+          },
+          currentTransform: {
+            timeTo: timeToRef.current?.style.transform || "none",
+            levelUp: levelUpRef.current?.style.transform || "none",
+            eyebrow: eyebrowRef.current?.style.transform || "none",
+            cta: ctaRef.current?.style.transform || "none",
+          },
+          initialMeasurementCompleted: initialMeasured,
+          initialMeasurementTimestamp: initialMeasureTime,
+          latestScrollCalcTimestamp: latestScrollCalcTime,
+          viewportHeight: viewportH,
+          documentHeight: document.documentElement.scrollHeight,
+        };
+      }
 
       // ---------------------------------------------------------------
       // SCENE 1: ONE LAST THING / TIME TO (left) + LEVEL UP (right)
@@ -96,14 +219,14 @@ export default function MobileClosingAndFooter({
       // ---------------------------------------------------------------
       // SCENE 2: HAVE A PROJECT IN MIND? +
       //          LET'S MAKE SOMETHING IMPOSSIBLE TO IGNORE.
-      // Enters 44% - 66%, Dominant 66% - 82%
+      // Enters 42% - 66%, Dominant 66% - 82%
       // ---------------------------------------------------------------
       if (eyebrowRef.current && impossibleRef.current) {
         if (p < 0.42) {
           eyebrowRef.current.style.opacity = "0";
           eyebrowRef.current.style.transform = "translate3d(0, 30px, 0)";
           impossibleRef.current.style.opacity = "0";
-          impossibleRef.current.style.transform = "translate3d(0, 45px, 0) scale(0.95)";
+          impossibleRef.current.style.transform = "translate3d(0, 45px, 0) scale3d(0.95, 0.95, 1)";
         } else if (p >= 0.42 && p <= 0.66) {
           const t = (p - 0.42) / 0.24;
           const op = t;
@@ -115,12 +238,12 @@ export default function MobileClosingAndFooter({
           eyebrowRef.current.style.transform = `translate3d(0, ${yEye.toFixed(2)}px, 0)`;
 
           impossibleRef.current.style.opacity = op.toFixed(4);
-          impossibleRef.current.style.transform = `translate3d(0, ${yImp.toFixed(2)}px, 0) scale(${sc.toFixed(4)})`;
+          impossibleRef.current.style.transform = `translate3d(0, ${yImp.toFixed(2)}px, 0) scale3d(${sc.toFixed(4)}, ${sc.toFixed(4)}, 1)`;
         } else if (p > 0.66 && p <= 0.82) {
           eyebrowRef.current.style.opacity = "1";
           eyebrowRef.current.style.transform = "translate3d(0, 0, 0)";
           impossibleRef.current.style.opacity = "1";
-          impossibleRef.current.style.transform = "translate3d(0, 0, 0) scale(1)";
+          impossibleRef.current.style.transform = "translate3d(0, 0, 0) scale3d(1, 1, 1)";
         } else {
           // Subtle lift as CTA settles into center
           const t = Math.min(1, (p - 0.82) / 0.18);
@@ -129,18 +252,18 @@ export default function MobileClosingAndFooter({
           eyebrowRef.current.style.transform = `translate3d(0, ${yLift.toFixed(2)}px, 0)`;
 
           impossibleRef.current.style.opacity = (1 - 0.1 * t).toFixed(4);
-          impossibleRef.current.style.transform = `translate3d(0, ${yLift.toFixed(2)}px, 0) scale(1)`;
+          impossibleRef.current.style.transform = `translate3d(0, ${yLift.toFixed(2)}px, 0) scale3d(1, 1, 1)`;
         }
       }
 
       // ---------------------------------------------------------------
       // SCENE 3: COMPACT PILL CTA
-      // Enters 70% - 90%
+      // Enters 68% - 90%
       // ---------------------------------------------------------------
       if (ctaRef.current) {
         if (p < 0.68) {
           ctaRef.current.style.opacity = "0";
-          ctaRef.current.style.transform = "translate3d(0, 35px, 0) scale(0.96)";
+          ctaRef.current.style.transform = "translate3d(0, 35px, 0) scale3d(0.96, 0.96, 1)";
           ctaRef.current.style.pointerEvents = "none";
         } else {
           const t = Math.min(1, (p - 0.68) / 0.22);
@@ -148,33 +271,43 @@ export default function MobileClosingAndFooter({
           const scCta = 0.96 + 0.04 * t;
 
           ctaRef.current.style.opacity = t.toFixed(4);
-          ctaRef.current.style.transform = `translate3d(0, ${yCta.toFixed(2)}px, 0) scale(${scCta.toFixed(4)})`;
+          ctaRef.current.style.transform = `translate3d(0, ${yCta.toFixed(2)}px, 0) scale3d(${scCta.toFixed(4)}, ${scCta.toFixed(4)}, 1)`;
           ctaRef.current.style.pointerEvents = t > 0.4 ? "auto" : "none";
         }
       }
     };
 
+    // Safe initial measurement on layout readiness (double rAF ensures browser layout commit)
+    initialRaf1 = requestAnimationFrame(() => {
+      initialRaf2 = requestAnimationFrame(() => {
+        updateStory(true);
+      });
+    });
+
     const onScroll = () => {
-      if (rafId === null) {
-        rafId = requestAnimationFrame(() => {
-          updateStory();
-          rafId = null;
+      if (scrollRafId === null) {
+        scrollRafId = requestAnimationFrame(() => {
+          updateStory(false);
+          scrollRafId = null;
         });
       }
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
-    updateStory();
+    window.addEventListener("orientationchange", onScroll, { passive: true });
+    window.addEventListener("touchstart", onScroll, { passive: true, once: true });
 
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
+      window.removeEventListener("orientationchange", onScroll);
+      window.removeEventListener("touchstart", onScroll);
+      if (initialRaf1 !== null) cancelAnimationFrame(initialRaf1);
+      if (initialRaf2 !== null) cancelAnimationFrame(initialRaf2);
+      if (scrollRafId !== null) cancelAnimationFrame(scrollRafId);
     };
-  }, [shouldReduceMotion]);
+  }, [pathname, shouldReduceMotion, isExcludedStory]);
 
   const emailAddress =
     contact?.email || content?.contactEmail || "rushansiddiqui5262@gmail.com";
@@ -262,7 +395,14 @@ export default function MobileClosingAndFooter({
       ) : (
         // Cinematic Scroll-Driven Viewport Scene
         <div ref={scrollContainerRef} className="relative h-story-mobile w-full">
-          <div className="sticky top-0 h-stage-full w-full flex flex-col justify-center px-4 sm:px-6 overflow-hidden">
+          <div
+            className="sticky top-0 h-stage-full w-full flex flex-col justify-center px-4 sm:px-6 overflow-clip"
+            style={{
+              transform: "translate3d(0, 0, 0)",
+              WebkitBackfaceVisibility: "hidden",
+              backfaceVisibility: "hidden",
+            }}
+          >
             {/* Ambient Background Shift */}
             <div
               aria-hidden="true"
@@ -278,7 +418,8 @@ export default function MobileClosingAndFooter({
                 <div className="flex flex-col select-none pointer-events-none w-full">
                   <div
                     ref={badgeRef}
-                    className="flex items-center gap-2 mb-3 will-change-transform opacity-100"
+                    className="flex items-center gap-2 mb-3"
+                    style={{ willChange: "transform, opacity", WebkitBackfaceVisibility: "hidden" }}
                   >
                     <span className="w-2 h-2 rounded-full bg-pacific-cyan animate-pulse" />
                     <span className="text-xs font-mono tracking-widest text-pacific-cyan uppercase font-semibold">
@@ -287,14 +428,18 @@ export default function MobileClosingAndFooter({
                   </div>
 
                   <div className="flex flex-col overflow-visible">
-                    <div ref={timeToRef} className="will-change-transform">
+                    <div
+                      ref={timeToRef}
+                      style={{ willChange: "transform, opacity", WebkitBackfaceVisibility: "hidden" }}
+                    >
                       <span className="text-[clamp(3.2rem,14vw,6.5rem)] font-black font-space tracking-tight text-foreground uppercase leading-[0.88] drop-shadow-sm whitespace-nowrap">
                         TIME TO
                       </span>
                     </div>
                     <div
                       ref={levelUpRef}
-                      className="will-change-transform -mt-1 sm:-mt-3"
+                      className="-mt-1 sm:-mt-3"
+                      style={{ willChange: "transform, opacity", WebkitBackfaceVisibility: "hidden" }}
                     >
                       <span className="footer-outline-text text-[clamp(3.2rem,14vw,6.5rem)] font-black font-space tracking-tight uppercase leading-[0.88] whitespace-nowrap">
                         LEVEL UP
@@ -310,7 +455,8 @@ export default function MobileClosingAndFooter({
                 <div className="flex flex-col select-none pointer-events-none w-full">
                   <div
                     ref={eyebrowRef}
-                    className="flex items-center gap-2 mb-2 will-change-transform opacity-0"
+                    className="flex items-center gap-2 mb-2"
+                    style={{ willChange: "transform, opacity", WebkitBackfaceVisibility: "hidden" }}
                   >
                     <span className="text-xs font-mono tracking-widest text-pacific-cyan uppercase font-semibold">
                       HAVE A PROJECT IN MIND?
@@ -319,7 +465,8 @@ export default function MobileClosingAndFooter({
 
                   <div
                     ref={impossibleRef}
-                    className="flex flex-col will-change-transform opacity-0"
+                    className="flex flex-col"
+                    style={{ willChange: "transform, opacity", WebkitBackfaceVisibility: "hidden" }}
                   >
                     <span className="text-[clamp(2.4rem,10.5vw,5.5rem)] font-black font-space tracking-tight text-foreground uppercase leading-[0.9] drop-shadow-sm">
                       LET&apos;S MAKE
@@ -339,7 +486,8 @@ export default function MobileClosingAndFooter({
               {/* ----------------------------------------------------- */}
               <div
                 ref={ctaRef}
-                className="w-full will-change-transform opacity-0 pointer-events-none pt-2"
+                className="w-full pointer-events-none pt-2"
+                style={{ willChange: "transform, opacity", WebkitBackfaceVisibility: "hidden" }}
               >
                 <Link
                   href="/contact"

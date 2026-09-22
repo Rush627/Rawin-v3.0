@@ -46,6 +46,7 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "heroPrimaryCtaText",
     "heroSecondaryCtaText",
     "featuredHeading",
+    "heroTypingPhrases",
   ],
   about: [
     "eyebrow",
@@ -188,6 +189,7 @@ const LONG_FIELDS = new Set([
   "principles",
   "focusAreas",
   "suggestedPrompts",
+  "heroTypingPhrases",
 ]);
 
 const ALLOWED_ICON_IDS = new Set([
@@ -799,6 +801,38 @@ export async function updateSectionAction(
           payload[key] = cleanedPrompts;
         } catch {
           return { error: "Invalid JSON for suggested prompts." };
+        }
+        continue;
+      }
+
+      if (key === "heroTypingPhrases") {
+        try {
+          const parsed = JSON.parse(trimmed || "[]");
+          if (!Array.isArray(parsed)) {
+            return { error: "Hero typing phrases must be an array." };
+          }
+          if (parsed.length > 25) {
+            return { error: "Hero typing phrases cannot exceed 25 items." };
+          }
+          const cleanedPhrases: string[] = [];
+          for (const item of parsed) {
+            const phraseStr = String(item || "").trim();
+            if (phraseStr) {
+              if (/[\u2014\u2013]/.test(phraseStr)) {
+                return { error: `Phrase "${phraseStr.slice(0, 20)}..." contains an em dash.` };
+              }
+              if (phraseStr.length > 100) {
+                return { error: `Phrase "${phraseStr.slice(0, 20)}..." exceeds 100 characters.` };
+              }
+              cleanedPhrases.push(phraseStr);
+            }
+          }
+          if (cleanedPhrases.length === 0) {
+            return { error: "At least one valid Hero typing phrase is required." };
+          }
+          payload[key] = cleanedPhrases;
+        } catch {
+          return { error: "Invalid JSON for Hero typing phrases." };
         }
         continue;
       }

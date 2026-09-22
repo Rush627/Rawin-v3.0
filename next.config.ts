@@ -7,6 +7,7 @@ try {
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["mongodb"],
+  images: {},
   experimental: {
     cpus: 1,
     serverActions: {

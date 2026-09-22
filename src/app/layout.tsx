@@ -18,6 +18,7 @@ import ParticleField from "@/components/ParticleField";
 import RawinErrorView from "@/components/RawinErrorView";
 import OfflineDetector from "@/components/OfflineDetector";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
+import IOSDebugContainer from "@/components/debug/IOSDebugContainer";
 import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 
 const geistSans = Geist({
@@ -144,6 +145,7 @@ export default async function RootLayout({
             actionLabel="Refresh"
           />
           <PublicCustomCursor />
+          <IOSDebugContainer />
         </body>
       </html>
     );
@@ -192,6 +194,7 @@ export default async function RootLayout({
           <TorchSpotlight />
         </SmoothScroll>
         <PublicCustomCursor />
+        <IOSDebugContainer />
       </body>
     </html>
   );

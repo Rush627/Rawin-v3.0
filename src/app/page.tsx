@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { GithubIcon } from "@/components/SocialIcons";
 import HeroRoleTyping from "@/components/HeroRoleTyping";
+import MobileHero from "@/components/MobileHero";
 import LaptopShowcase from "@/components/LaptopShowcase";
 import BorderGlow from "@/components/BorderGlow";
 import SelectedProjectsDeck from "@/components/SelectedProjectsDeck";
@@ -42,97 +43,105 @@ export default async function HomePage() {
       {/* ------------------------------------------------------------- */}
       {/* SECTION 1: HERO                                               */}
       {/* ------------------------------------------------------------- */}
-      <section className="relative flex flex-col items-center text-center pt-8 sm:pt-10 md:pt-4 lg:pt-1 pb-6 overflow-hidden">
-        {/* Subtle Background Glow Accent (GPU friendly, zero lag) */}
-        <div
-          aria-hidden="true"
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] sm:w-[340px] md:w-[600px] h-[280px] sm:h-[340px] md:h-[600px] max-w-full rounded-full bg-pacific-cyan/10 blur-[120px] pointer-events-none -z-10"
-        />
+      {/* Desktop Hero (>=1024px) - 100% UNTOUCHED */}
+      <div className="hidden lg:block w-full">
+        <section className="relative flex flex-col items-center text-center pt-8 sm:pt-10 md:pt-4 lg:pt-1 pb-6 overflow-hidden">
+          {/* Subtle Background Glow Accent (GPU friendly, zero lag) */}
+          <div
+            aria-hidden="true"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] sm:w-[340px] md:w-[600px] h-[280px] sm:h-[340px] md:h-[600px] max-w-full rounded-full bg-pacific-cyan/10 blur-[120px] pointer-events-none -z-10"
+          />
 
-        {/* Status Pill Badge - Extra-compact on narrow mobile, centered, single-line */}
-        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-full text-[9px] xs:text-[10px] sm:text-xs font-mono font-medium glass-pill text-muted mb-5 sm:mb-8 border border-white/10 shadow-md whitespace-nowrap max-w-[92vw] overflow-hidden text-ellipsis">
-          <span className="flex h-1.5 w-1.5 sm:h-2 sm:w-2 relative shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-emerald-500"></span>
-          </span>
-          <span className="truncate">{homeContent.heroStatus}</span>
-          <span className="text-white/20 shrink-0">•</span>
-          <span className="text-pacific-cyan font-semibold shrink-0">{homeContent.heroBadge}</span>
-        </div>
-
-        {/* Medium-sized Integrated Portrait */}
-        <div data-particle-protected className="relative mb-6 sm:mb-8 group">
-          <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-pacific-cyan/40 via-apricot-cream/30 to-pacific-cyan/40 blur-md opacity-60 group-hover:opacity-100 transition duration-500"></div>
-          <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-pacific-cyan/50 p-1 bg-surface/80 shadow-2xl">
-            <Image
-              src={siteContent.assets?.profilePhoto?.url || "/images/profile.png"}
-              alt={siteContent.assets?.profilePhoto?.alt || "Rushan Siddiqui : Full Stack Developer"}
-              width={128}
-              height={128}
-              priority
-              unoptimized
-              className="w-full h-full object-cover rounded-full filter contrast-105"
-            />
-          </div>
-        </div>
-
-        {/* Large Confident Typography with Role Typing Animation */}
-        <div data-particle-protected className="flex flex-col items-center gap-2 max-w-4xl">
-          <h1 className="text-3xl sm:text-6xl md:text-7xl font-bold tracking-tight text-foreground font-space leading-[1.08]">
-            {homeContent.heroTitlePrefix}{" "}
-            <span className="text-pacific-cyan" id="hero-name">
-              {homeContent.heroName}
+          {/* Status Pill Badge - Extra-compact on narrow mobile, centered, single-line */}
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-full text-[9px] xs:text-[10px] sm:text-xs font-mono font-medium glass-pill text-muted mb-5 sm:mb-8 border border-white/10 shadow-md whitespace-nowrap max-w-[92vw] overflow-hidden text-ellipsis">
+            <span className="flex h-1.5 w-1.5 sm:h-2 sm:w-2 relative shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-emerald-500"></span>
             </span>
-          </h1>
-          <HeroRoleTyping />
-        </div>
+            <span className="truncate">{homeContent.heroStatus}</span>
+            <span className="text-white/20 shrink-0">•</span>
+            <span className="text-pacific-cyan font-semibold shrink-0">{homeContent.heroBadge}</span>
+          </div>
 
-        {/* Bio statement - comfortably breathes on sides on mobile */}
-        <p data-particle-protected className="mt-3.5 sm:mt-6 w-[86%] sm:w-auto max-w-xl text-xs sm:text-base md:text-lg text-muted leading-relaxed font-sans mx-auto">
-          {homeContent.heroBio}
-        </p>
+          {/* Medium-sized Integrated Portrait */}
+          <div data-particle-protected className="relative mb-6 sm:mb-8 group">
+            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-pacific-cyan/40 via-apricot-cream/30 to-pacific-cyan/40 blur-md opacity-60 group-hover:opacity-100 transition duration-500"></div>
+            <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-pacific-cyan/50 p-1 bg-surface/80 shadow-2xl">
+              <Image
+                src={siteContent.assets?.profilePhoto?.url || "/images/profile.png"}
+                alt={siteContent.assets?.profilePhoto?.alt || "Rushan Siddiqui : Full Stack Developer"}
+                width={128}
+                height={128}
+                priority
+                unoptimized
+                className="w-full h-full object-cover rounded-full filter contrast-105"
+              />
+            </div>
+          </div>
 
-        {/* Primary CTAs - compact on mobile, full touch accessibility */}
-        <div data-particle-protected className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4 mt-5 sm:mt-8 w-full max-w-[280px] sm:max-w-none mx-auto">
-          <Link
-            href="/projects"
-            className="w-full sm:w-auto justify-center flex items-center gap-2 px-3.5 sm:px-6 py-2 sm:py-3.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-xs sm:text-sm hover:bg-pacific-cyan/90 transition-all duration-200 shadow-[0_0_25px_rgba(24,155,173,0.35)] hover:shadow-[0_0_35px_rgba(24,155,173,0.5)] transform hover:-translate-y-0.5 text-center min-h-[38px] sm:min-h-[44px]"
+          {/* Large Confident Typography with Role Typing Animation */}
+          <div data-particle-protected className="flex flex-col items-center gap-2 max-w-4xl">
+            <h1 className="text-3xl sm:text-6xl md:text-7xl font-bold tracking-tight text-foreground font-space leading-[1.08]">
+              {homeContent.heroTitlePrefix}{" "}
+              <span className="text-pacific-cyan" id="hero-name">
+                {homeContent.heroName}
+              </span>
+            </h1>
+            <HeroRoleTyping phrases={homeContent.heroTypingPhrases} />
+          </div>
+
+          {/* Bio statement - comfortably breathes on sides on mobile */}
+          <p data-particle-protected className="mt-3.5 sm:mt-6 w-[86%] sm:w-auto max-w-xl text-xs sm:text-base md:text-lg text-muted leading-relaxed font-sans mx-auto">
+            {homeContent.heroBio}
+          </p>
+
+          {/* Primary CTAs - compact on mobile, full touch accessibility */}
+          <div data-particle-protected className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4 mt-5 sm:mt-8 w-full max-w-[280px] sm:max-w-none mx-auto">
+            <Link
+              href="/projects"
+              className="w-full sm:w-auto justify-center flex items-center gap-2 px-3.5 sm:px-6 py-2 sm:py-3.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-xs sm:text-sm hover:bg-pacific-cyan/90 transition-all duration-200 shadow-[0_0_25px_rgba(24,155,173,0.35)] hover:shadow-[0_0_35px_rgba(24,155,173,0.5)] transform hover:-translate-y-0.5 text-center min-h-[38px] sm:min-h-[44px]"
+            >
+              <span>{homeContent.heroPrimaryCtaText}</span>
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            </Link>
+            <Link
+              href="/contact"
+              className="w-full sm:w-auto justify-center flex items-center gap-2 px-3.5 sm:px-6 py-2 sm:py-3.5 rounded-xl glass-card text-foreground font-medium text-xs sm:text-sm hover:border-pacific-cyan/40 transition-all duration-200 text-center min-h-[38px] sm:min-h-[44px]"
+            >
+              <span>{homeContent.heroSecondaryCtaText}</span>
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pacific-cyan shrink-0" />
+            </Link>
+          </div>
+
+          {/* Quick Highlights Strip */}
+          <div
+            data-particle-protected
+            className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 mt-16 pt-8 border-t border-white/[0.06] w-full max-w-3xl"
           >
-            <span>{homeContent.heroPrimaryCtaText}</span>
-            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-          </Link>
-          <Link
-            href="/contact"
-            className="w-full sm:w-auto justify-center flex items-center gap-2 px-3.5 sm:px-6 py-2 sm:py-3.5 rounded-xl glass-card text-foreground font-medium text-xs sm:text-sm hover:border-pacific-cyan/40 transition-all duration-200 text-center min-h-[38px] sm:min-h-[44px]"
-          >
-            <span>{homeContent.heroSecondaryCtaText}</span>
-            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pacific-cyan shrink-0" />
-          </Link>
-        </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xl sm:text-2xl font-bold text-foreground font-space">Next.js</span>
+              <span className="text-xs text-muted/70 font-mono uppercase mt-1">&amp; React</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xl sm:text-2xl font-bold text-pacific-cyan font-space">Full Stack</span>
+              <span className="text-xs text-muted/70 font-mono uppercase mt-1">Development</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xl sm:text-2xl font-bold text-apricot-cream font-space">Modern</span>
+              <span className="text-xs text-muted/70 font-mono uppercase mt-1">Web Systems</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xl sm:text-2xl font-bold text-foreground font-space">Interaction</span>
+              <span className="text-xs text-muted/70 font-mono uppercase mt-1">&amp; Motion</span>
+            </div>
+          </div>
+        </section>
+      </div>
 
-        {/* Quick Highlights Strip */}
-        <div
-          data-particle-protected
-          className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 mt-16 pt-8 border-t border-white/[0.06] w-full max-w-3xl"
-        >
-          <div className="flex flex-col items-center">
-            <span className="text-xl sm:text-2xl font-bold text-foreground font-space">Next.js</span>
-            <span className="text-xs text-muted/70 font-mono uppercase mt-1">&amp; React</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl sm:text-2xl font-bold text-pacific-cyan font-space">Full Stack</span>
-            <span className="text-xs text-muted/70 font-mono uppercase mt-1">Development</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl sm:text-2xl font-bold text-apricot-cream font-space">Modern</span>
-            <span className="text-xs text-muted/70 font-mono uppercase mt-1">Web Systems</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl sm:text-2xl font-bold text-foreground font-space">Interaction</span>
-            <span className="text-xs text-muted/70 font-mono uppercase mt-1">&amp; Motion</span>
-          </div>
-        </div>
-      </section>
+      {/* Smartphone Hero (<1024px) - Clean, dedicated zero-JS mobile architecture */}
+      <div className="block lg:hidden w-full">
+        <MobileHero homeContent={homeContent} assets={siteContent.assets} />
+      </div>
 
       {/* ------------------------------------------------------------- */}
       {/* SECTION 2: FEATURED PROJECTS (Case Studies)                  */}
