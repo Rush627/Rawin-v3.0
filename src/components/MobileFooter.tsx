@@ -59,7 +59,7 @@ export default function MobileFooter({
       id="mobile-footer"
       className={`bg-ink-black/95 ${
         hasTopBorder ? "pt-6 sm:pt-8 border-t border-white/[0.08]" : "pt-0"
-      } pb-[env(safe-area-inset-bottom,0px)] relative z-20 flex flex-col w-full overflow-x-clip`}
+      } pb-0 relative z-20 flex flex-col w-full overflow-x-clip`}
     >
       {/* Continuous Marquee / Notification Strip */}
       <div
@@ -132,7 +132,7 @@ export default function MobileFooter({
 
       {/* Giant Outlined RAWIN Typography Signature */}
       <div
-        className="w-full overflow-hidden select-none flex justify-center items-start pointer-events-none mt-1 sm:mt-2 h-[clamp(2.5rem,10.8vw,6.2rem)]"
+        className="w-full overflow-hidden select-none flex justify-center items-start pointer-events-none mt-1 sm:mt-2 h-[calc(clamp(2.5rem,10.8vw,6.2rem)+env(safe-area-inset-bottom,0px))]"
         aria-hidden="true"
       >
         <span

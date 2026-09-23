@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 
 export interface MobileClosingSectionProps {
@@ -27,19 +26,6 @@ export interface MobileClosingSectionProps {
 export default function MobileClosingSection({
   emailAddress = "rushansiddiqui5262@gmail.com",
 }: MobileClosingSectionProps) {
-  const pathname = usePathname();
-
-  // Lightweight debug marker (only active when ?ios-debug=1 is in query parameters)
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.location.search.includes("ios-debug=1")) {
-      console.log("[IOS_DEBUG] MOBILE_CLOSING_MOUNT", {
-        pathname,
-        emailAddress,
-        architecture: "static-editorial-typography",
-        timestamp: Date.now(),
-      });
-    }
-  }, [pathname, emailAddress]);
 
   return (
     <section

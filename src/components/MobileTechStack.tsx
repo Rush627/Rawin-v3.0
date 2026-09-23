@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import type { TechCategory } from "@/data/techArsenal";
 
 interface MobileTechStackProps {
@@ -72,16 +72,6 @@ function TechCategoryCardContent({ category }: { category: TechCategory }) {
  * - Fluid natural document scroll flow
  */
 export default function MobileTechStack({ categories }: MobileTechStackProps) {
-  // Lightweight debug marker (only when ?ios-debug=1 is explicitly requested)
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.location.search.includes("ios-debug=1")) {
-      console.log("[IOS_DEBUG] MOBILE_TECH_STACK_MOUNT", {
-        cardCount: categories?.length ?? 0,
-        timestamp: Date.now(),
-      });
-    }
-  }, [categories?.length]);
-
   if (!categories || categories.length === 0) {
     return null;
   }
