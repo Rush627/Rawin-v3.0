@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { ObjectId, GridFSBucket } from "mongodb";
 import type { Readable } from "stream";
 import { getDatabase } from "./mongodb";
@@ -91,8 +93,7 @@ function mapProjectDoc(doc: any): Project {
 /**
  * Retrieves all projects sorted by displayOrder ascending, then createdAt descending.
  */
-export async function getProjects(): Promise<Project[]> {
-  await ensureProjectIndexes();
+async function fetchProjectsFromDb(): Promise<Project[]> {
   try {
     const db = await getDatabase();
     if (!db) return [];
@@ -109,11 +110,23 @@ export async function getProjects(): Promise<Project[]> {
   }
 }
 
+const getCachedProjects = unstable_cache(
+  async () => fetchProjectsFromDb(),
+  ["projects-all"],
+  {
+    tags: ["projects"],
+    revalidate: 3600,
+  }
+);
+
+export const getProjects = cache(async (): Promise<Project[]> => {
+  return getCachedProjects();
+});
+
 /**
  * Retrieves only featured projects sorted by displayOrder ascending.
  */
-export async function getFeaturedProjects(): Promise<Project[]> {
-  await ensureProjectIndexes();
+async function fetchFeaturedProjectsFromDb(): Promise<Project[]> {
   try {
     const db = await getDatabase();
     if (!db) return [];
@@ -130,11 +143,23 @@ export async function getFeaturedProjects(): Promise<Project[]> {
   }
 }
 
+const getCachedFeaturedProjects = unstable_cache(
+  async () => fetchFeaturedProjectsFromDb(),
+  ["projects-featured"],
+  {
+    tags: ["projects"],
+    revalidate: 3600,
+  }
+);
+
+export const getFeaturedProjects = cache(async (): Promise<Project[]> => {
+  return getCachedFeaturedProjects();
+});
+
 /**
  * Retrieves a single project by unique slug.
  */
-export async function getProjectBySlug(slug: string): Promise<Project | null> {
-  await ensureProjectIndexes();
+async function fetchProjectBySlugFromDb(slug: string): Promise<Project | null> {
   try {
     const db = await getDatabase();
     if (!db) return null;
@@ -146,6 +171,18 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
     return null;
   }
 }
+
+export const getProjectBySlug = cache(async (slug: string): Promise<Project | null> => {
+  const fetcher = unstable_cache(
+    async () => fetchProjectBySlugFromDb(slug),
+    [`project-slug-${slug.trim().toLowerCase()}`],
+    {
+      tags: ["projects"],
+      revalidate: 3600,
+    }
+  );
+  return fetcher();
+});
 
 /**
  * Retrieves a single project by MongoDB ObjectId.
@@ -183,6 +220,13 @@ export async function createProject(data: CreateProjectInput): Promise<Project |
     };
 
     const result = await db.collection(COLLECTION_NAME).insertOne(docToInsert);
+
+    try {
+      revalidateTag("projects", "max");
+    } catch {
+      // Ignore outside request context
+    }
+
     return {
       _id: result.insertedId.toString(),
       ...docToInsert,
@@ -219,6 +263,12 @@ export async function updateProject(id: string, data: UpdateProjectInput): Promi
       { $set: updateFields }
     );
 
+    try {
+      revalidateTag("projects", "max");
+    } catch {
+      // Ignore outside request context
+    }
+
     return result.matchedCount > 0;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -237,6 +287,13 @@ export async function deleteProject(id: string): Promise<boolean> {
     if (!ObjectId.isValid(id)) throw new Error("Invalid project ID format.");
 
     const result = await db.collection(COLLECTION_NAME).deleteOne({ _id: new ObjectId(id) });
+
+    try {
+      revalidateTag("projects", "max");
+    } catch {
+      // Ignore outside request context
+    }
+
     return result.deletedCount > 0;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -305,6 +362,12 @@ export async function storeProjectPreviewFile(
     { _id: new ObjectId(projectId) },
     { $set: { previewImage: url, updatedAt: new Date() } }
   );
+
+  try {
+    revalidateTag("projects", "max");
+  } catch {
+    // Ignore outside request context
+  }
 
   return url;
 }

@@ -85,12 +85,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [content, headerList] = await Promise.all([
-    getSiteContent(),
-    headers(),
-  ]);
-
-  const pathname = headerList.get("x-pathname") || "";
+  const content = await getSiteContent();
 
   const now = Date.now();
   const endsAtTime = content.maintenance?.endsAt ? new Date(content.maintenance.endsAt).getTime() : null;
@@ -98,13 +93,16 @@ export default async function RootLayout({
   const isMaintenanceActive = Boolean(content.maintenance?.enabled && !isMaintenanceExpired);
 
   // Server-Side Maintenance Gate:
-  // If maintenance is active (enabled and not expired) AND route is public, serve dedicated 503 screen
-  if (
-    isMaintenanceActive &&
-    !pathname.startsWith("/admin") &&
-    !pathname.startsWith("/api/admin") &&
-    !pathname.startsWith("/api/auth")
-  ) {
+  // Only conditionally inspect headers when maintenance is actually active
+  if (isMaintenanceActive) {
+    const headerList = await headers();
+    const pathname = headerList.get("x-pathname") || "";
+
+    if (
+      !pathname.startsWith("/admin") &&
+      !pathname.startsWith("/api/admin") &&
+      !pathname.startsWith("/api/auth")
+    ) {
     const isMaintenanceMessage = content.maintenance.showMessage;
     return (
       <html
@@ -148,6 +146,7 @@ export default async function RootLayout({
       </html>
     );
   }
+}
 
   const footerCopyright =
     content.global?.footerCopyright ||

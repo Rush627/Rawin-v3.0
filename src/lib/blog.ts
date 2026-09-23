@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { ObjectId } from "mongodb";
 import { GridFSBucket } from "mongodb";
 import type { Readable } from "stream";
@@ -79,9 +81,8 @@ function mapBlogDoc(doc: any): BlogPost {
 /**
  * Retrieves all published posts for the public website, sorted by published date descending.
  */
-export async function getPublishedPosts(): Promise<BlogPost[]> {
+async function fetchPublishedPostsFromDb(): Promise<BlogPost[]> {
   try {
-    await ensureBlogIndexes();
     const db = await getDatabase();
     if (!db) return [];
 
@@ -99,12 +100,24 @@ export async function getPublishedPosts(): Promise<BlogPost[]> {
   }
 }
 
+const getCachedPublishedPosts = unstable_cache(
+  async () => fetchPublishedPostsFromDb(),
+  ["blog-published"],
+  {
+    tags: ["blog"],
+    revalidate: 3600,
+  }
+);
+
+export const getPublishedPosts = cache(async (): Promise<BlogPost[]> => {
+  return getCachedPublishedPosts();
+});
+
 /**
  * Retrieves published posts marked as featured.
  */
-export async function getFeaturedPosts(): Promise<BlogPost[]> {
+async function fetchFeaturedPostsFromDb(): Promise<BlogPost[]> {
   try {
-    await ensureBlogIndexes();
     const db = await getDatabase();
     if (!db) return [];
 
@@ -122,13 +135,25 @@ export async function getFeaturedPosts(): Promise<BlogPost[]> {
   }
 }
 
+const getCachedFeaturedPosts = unstable_cache(
+  async () => fetchFeaturedPostsFromDb(),
+  ["blog-featured"],
+  {
+    tags: ["blog"],
+    revalidate: 3600,
+  }
+);
+
+export const getFeaturedPosts = cache(async (): Promise<BlogPost[]> => {
+  return getCachedFeaturedPosts();
+});
+
 /**
  * Retrieves a single post by unique slug.
  * By default (includeUnpublished = false), only returns the post if its status is "published".
  */
-export async function getPostBySlug(slug: string, includeUnpublished = false): Promise<BlogPost | null> {
+async function fetchPostBySlugFromDb(slug: string, includeUnpublished = false): Promise<BlogPost | null> {
   try {
-    await ensureBlogIndexes();
     const db = await getDatabase();
     if (!db) return null;
 
@@ -147,6 +172,21 @@ export async function getPostBySlug(slug: string, includeUnpublished = false): P
     return null;
   }
 }
+
+export const getPostBySlug = cache(async (slug: string, includeUnpublished = false): Promise<BlogPost | null> => {
+  if (includeUnpublished) {
+    return fetchPostBySlugFromDb(slug, true);
+  }
+  const fetcher = unstable_cache(
+    async () => fetchPostBySlugFromDb(slug, false),
+    [`blog-slug-${slug.trim().toLowerCase()}`],
+    {
+      tags: ["blog"],
+      revalidate: 3600,
+    }
+  );
+  return fetcher();
+});
 
 /**
  * Retrieves a single post by MongoDB ObjectId (used by the admin editor).
@@ -216,6 +256,13 @@ export async function createPost(data: CreateBlogPostInput): Promise<BlogPost | 
     };
 
     const result = await db.collection(COLLECTION_NAME).insertOne(docToInsert);
+
+    try {
+      revalidateTag("blog", "max");
+    } catch {
+      // Ignore outside request context
+    }
+
     return {
       _id: result.insertedId.toString(),
       ...data,
@@ -276,6 +323,12 @@ export async function updatePost(id: string, data: UpdateBlogPostInput): Promise
       { $set: updateFields }
     );
 
+    try {
+      revalidateTag("blog", "max");
+    } catch {
+      // Ignore outside request context
+    }
+
     return result.matchedCount > 0;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -296,6 +349,13 @@ export async function deletePost(id: string): Promise<boolean> {
     if (!ObjectId.isValid(id)) throw new Error("Invalid post ID format.");
 
     const result = await db.collection(COLLECTION_NAME).deleteOne({ _id: new ObjectId(id) });
+
+    try {
+      revalidateTag("blog", "max");
+    } catch {
+      // Ignore outside request context
+    }
+
     return result.deletedCount > 0;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -364,6 +424,12 @@ export async function storeBlogCoverFile(
     { _id: new ObjectId(postId) },
     { $set: { coverImage: url, updatedAt: new Date() } }
   );
+
+  try {
+    revalidateTag("blog", "max");
+  } catch {
+    // Ignore outside request context
+  }
 
   return url;
 }

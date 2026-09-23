@@ -1,7 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getAdminSession, verifyAdminCredentials, destroyAdminSession } from "@/lib/auth";
 import { getDatabase } from "@/lib/mongodb";
 import {
@@ -164,6 +164,9 @@ export async function saveAvailabilityAction({
       return { error: "Failed to persist maintenance settings. Please try again." };
     }
 
+    try {
+      revalidateTag("site-content", "max");
+    } catch {}
     revalidatePath("/", "layout");
     revalidatePath("/admin/settings");
 
@@ -269,6 +272,9 @@ export async function saveLaunchExperienceAction(
       return { error: "Failed to persist launch experience settings. Please try again." };
     }
 
+    try {
+      revalidateTag("site-content", "max");
+    } catch {}
     revalidatePath("/", "layout");
     revalidatePath("/admin/settings");
 

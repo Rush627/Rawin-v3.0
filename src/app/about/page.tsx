@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     "Learn about Rushan Siddiqui's background, evolution from static web pages to modern engineering systems, and core development principles.",
 };
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 const ICON_MAP: Record<string, LucideIcon> = {
   layers: Layers,

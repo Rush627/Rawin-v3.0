@@ -7,8 +7,7 @@ export const metadata = {
   description: "Selected web applications, tools, and experiments built by Rushan Siddiqui.",
 };
 
-// Revalidate page dynamically
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export default async function ProjectsPage() {
   const projects = await getProjects();

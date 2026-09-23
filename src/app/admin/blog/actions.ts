@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
 import {
@@ -142,6 +142,9 @@ export async function createPostAction(
     return { error: "An unexpected error occurred while saving the post. Please try again." };
   }
 
+  try {
+    revalidateTag("blog", "max");
+  } catch {}
   revalidatePath("/blog");
   revalidatePath(`/blog/${slug}`);
   revalidatePath("/admin/blog");
@@ -269,6 +272,9 @@ export async function updatePostAction(
     return { error: "An unexpected error occurred while updating the post. Please try again." };
   }
 
+  try {
+    revalidateTag("blog", "max");
+  } catch {}
   revalidatePath("/blog");
   revalidatePath(`/blog/${slug}`);
   revalidatePath("/admin/blog");
@@ -287,6 +293,9 @@ export async function togglePostFeaturedAction(id: string, currentFeatured: bool
   const post = await getPostById(id);
   await updatePost(id, { featured: !currentFeatured });
 
+  try {
+    revalidateTag("blog", "max");
+  } catch {}
   revalidatePath("/blog");
   if (post?.slug) {
     revalidatePath(`/blog/${post.slug}`);
@@ -306,6 +315,9 @@ export async function setPostStatusAction(id: string, newStatus: BlogPostStatus)
   const post = await getPostById(id);
   await updatePost(id, { status: newStatus });
 
+  try {
+    revalidateTag("blog", "max");
+  } catch {}
   revalidatePath("/blog");
   if (post?.slug) {
     revalidatePath(`/blog/${post.slug}`);
@@ -329,6 +341,9 @@ export async function deletePostAction(id: string): Promise<void> {
 
   await deletePost(id);
 
+  try {
+    revalidateTag("blog", "max");
+  } catch {}
   revalidatePath("/blog");
   if (post?.slug) {
     revalidatePath(`/blog/${post.slug}`);
@@ -392,6 +407,9 @@ export async function uploadBlogCoverAction(
     const url = await storeBlogCoverFile(postId, buffer, file.type, file.name);
     const post = await getPostById(postId);
 
+    try {
+      revalidateTag("blog", "max");
+    } catch {}
     revalidatePath("/blog");
     if (post?.slug) {
       revalidatePath(`/blog/${post.slug}`);
@@ -434,6 +452,9 @@ export async function removeBlogCoverAction(
       );
     }
 
+    try {
+      revalidateTag("blog", "max");
+    } catch {}
     revalidatePath("/blog");
     if (post?.slug) {
       revalidatePath(`/blog/${post.slug}`);

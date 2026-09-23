@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     "Exploring the intersection of software architecture, intelligent agents, and performant web systems.",
 };
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return "RECENT";

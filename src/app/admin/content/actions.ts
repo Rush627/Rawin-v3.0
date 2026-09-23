@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getAdminSession } from "@/lib/auth";
 import {
   updateSiteSection,
@@ -1056,6 +1056,9 @@ export async function updateSectionAction(
   }
 
   // Revalidate public pages and admin content editor
+  try {
+    revalidateTag("site-content", "max");
+  } catch {}
   revalidatePath("/");
   revalidatePath("/about");
   revalidatePath("/contact");
@@ -1216,6 +1219,9 @@ export async function updateAssetAction(
 }
 
 function revalidateAllAssetPaths() {
+  try {
+    revalidateTag("site-content", "max");
+  } catch {}
   revalidatePath("/");
   revalidatePath("/about");
   revalidatePath("/contact");
@@ -1273,6 +1279,9 @@ export async function uploadResumePdfAction(
     const { storeResumePdfFile } = await import("@/lib/site-content");
     const result = await storeResumePdfFile(buffer, file.name, file.size);
 
+    try {
+      revalidateTag("site-content", "max");
+    } catch {}
     revalidatePath("/resume");
     revalidatePath("/admin/content");
 
@@ -1300,6 +1309,9 @@ export async function removeResumePdfAction(): Promise<ContentActionState> {
     const { removeResumePdfFile } = await import("@/lib/site-content");
     await removeResumePdfFile();
 
+    try {
+      revalidateTag("site-content", "max");
+    } catch {}
     revalidatePath("/resume");
     revalidatePath("/admin/content");
 
@@ -1350,6 +1362,9 @@ export async function uploadMilestoneImageAction(
     const safeName = file.name || `milestone-${milestoneId}.png`;
     const url = await storeMilestoneImage(milestoneId, buffer, file.type, safeName);
 
+    try {
+      revalidateTag("site-content", "max");
+    } catch {}
     revalidatePath("/about");
     revalidatePath("/admin/content");
 

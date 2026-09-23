@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { getDatabase } from "./mongodb";
 import { GridFSBucket, ObjectId } from "mongodb";
 import type { Readable } from "stream";
@@ -1451,9 +1453,8 @@ export function mergeWithDefaults(doc: any): SiteContent {
 /**
  * Retrieves site content from MongoDB with automatic default seeding and graceful fallback.
  */
-export async function getSiteContent(): Promise<SiteContent> {
+async function fetchSiteContentFromDb(): Promise<SiteContent> {
   try {
-    await ensureSiteContentIndexes();
     const db = await getDatabase();
     if (!db) {
       return DEFAULT_SITE_CONTENT;
@@ -1507,6 +1508,19 @@ export async function getSiteContent(): Promise<SiteContent> {
   }
 }
 
+const getCachedSiteContent = unstable_cache(
+  async () => fetchSiteContentFromDb(),
+  ["site-content-cache"],
+  {
+    tags: ["site-content"],
+    revalidate: 3600,
+  }
+);
+
+export const getSiteContent = cache(async (): Promise<SiteContent> => {
+  return getCachedSiteContent();
+});
+
 /**
  * Updates a specific section of the site content in MongoDB.
  */
@@ -1552,6 +1566,12 @@ export async function updateSiteSection<K extends ContentSectionKey>(
       },
       { upsert: true }
     );
+
+    try {
+      revalidateTag("site-content", "max");
+    } catch {
+      // Ignore outside request context
+    }
 
     return result.acknowledged;
   } catch (err: unknown) {
@@ -1625,6 +1645,12 @@ export async function storeAssetFile(
 
   await col.updateOne({ key: "main" }, { $set: updatePayload }, { upsert: true });
 
+  try {
+    revalidateTag("site-content", "max");
+  } catch {
+    // Ignore outside request context
+  }
+
   return { fileId, url };
 }
 
@@ -1691,6 +1717,13 @@ export async function updateSiteAssetMeta(
     { $set: updateFields },
     { upsert: true }
   );
+
+  try {
+    revalidateTag("site-content", "max");
+  } catch {
+    // Ignore outside request context
+  }
+
   return res.acknowledged;
 }
 
@@ -1731,6 +1764,13 @@ export async function resetAssetToDefault(assetType: AssetKey): Promise<boolean>
       },
     }
   );
+
+  try {
+    revalidateTag("site-content", "max");
+  } catch {
+    // Ignore outside request context
+  }
+
   return true;
 }
 
@@ -1873,6 +1913,12 @@ export async function storeResumePdfFile(
     { upsert: true }
   );
 
+  try {
+    revalidateTag("site-content", "max");
+  } catch {
+    // Ignore outside request context
+  }
+
   return { fileId, filename: sanitizedName, url, size };
 }
 
@@ -1949,6 +1995,12 @@ export async function removeResumePdfFile(): Promise<boolean> {
     }
   );
 
+  try {
+    revalidateTag("site-content", "max");
+  } catch {
+    // Ignore outside request context
+  }
+
   return true;
 }
 
@@ -1962,7 +2014,7 @@ export interface PublicAvailability {
  * Lightweight query for public website availability status with zero sensitive data.
  * Automatically normalizes expired maintenance timers in MongoDB.
  */
-export async function getPublicAvailability(): Promise<PublicAvailability> {
+async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
   try {
     const db = await getDatabase();
     if (!db) {
@@ -2019,5 +2071,18 @@ export async function getPublicAvailability(): Promise<PublicAvailability> {
     return { status: "live" };
   }
 }
+
+const getCachedPublicAvailability = unstable_cache(
+  async () => fetchPublicAvailabilityFromDb(),
+  ["public-availability-cache"],
+  {
+    tags: ["site-content"],
+    revalidate: 60,
+  }
+);
+
+export const getPublicAvailability = cache(async (): Promise<PublicAvailability> => {
+  return getCachedPublicAvailability();
+});
 
 

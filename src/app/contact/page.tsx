@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "Direct communication channel for Rushan Siddiqui : Full Stack Developer. Open to full-time developer roles, freelance contracts, and software architecture consultancies.",
 };
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export default async function ContactPage() {
   const content = await getSiteContent();

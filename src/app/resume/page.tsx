@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Professional resume and developer profile of Rushan Siddiqui: Full Stack Developer.",
 };
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export default async function ResumePage() {
   const content = await getSiteContent();

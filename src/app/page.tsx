@@ -27,7 +27,7 @@ import { TECH_ARSENAL } from "@/data/techArsenal";
 import { TIMELINE, VALUE_PROPOSITIONS } from "@/data/experience";
 import LaunchExperience from "@/components/launch/LaunchExperience";
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export default async function HomePage() {
   const [featuredProjects, siteContent] = await Promise.all([

@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "The tools, software, engineering stack, and personal workflow used daily by Rushan Siddiqui.",
 };
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 const DEFAULT_DAILY_STACK: DailyStackItem[] = [
   {

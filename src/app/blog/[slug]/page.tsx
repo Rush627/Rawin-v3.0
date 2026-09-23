@@ -3,14 +3,23 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { ArrowLeft, Calendar, Clock, BookOpen } from "lucide-react";
-import { getPostBySlug } from "@/lib/blog";
+import { getPostBySlug, getPublishedPosts } from "@/lib/blog";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export const revalidate = 0;
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  try {
+    const posts = await getPublishedPosts();
+    return posts.map((post) => ({ slug: post.slug }));
+  } catch {
+    return [];
+  }
+}
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
