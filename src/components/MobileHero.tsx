@@ -2,11 +2,12 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Send } from "lucide-react";
-import type { HomeContent, SiteAssets } from "@/lib/site-content";
+import type { GlobalContent, HomeContent, SiteAssets } from "@/lib/site-content";
 import MobileHeroRole from "@/components/MobileHeroRole";
 
 interface MobileHeroProps {
   homeContent: HomeContent;
+  globalContent?: GlobalContent;
   assets?: SiteAssets;
 }
 
@@ -26,7 +27,7 @@ interface MobileHeroProps {
  * - Refined 2x2 capability section with subtle Pacific Cyan L-shaped corner accents
  * - 100% connected to existing CMS / MongoDB data pipeline via props
  */
-export default function MobileHero({ homeContent, assets }: MobileHeroProps) {
+export default function MobileHero({ homeContent, globalContent, assets }: MobileHeroProps) {
   const rawProfileUrl = assets?.profilePhoto?.url || "/images/profile.png";
   // Strip cache-busting query strings so Next/Image optimizer processes local API route cleanly
   const profileUrl = rawProfileUrl.startsWith("/api/")
@@ -34,6 +35,17 @@ export default function MobileHero({ homeContent, assets }: MobileHeroProps) {
     : rawProfileUrl;
   const profileAlt =
     assets?.profilePhoto?.alt || "Rushan Siddiqui : Full Stack Developer";
+
+  const availabilityStatus = globalContent?.availabilityStatus || homeContent.heroStatus;
+  const availabilityBadge = globalContent?.availabilityBadge || homeContent.heroBadge;
+  const statusColor = globalContent?.availabilityStatusColor || "green";
+
+  const dotColorClass =
+    statusColor === "red"
+      ? "bg-rose-500"
+      : statusColor === "orange"
+      ? "bg-amber-500"
+      : "bg-emerald-400";
 
   return (
     <section
@@ -44,13 +56,13 @@ export default function MobileHero({ homeContent, assets }: MobileHeroProps) {
       {/* 1. Status Pill Badge - Compact, subtle, elegant status indicator */}
       <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-medium text-muted/80 bg-[#12121a] border border-white/[0.08] max-w-[90vw] overflow-hidden mb-2.5">
         <span
-          className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"
+          className={`w-1.5 h-1.5 rounded-full ${dotColorClass} shrink-0`}
           aria-hidden="true"
         />
-        <span className="truncate">{homeContent.heroStatus}</span>
+        <span className="truncate">{availabilityStatus}</span>
         <span className="text-white/20 shrink-0 text-[8px]">•</span>
         <span className="text-pacific-cyan font-medium shrink-0">
-          {homeContent.heroBadge}
+          {availabilityBadge}
         </span>
       </div>
 

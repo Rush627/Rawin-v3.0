@@ -1,5 +1,6 @@
 import { cache } from "react";
-import { unstable_cache, revalidateTag } from "next/cache";
+import { unstable_cache } from "next/cache";
+import { invalidateCacheTag } from "./cache";
 import { ObjectId } from "mongodb";
 import { GridFSBucket } from "mongodb";
 import type { Readable } from "stream";
@@ -228,17 +229,8 @@ async function fetchAllPostsAdminFromDb(): Promise<BlogPost[]> {
   }
 }
 
-const getCachedAllPostsAdmin = unstable_cache(
-  async () => fetchAllPostsAdminFromDb(),
-  ["blog-all-admin"],
-  {
-    tags: ["blog"],
-    revalidate: 3600,
-  }
-);
-
 export const getAllPostsAdmin = cache(async (): Promise<BlogPost[]> => {
-  return getCachedAllPostsAdmin();
+  return fetchAllPostsAdminFromDb();
 });
 
 /**
@@ -270,7 +262,7 @@ export async function createPost(data: CreateBlogPostInput): Promise<BlogPost | 
     const result = await db.collection(COLLECTION_NAME).insertOne(docToInsert);
 
     try {
-      revalidateTag("blog", "max");
+      invalidateCacheTag("blog");
     } catch {
       // Ignore outside request context
     }
@@ -336,7 +328,7 @@ export async function updatePost(id: string, data: UpdateBlogPostInput): Promise
     );
 
     try {
-      revalidateTag("blog", "max");
+      invalidateCacheTag("blog");
     } catch {
       // Ignore outside request context
     }
@@ -363,7 +355,7 @@ export async function deletePost(id: string): Promise<boolean> {
     const result = await db.collection(COLLECTION_NAME).deleteOne({ _id: new ObjectId(id) });
 
     try {
-      revalidateTag("blog", "max");
+      invalidateCacheTag("blog");
     } catch {
       // Ignore outside request context
     }
@@ -438,7 +430,7 @@ export async function storeBlogCoverFile(
   );
 
   try {
-    revalidateTag("blog", "max");
+    invalidateCacheTag("blog");
   } catch {
     // Ignore outside request context
   }

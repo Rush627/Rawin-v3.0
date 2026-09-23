@@ -39,11 +39,16 @@ export async function GET(
     if (asset && asset.stream) {
       // Convert Node.js stream to Web standard ReadableStream
       const webStream = Readable.toWeb(asset.stream) as ReadableStream;
+      const hasVersion = req.nextUrl.searchParams.has("v");
+      const cacheControl = hasVersion
+        ? "public, max-age=31536000, immutable"
+        : "public, max-age=60, stale-while-revalidate=300";
+
       return new Response(webStream, {
         status: 200,
         headers: {
           "Content-Type": asset.contentType,
-          "Cache-Control": "public, max-age=31536000, immutable",
+          "Cache-Control": cacheControl,
           "Content-Disposition": `inline; filename="${asset.filename}"`,
         },
       });

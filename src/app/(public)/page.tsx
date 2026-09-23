@@ -35,6 +35,25 @@ export default async function HomePage() {
     getSiteContent(),
   ]);
   const homeContent = siteContent.home;
+  const globalContent = siteContent.global;
+
+  const availabilityStatus = globalContent?.availabilityStatus || homeContent.heroStatus;
+  const availabilityBadge = globalContent?.availabilityBadge || homeContent.heroBadge;
+  const statusColor = globalContent?.availabilityStatusColor || "green";
+
+  const dotColorClass =
+    statusColor === "red"
+      ? "bg-rose-500"
+      : statusColor === "orange"
+      ? "bg-amber-500"
+      : "bg-emerald-500";
+
+  const pingColorClass =
+    statusColor === "red"
+      ? "bg-rose-400"
+      : statusColor === "orange"
+      ? "bg-amber-400"
+      : "bg-emerald-400";
 
   return (
     <>
@@ -55,12 +74,12 @@ export default async function HomePage() {
           {/* Status Pill Badge - Extra-compact on narrow mobile, centered, single-line */}
           <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-full text-[9px] xs:text-[10px] sm:text-xs font-mono font-medium glass-pill text-muted mb-5 sm:mb-8 border border-white/10 shadow-md whitespace-nowrap max-w-[92vw] overflow-hidden text-ellipsis">
             <span className="flex h-1.5 w-1.5 sm:h-2 sm:w-2 relative shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-emerald-500"></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${pingColorClass} opacity-75`}></span>
+              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 ${dotColorClass}`}></span>
             </span>
-            <span className="truncate">{homeContent.heroStatus}</span>
+            <span className="truncate">{availabilityStatus}</span>
             <span className="text-white/20 shrink-0">•</span>
-            <span className="text-pacific-cyan font-semibold shrink-0">{homeContent.heroBadge}</span>
+            <span className="text-pacific-cyan font-semibold shrink-0">{availabilityBadge}</span>
           </div>
 
           {/* Medium-sized Integrated Portrait */}
@@ -140,7 +159,7 @@ export default async function HomePage() {
 
       {/* Smartphone Hero (<1024px) - Clean, dedicated zero-JS mobile architecture */}
       <div className="block lg:hidden w-full">
-        <MobileHero homeContent={homeContent} assets={siteContent.assets} />
+        <MobileHero homeContent={homeContent} globalContent={globalContent} assets={siteContent.assets} />
       </div>
 
       {/* ------------------------------------------------------------- */}

@@ -1,5 +1,6 @@
 import { cache } from "react";
-import { unstable_cache, revalidateTag } from "next/cache";
+import { unstable_cache } from "next/cache";
+import { invalidateCacheTag } from "./cache";
 import { ObjectId } from "mongodb";
 import { getDatabase } from "./mongodb";
 
@@ -170,7 +171,7 @@ export async function createOrbitKnowledge(
   const result = await db.collection(COLLECTION_NAME).insertOne(docToInsert);
 
   try {
-    revalidateTag("orbit-knowledge", "max");
+    invalidateCacheTag("orbit-knowledge");
   } catch {}
 
   return {
@@ -215,7 +216,7 @@ export async function updateOrbitKnowledge(
   if (!result) return null;
 
   try {
-    revalidateTag("orbit-knowledge", "max");
+    invalidateCacheTag("orbit-knowledge");
   } catch {}
 
   return {
@@ -242,7 +243,7 @@ export async function deleteOrbitKnowledge(id: string): Promise<boolean> {
     const result = await db.collection(COLLECTION_NAME).deleteOne({ _id: new ObjectId(id) });
     if (result.deletedCount === 1) {
       try {
-        revalidateTag("orbit-knowledge", "max");
+        invalidateCacheTag("orbit-knowledge");
       } catch {}
       return true;
     }
@@ -276,7 +277,7 @@ export async function toggleOrbitKnowledgeEnabled(
     );
     if (result.matchedCount === 1) {
       try {
-        revalidateTag("orbit-knowledge", "max");
+        invalidateCacheTag("orbit-knowledge");
       } catch {}
       return true;
     }

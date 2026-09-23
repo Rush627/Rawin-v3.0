@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
+import { invalidateCacheTag } from "@/lib/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
 import {
@@ -194,7 +195,7 @@ export async function createProjectAction(
   }
 
   try {
-    revalidateTag("projects", "max");
+    invalidateCacheTag("projects");
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
@@ -382,7 +383,7 @@ export async function updateProjectAction(
   }
 
   try {
-    revalidateTag("projects", "max");
+    invalidateCacheTag("projects");
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
@@ -401,7 +402,7 @@ export async function toggleFeaturedAction(id: string, currentFeatured: boolean)
 
   await updateProject(id, { featured: !currentFeatured });
   try {
-    revalidateTag("projects", "max");
+    invalidateCacheTag("projects");
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
@@ -421,7 +422,7 @@ export async function deleteProjectAction(id: string): Promise<void> {
 
   await deleteProject(id);
   try {
-    revalidateTag("projects", "max");
+    invalidateCacheTag("projects");
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
@@ -483,7 +484,7 @@ export async function uploadProjectPreviewAction(
     const url = await storeProjectPreviewFile(projectId, buffer, file.type, file.name);
 
     try {
-      revalidateTag("projects", "max");
+      invalidateCacheTag("projects");
     } catch {}
     revalidatePath("/");
     revalidatePath("/projects");
@@ -525,7 +526,7 @@ export async function removeProjectPreviewAction(
     }
 
     try {
-      revalidateTag("projects", "max");
+      invalidateCacheTag("projects");
     } catch {}
     revalidatePath("/");
     revalidatePath("/projects");

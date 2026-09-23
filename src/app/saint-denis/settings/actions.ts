@@ -1,7 +1,8 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
+import { invalidateCacheTag } from "@/lib/cache";
 import { getAdminSession, verifyAdminCredentials, destroyAdminSession } from "@/lib/auth";
 import { getDatabase } from "@/lib/mongodb";
 import {
@@ -165,7 +166,7 @@ export async function saveAvailabilityAction({
     }
 
     try {
-      revalidateTag("site-content", "max");
+      invalidateCacheTag("site-content");
     } catch {}
     revalidatePath("/", "layout");
     revalidatePath("/saint-denis/settings");
@@ -273,7 +274,7 @@ export async function saveLaunchExperienceAction(
     }
 
     try {
-      revalidateTag("site-content", "max");
+      invalidateCacheTag("site-content");
     } catch {}
     revalidatePath("/", "layout");
     revalidatePath("/saint-denis/settings");

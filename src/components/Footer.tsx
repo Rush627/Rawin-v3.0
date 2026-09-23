@@ -239,9 +239,11 @@ export default function Footer({
   const resolvedCopyright =
     footerCopyright ||
     content?.footerCopyright ||
-    "RAWIN. All rights reserved. Designed & built by Rushan Siddiqui.";
+    "© 2026 RAWIN. All rights reserved. Designed & built by Rushan Siddiqui.";
   const year = currentYear ?? 2026;
-  const copyrightText = `© ${year} ${resolvedCopyright}`;
+  const copyrightText = resolvedCopyright.trim().startsWith("©")
+    ? resolvedCopyright.trim()
+    : `© ${year} ${resolvedCopyright.trim()}`;
 
   // Route Exception 2: Contact page
   // Desktop/laptop: renders existing sleek minimal bottom strip (100% unchanged)

@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
+import { invalidateCacheTag } from "@/lib/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
 import {
@@ -143,8 +144,9 @@ export async function createPostAction(
   }
 
   try {
-    revalidateTag("blog", "max");
+    invalidateCacheTag("blog");
   } catch {}
+  revalidatePath("/");
   revalidatePath("/blog");
   revalidatePath(`/blog/${slug}`);
   revalidatePath("/saint-denis/blog");
@@ -273,8 +275,9 @@ export async function updatePostAction(
   }
 
   try {
-    revalidateTag("blog", "max");
+    invalidateCacheTag("blog");
   } catch {}
+  revalidatePath("/");
   revalidatePath("/blog");
   revalidatePath(`/blog/${slug}`);
   revalidatePath("/saint-denis/blog");
@@ -293,7 +296,7 @@ export async function togglePostFeaturedAction(id: string, currentFeatured: bool
   await updatePost(id, { featured: !currentFeatured });
 
   try {
-    revalidateTag("blog", "max");
+    invalidateCacheTag("blog");
   } catch {}
   revalidatePath("/");
   revalidatePath("/blog");
@@ -312,7 +315,7 @@ export async function setPostStatusAction(id: string, newStatus: BlogPostStatus)
   await updatePost(id, { status: newStatus });
 
   try {
-    revalidateTag("blog", "max");
+    invalidateCacheTag("blog");
   } catch {}
   revalidatePath("/");
   revalidatePath("/blog");
@@ -338,7 +341,7 @@ export async function deletePostAction(id: string): Promise<void> {
   await deletePost(id);
 
   try {
-    revalidateTag("blog", "max");
+    invalidateCacheTag("blog");
   } catch {}
   revalidatePath("/");
   revalidatePath("/blog");
@@ -404,8 +407,9 @@ export async function uploadBlogCoverAction(
     const post = await getPostById(postId);
 
     try {
-      revalidateTag("blog", "max");
+      invalidateCacheTag("blog");
     } catch {}
+    revalidatePath("/");
     revalidatePath("/blog");
     if (post?.slug) {
       revalidatePath(`/blog/${post.slug}`);
@@ -449,8 +453,9 @@ export async function removeBlogCoverAction(
     }
 
     try {
-      revalidateTag("blog", "max");
+      invalidateCacheTag("blog");
     } catch {}
+    revalidatePath("/");
     revalidatePath("/blog");
     if (post?.slug) {
       revalidatePath(`/blog/${post.slug}`);

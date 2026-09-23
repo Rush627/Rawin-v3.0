@@ -1,5 +1,6 @@
 import { cache } from "react";
-import { unstable_cache, revalidateTag } from "next/cache";
+import { unstable_cache } from "next/cache";
+import { invalidateCacheTag } from "./cache";
 import { getDatabase } from "./mongodb";
 import { GridFSBucket, ObjectId } from "mongodb";
 import type { Readable } from "stream";
@@ -377,7 +378,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     availabilityStatus: "Open to opportunities",
     availabilityBadge: "Available for hire",
     availabilityStatusColor: "green",
-    footerCopyright: "RAWIN. All rights reserved. Designed & built by Rushan Siddiqui.",
+    footerCopyright: "© 2026 RAWIN. All rights reserved. Designed & built by Rushan Siddiqui.",
     footerBulletNotification:
       "BUILDING WITH INTENT • CRAFTING DIGITAL EXPERIENCES • ALWAYS LEARNING",
     contactEmail: "rushansiddiqui5262@gmail.com",
@@ -1111,10 +1112,7 @@ export function mergeWithDefaults(doc: any): SiteContent {
           : DEFAULT_SITE_CONTENT.home.heroTypingPhrases,
     },
     about: {
-      eyebrow:
-        doc.about?.eyebrow && doc.about.eyebrow !== "Biography & Philosophy"
-          ? doc.about.eyebrow
-          : DEFAULT_SITE_CONTENT.about.eyebrow,
+      eyebrow: doc.about?.eyebrow || DEFAULT_SITE_CONTENT.about.eyebrow,
       title: doc.about?.title || DEFAULT_SITE_CONTENT.about.title,
       subtitle: doc.about?.subtitle || DEFAULT_SITE_CONTENT.about.subtitle,
       narrativeEyebrow:
@@ -1338,19 +1336,10 @@ export function mergeWithDefaults(doc: any): SiteContent {
       },
     },
     ai: {
-      eyebrow:
-        doc.ai?.eyebrow && !["AI ASSISTANT", "RAWIN AI ASSISTANT", "AURA", "COGNITIVE ASSISTANT"].includes(doc.ai.eyebrow.toUpperCase())
-          ? doc.ai.eyebrow
-          : DEFAULT_SITE_CONTENT.ai.eyebrow,
-      title:
-        doc.ai?.title && !["AI Assistant", "RAWIN AI Assistant", "Aura", "Cognitive Assistant"].includes(doc.ai.title)
-          ? doc.ai.title
-          : DEFAULT_SITE_CONTENT.ai.title,
+      eyebrow: doc.ai?.eyebrow || DEFAULT_SITE_CONTENT.ai.eyebrow,
+      title: doc.ai?.title || DEFAULT_SITE_CONTENT.ai.title,
       description: doc.ai?.description || DEFAULT_SITE_CONTENT.ai.description,
-      greetingMessage:
-        doc.ai?.greetingMessage && !doc.ai.greetingMessage.includes("RAWIN AI.")
-          ? doc.ai.greetingMessage
-          : DEFAULT_SITE_CONTENT.ai.greetingMessage,
+      greetingMessage: doc.ai?.greetingMessage || DEFAULT_SITE_CONTENT.ai.greetingMessage,
       inputPlaceholder: doc.ai?.inputPlaceholder || DEFAULT_SITE_CONTENT.ai.inputPlaceholder,
       mobileComposerPlaceholder:
         doc.ai?.mobileComposerPlaceholder ||
@@ -1567,7 +1556,7 @@ export async function updateSiteSection<K extends ContentSectionKey>(
     );
 
     try {
-      revalidateTag("site-content", "max");
+      invalidateCacheTag("site-content");
     } catch {
       // Ignore outside request context
     }
@@ -1645,7 +1634,7 @@ export async function storeAssetFile(
   await col.updateOne({ key: "main" }, { $set: updatePayload }, { upsert: true });
 
   try {
-    revalidateTag("site-content", "max");
+    invalidateCacheTag("site-content");
   } catch {
     // Ignore outside request context
   }
@@ -1718,7 +1707,7 @@ export async function updateSiteAssetMeta(
   );
 
   try {
-    revalidateTag("site-content", "max");
+    invalidateCacheTag("site-content");
   } catch {
     // Ignore outside request context
   }
@@ -1765,7 +1754,7 @@ export async function resetAssetToDefault(assetType: AssetKey): Promise<boolean>
   );
 
   try {
-    revalidateTag("site-content", "max");
+    invalidateCacheTag("site-content");
   } catch {
     // Ignore outside request context
   }
@@ -1913,7 +1902,7 @@ export async function storeResumePdfFile(
   );
 
   try {
-    revalidateTag("site-content", "max");
+    invalidateCacheTag("site-content");
   } catch {
     // Ignore outside request context
   }
@@ -1995,7 +1984,7 @@ export async function removeResumePdfFile(): Promise<boolean> {
   );
 
   try {
-    revalidateTag("site-content", "max");
+    invalidateCacheTag("site-content");
   } catch {
     // Ignore outside request context
   }

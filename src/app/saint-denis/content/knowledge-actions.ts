@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
+import { invalidateCacheTag } from "@/lib/cache";
 import { getAdminSession } from "@/lib/auth";
 import {
   createOrbitKnowledge,
@@ -92,8 +93,10 @@ export async function createKnowledgeAction(
 
     invalidateAuraKnowledgeCache();
     try {
-      revalidateTag("orbit-knowledge", "max");
+      invalidateCacheTag("orbit-knowledge");
     } catch {}
+    revalidatePath("/ai");
+    revalidatePath("/saint-denis/content");
 
     return {
       success: true,
@@ -175,8 +178,10 @@ export async function updateKnowledgeAction(
 
     invalidateAuraKnowledgeCache();
     try {
-      revalidateTag("orbit-knowledge", "max");
+      invalidateCacheTag("orbit-knowledge");
     } catch {}
+    revalidatePath("/ai");
+    revalidatePath("/saint-denis/content");
 
     return {
       success: true,
@@ -211,8 +216,10 @@ export async function deleteKnowledgeAction(id: string): Promise<KnowledgeAction
 
     invalidateAuraKnowledgeCache();
     try {
-      revalidateTag("orbit-knowledge", "max");
+      invalidateCacheTag("orbit-knowledge");
     } catch {}
+    revalidatePath("/ai");
+    revalidatePath("/saint-denis/content");
 
     return {
       success: true,
@@ -249,8 +256,10 @@ export async function toggleKnowledgeAction(
 
     invalidateAuraKnowledgeCache();
     try {
-      revalidateTag("orbit-knowledge", "max");
+      invalidateCacheTag("orbit-knowledge");
     } catch {}
+    revalidatePath("/ai");
+    revalidatePath("/saint-denis/content");
 
     return {
       success: true,

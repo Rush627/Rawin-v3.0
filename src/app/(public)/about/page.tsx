@@ -158,8 +158,19 @@ export default async function AboutPage() {
           {/* Editorial Introduction: Centered on mobile, Left on desktop */}
           <div className="flex flex-col gap-3 sm:gap-4 text-center md:text-left items-center md:items-start">
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight font-space leading-[1.15] flex flex-col items-center md:items-start">
-              <span className="text-foreground">About</span>
-              <span className="text-pacific-cyan">Rushan Siddiqui</span>
+              {(() => {
+                const title = aboutContent.title || "About Rushan Siddiqui";
+                const parts = title.split(" ");
+                if (parts.length > 1) {
+                  return (
+                    <>
+                      <span className="text-foreground">{parts[0]}</span>
+                      <span className="text-pacific-cyan">{parts.slice(1).join(" ")}</span>
+                    </>
+                  );
+                }
+                return <span className="text-pacific-cyan">{title}</span>;
+              })()}
             </h1>
             <p className="text-sm sm:text-lg text-muted/90 font-medium max-w-md">
               {aboutContent.subtitle}

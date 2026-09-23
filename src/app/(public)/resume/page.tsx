@@ -16,22 +16,15 @@ export default async function ResumePage() {
   const global = content.global;
 
   const cleanSummary =
-    resume.summary && !resume.summary.includes("over 4 years")
-      ? resume.summary
-      : "Full stack developer focused on building fast, reliable web applications with Next.js, TypeScript, and modern backend systems. Passionate about interface craft, performance, and writing clean, maintainable code.";
+    resume.summary ||
+    "Full stack developer focused on building fast, reliable web applications with Next.js, TypeScript, and modern backend systems. Passionate about interface craft, performance, and writing clean, maintainable code.";
 
   const skillsList = [...(resume.skills || [])].sort(
     (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
   );
 
   const experienceList = [...(resume.experience || [])]
-    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
-    .map((item) => ({
-      ...item,
-      role: item.role
-        .replace(/\bEngineer\b/g, "Developer")
-        .replace(/\bEngineering\b/g, "Developer"),
-    }));
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
   const cleanResume = {
     ...resume,

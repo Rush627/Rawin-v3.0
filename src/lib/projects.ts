@@ -1,5 +1,6 @@
 import { cache } from "react";
-import { unstable_cache, revalidateTag } from "next/cache";
+import { unstable_cache } from "next/cache";
+import { invalidateCacheTag } from "./cache";
 import { ObjectId, GridFSBucket } from "mongodb";
 import type { Readable } from "stream";
 import { getDatabase } from "./mongodb";
@@ -221,7 +222,7 @@ export async function createProject(data: CreateProjectInput): Promise<Project |
     const result = await db.collection(COLLECTION_NAME).insertOne(docToInsert);
 
     try {
-      revalidateTag("projects", "max");
+      invalidateCacheTag("projects");
     } catch {
       // Ignore outside request context
     }
@@ -263,7 +264,7 @@ export async function updateProject(id: string, data: UpdateProjectInput): Promi
     );
 
     try {
-      revalidateTag("projects", "max");
+      invalidateCacheTag("projects");
     } catch {
       // Ignore outside request context
     }
@@ -288,7 +289,7 @@ export async function deleteProject(id: string): Promise<boolean> {
     const result = await db.collection(COLLECTION_NAME).deleteOne({ _id: new ObjectId(id) });
 
     try {
-      revalidateTag("projects", "max");
+      invalidateCacheTag("projects");
     } catch {
       // Ignore outside request context
     }
@@ -363,7 +364,7 @@ export async function storeProjectPreviewFile(
   );
 
   try {
-    revalidateTag("projects", "max");
+    invalidateCacheTag("projects");
   } catch {
     // Ignore outside request context
   }

@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
+import { invalidateCacheTag } from "@/lib/cache";
 import { getAdminSession } from "@/lib/auth";
 import {
   updateSiteSection,
@@ -1055,9 +1056,32 @@ export async function updateSectionAction(
     return { error: "An unexpected error occurred while saving content. Please try again." };
   }
 
-  // Invalidate public site content cache tag on-demand
+  // Invalidate public site content cache tag on-demand immediately
   try {
-    revalidateTag("site-content", "max");
+    invalidateCacheTag("site-content");
+  } catch {}
+
+  // Revalidate relevant routes based on mutated section
+  try {
+    if (section === "global") {
+      revalidatePath("/", "layout");
+      revalidatePath("/");
+      revalidatePath("/contact");
+    } else if (section === "home") {
+      revalidatePath("/", "page");
+    } else if (section === "about") {
+      revalidatePath("/about", "page");
+    } else if (section === "contact") {
+      revalidatePath("/contact", "page");
+      revalidatePath("/", "layout");
+    } else if (section === "resume") {
+      revalidatePath("/resume", "page");
+    } else if (section === "uses") {
+      revalidatePath("/uses", "page");
+    } else if (section === "ai") {
+      revalidatePath("/ai", "page");
+    }
+    revalidatePath("/saint-denis/content");
   } catch {}
 
   const sectionDisplayName = section.charAt(0).toUpperCase() + section.slice(1);
@@ -1213,7 +1237,11 @@ export async function updateAssetAction(
 
 function revalidateAllAssetPaths() {
   try {
-    revalidateTag("site-content", "max");
+    invalidateCacheTag("site-content");
+  } catch {}
+  try {
+    revalidatePath("/", "layout");
+    revalidatePath("/saint-denis/content");
   } catch {}
 }
 
@@ -1264,7 +1292,7 @@ export async function uploadResumePdfAction(
     const result = await storeResumePdfFile(buffer, file.name, file.size);
 
     try {
-      revalidateTag("site-content", "max");
+      invalidateCacheTag("site-content");
     } catch {}
     revalidatePath("/resume");
     revalidatePath("/saint-denis/content");
@@ -1294,7 +1322,7 @@ export async function removeResumePdfAction(): Promise<ContentActionState> {
     await removeResumePdfFile();
 
     try {
-      revalidateTag("site-content", "max");
+      invalidateCacheTag("site-content");
     } catch {}
     revalidatePath("/resume");
     revalidatePath("/saint-denis/content");
@@ -1347,7 +1375,7 @@ export async function uploadMilestoneImageAction(
     const url = await storeMilestoneImage(milestoneId, buffer, file.type, safeName);
 
     try {
-      revalidateTag("site-content", "max");
+      invalidateCacheTag("site-content");
     } catch {}
     revalidatePath("/about");
     revalidatePath("/saint-denis/content");
