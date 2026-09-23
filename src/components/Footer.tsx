@@ -234,6 +234,7 @@ export default function Footer({
   }
 
   const isBlogListing = pathname === "/blog";
+  const isExcludedFromMobileClosing = pathname === "/blog" || pathname === "/about";
 
   const resolvedCopyright =
     footerCopyright ||
@@ -573,8 +574,8 @@ export default function Footer({
       {/* MOBILE & TABLET (<1024px)                                     */}
       {/* ------------------------------------------------------------- */}
       <div className="block lg:hidden w-full">
-        {/* Dedicated Smartphone Closing Animation (/, /about, /projects, /uses, /resume) */}
-        {!isBlogListing && (
+        {/* Dedicated Smartphone Closing Section (/, /projects, /uses, /resume; excluded on /about & /blog) */}
+        {!isExcludedFromMobileClosing && (
           <MobileClosingSection emailAddress={emailAddress} />
         )}
 

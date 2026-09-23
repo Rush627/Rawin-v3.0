@@ -55,7 +55,7 @@ export default function MobileHero({ homeContent, assets }: MobileHeroProps) {
       </div>
 
       {/* 2. Integrated Profile Portrait - Responsive 128px - 144px circular focal point */}
-      <div className="relative my-2 sm:my-3">
+      <div className="relative mt-4 mb-4 sm:mt-5 sm:mb-5">
         <div className="w-32 h-32 sm:w-[136px] sm:h-[136px] md:w-36 md:h-36 rounded-full overflow-hidden p-1 bg-gradient-to-b from-pacific-cyan/35 via-white/[0.08] to-pacific-cyan/20 border border-pacific-cyan/40 shadow-lg mx-auto bg-surface">
           <Image
             src={profileUrl}
@@ -70,8 +70,8 @@ export default function MobileHero({ homeContent, assets }: MobileHeroProps) {
       </div>
 
       {/* 3. Confident Typography & CMS Name & Lightweight Typing Role */}
-      <div className="flex flex-col items-center gap-0.5 max-w-xl mx-auto px-2">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground font-space leading-tight">
+      <div className="flex flex-col items-center gap-1 sm:gap-1.5 w-full max-w-xl mx-auto px-1">
+        <h1 className="text-[clamp(1.25rem,6.1vw,2.15rem)] sm:text-4xl font-bold tracking-tight text-foreground font-space leading-[1.15] whitespace-nowrap text-center">
           {homeContent.heroTitlePrefix}{" "}
           <span className="text-pacific-cyan" id="mobile-hero-name">
             {homeContent.heroName}
@@ -81,31 +81,31 @@ export default function MobileHero({ homeContent, assets }: MobileHeroProps) {
       </div>
 
       {/* 4. Bio Statement - Comfortable typography and wider readable line length */}
-      <p className="mt-2.5 w-full max-w-[348px] min-[400px]:max-w-[364px] sm:max-w-[380px] text-xs sm:text-sm text-muted/80 leading-relaxed font-sans mx-auto">
+      <p className="mt-4 sm:mt-5 w-full max-w-[348px] min-[400px]:max-w-[370px] sm:max-w-[400px] text-xs sm:text-sm text-muted/80 leading-relaxed font-sans mx-auto px-1">
         {homeContent.heroBio}
       </p>
 
-      {/* 5. Primary & Secondary CTAs - Vertically stacked, full-width within Hero container */}
-      <div className="flex flex-col items-stretch gap-2.5 mt-4 w-full max-w-[348px] min-[400px]:max-w-[364px] sm:max-w-[380px] mx-auto">
+      {/* 5. Primary & Secondary CTAs - Compact, centered, premium touch targets */}
+      <div className="flex flex-col items-stretch gap-3 sm:gap-3.5 mt-5 sm:mt-6 w-full max-w-[270px] min-[390px]:max-w-[290px] sm:max-w-[310px] mx-auto">
         <Link
           href="/projects"
-          className="w-full justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-xs sm:text-sm hover:bg-pacific-cyan/90 active:scale-[0.99] transition-all text-center min-h-[42px] shadow-sm"
+          className="w-full justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-xs sm:text-sm hover:bg-pacific-cyan/90 active:scale-[0.99] transition-all text-center min-h-[42px] sm:min-h-[44px] shadow-sm"
         >
           <span className="truncate">{homeContent.heroPrimaryCtaText}</span>
           <ArrowRight className="w-4 h-4 shrink-0" />
         </Link>
         <Link
           href="/contact"
-          className="w-full justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#141420] border border-white/10 text-foreground font-medium text-xs sm:text-sm hover:border-pacific-cyan/40 active:scale-[0.99] transition-all text-center min-h-[42px]"
+          className="w-full justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#141420] border border-white/10 text-foreground font-medium text-xs sm:text-sm hover:border-pacific-cyan/40 active:scale-[0.99] transition-all text-center min-h-[42px] sm:min-h-[44px]"
         >
           <span className="truncate">{homeContent.heroSecondaryCtaText}</span>
           <Send className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
         </Link>
       </div>
 
-      {/* Subtle quiet separator */}
+      {/* Subtle quiet separator with generous breathing space before capabilities */}
       <div
-        className="w-full max-w-[348px] min-[400px]:max-w-[364px] sm:max-w-[380px] mx-auto my-5 border-t border-white/[0.06]"
+        className="w-full max-w-[280px] min-[400px]:max-w-[320px] sm:max-w-[360px] mx-auto mt-8 mb-7 sm:mt-10 sm:mb-8 border-t border-white/[0.07]"
         aria-hidden="true"
       />
 

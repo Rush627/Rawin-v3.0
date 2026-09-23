@@ -75,15 +75,15 @@ export default function MobileHeroRole({
 
   return (
     <div
-      className="h-7 sm:h-8 flex items-center justify-center select-none"
+      className="h-8 sm:h-9 flex items-center justify-center select-none"
       aria-live="polite"
       aria-label={`Role: ${activeRoles[roleIndex]}`}
     >
-      <span className="text-sm sm:text-lg font-medium text-muted/90 font-space tracking-tight">
+      <span className="text-[15px] min-[375px]:text-base sm:text-lg font-medium text-muted/90 font-space tracking-tight">
         {currentText}
       </span>
       <span
-        className="inline-block w-[1.5px] h-3.5 sm:h-4 ml-1 bg-pacific-cyan rounded-full"
+        className="inline-block w-[1.5px] h-4 sm:h-4.5 ml-1.5 bg-pacific-cyan rounded-full"
         aria-hidden="true"
       />
     </div>
