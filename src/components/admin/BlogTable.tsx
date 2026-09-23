@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -14,7 +14,7 @@ import {
   Eye,
 } from "lucide-react";
 import type { BlogPost, BlogPostStatus } from "@/lib/blog";
-import { togglePostFeaturedAction, deletePostAction, setPostStatusAction } from "@/app/admin/blog/actions";
+import { togglePostFeaturedAction, deletePostAction, setPostStatusAction } from "@/app/saint-denis/blog/actions";
 import RawinSelect from "./RawinSelect";
 
 const TABLE_STATUS_OPTIONS = [
@@ -53,47 +53,86 @@ function StatusBadge({ status }: { status: BlogPostStatus }) {
 }
 
 export default function BlogTable({ posts }: BlogTableProps) {
+  const [localPosts, setLocalPosts] = useState<BlogPost[]>(posts);
   const [filter, setFilter] = useState<"all" | BlogPostStatus>("all");
   const [postToDelete, setPostToDelete] = useState<BlogPost | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [changingStatusId, setChangingStatusId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Sync if parent passes updated posts
+  useEffect(() => {
+    setLocalPosts(posts);
+  }, [posts]);
+
   const filteredPosts = filter === "all"
-    ? posts
-    : posts.filter((p) => p.status === filter);
+    ? localPosts
+    : localPosts.filter((p) => p.status === filter);
 
-  const handleToggleFeatured = (post: BlogPost) => {
+  const handleToggleFeatured = async (post: BlogPost) => {
     if (!post._id) return;
-    startTransition(async () => {
-      try {
-        await togglePostFeaturedAction(post._id!, post.featured);
-      } catch (err: unknown) {
-        setErrorMessage(err instanceof Error ? err.message : "Failed to toggle featured state.");
-      }
-    });
+    const prevFeatured = post.featured;
+    const targetId = post._id;
+
+    // Optimistic update immediately
+    setLocalPosts((prev) =>
+      prev.map((p) => (p._id === targetId ? { ...p, featured: !prevFeatured } : p))
+    );
+    setTogglingId(targetId);
+
+    try {
+      await togglePostFeaturedAction(targetId, prevFeatured);
+    } catch (err: unknown) {
+      // Revert on error
+      setLocalPosts((prev) =>
+        prev.map((p) => (p._id === targetId ? { ...p, featured: prevFeatured } : p))
+      );
+      setErrorMessage(err instanceof Error ? err.message : "Failed to toggle featured state.");
+    } finally {
+      setTogglingId(null);
+    }
   };
 
-  const handleStatusChange = (post: BlogPost, newStatus: BlogPostStatus) => {
+  const handleStatusChange = async (post: BlogPost, newStatus: BlogPostStatus) => {
     if (!post._id || post.status === newStatus) return;
-    startTransition(async () => {
-      try {
-        await setPostStatusAction(post._id!, newStatus);
-      } catch (err: unknown) {
-        setErrorMessage(err instanceof Error ? err.message : "Failed to change status.");
-      }
-    });
+    const prevStatus = post.status;
+    const targetId = post._id;
+
+    // Optimistic update immediately
+    setLocalPosts((prev) =>
+      prev.map((p) => (p._id === targetId ? { ...p, status: newStatus } : p))
+    );
+    setChangingStatusId(targetId);
+
+    try {
+      await setPostStatusAction(targetId, newStatus);
+    } catch (err: unknown) {
+      // Revert on error
+      setLocalPosts((prev) =>
+        prev.map((p) => (p._id === targetId ? { ...p, status: prevStatus } : p))
+      );
+      setErrorMessage(err instanceof Error ? err.message : "Failed to change status.");
+    } finally {
+      setChangingStatusId(null);
+    }
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!postToDelete?._id) return;
-    startTransition(async () => {
-      try {
-        await deletePostAction(postToDelete._id!);
-        setPostToDelete(null);
-      } catch (err: unknown) {
-        setErrorMessage(err instanceof Error ? err.message : "Failed to delete post.");
-      }
-    });
+    const targetId = postToDelete._id;
+    setIsDeleting(true);
+
+    try {
+      await deletePostAction(targetId);
+      // Optimistically remove from list
+      setLocalPosts((prev) => prev.filter((p) => p._id !== targetId));
+      setPostToDelete(null);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "Failed to delete post.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const formatDate = (dateStr?: string) => {
@@ -126,8 +165,8 @@ export default function BlogTable({ posts }: BlogTableProps) {
         <div className="w-full sm:w-auto grid grid-cols-4 sm:flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
           {FILTER_TABS.map(({ key, full, short }) => {
             const count = key === "all"
-              ? posts.length
-              : posts.filter((p) => p.status === key).length;
+              ? localPosts.length
+              : localPosts.filter((p) => p.status === key).length;
 
             return (
               <button
@@ -148,7 +187,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
         </div>
 
         <div className="text-[11px] sm:text-xs font-mono text-muted">
-          Showing {filteredPosts.length} of {posts.length} articles
+          Showing {filteredPosts.length} of {localPosts.length} articles
         </div>
       </div>
 
@@ -168,7 +207,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
           <FileText className="w-8 h-8 text-muted/40" />
           <p className="text-muted text-sm font-mono">No articles found in this view.</p>
           <Link
-            href="/admin/blog/new"
+            href="/saint-denis/blog/new"
             className="px-4 py-2 rounded-xl bg-pacific-cyan text-ink-black text-xs font-mono font-semibold"
           >
             New Article
@@ -216,7 +255,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                             options={TABLE_STATUS_OPTIONS}
                             size="sm"
                             fontMono
-                            disabled={isPending}
+                            disabled={changingStatusId === post._id}
                           />
                         </div>
                       </td>
@@ -224,7 +263,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                       <td className="px-5 py-4 text-center">
                         <button
                           onClick={() => handleToggleFeatured(post)}
-                          disabled={isPending}
+                          disabled={togglingId === post._id}
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold transition-all cursor-pointer ${
                             post.featured
                               ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30 hover:bg-pacific-cyan/25"
@@ -273,7 +312,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                             </Link>
                           )}
                           <Link
-                            href={`/admin/blog/${post._id}`}
+                            href={`/saint-denis/blog/${post._id}`}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-foreground text-xs font-mono transition-colors"
                             title="Edit post"
                           >
@@ -334,7 +373,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                     <button
                       type="button"
                       onClick={() => handleToggleFeatured(post)}
-                      disabled={isPending}
+                      disabled={togglingId === post._id}
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold transition-all cursor-pointer ${
                         post.featured
                           ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30"
@@ -378,7 +417,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                       options={TABLE_STATUS_OPTIONS}
                       size="sm"
                       fontMono
-                      disabled={isPending}
+                      disabled={changingStatusId === post._id}
                     />
                   </div>
                 </div>
@@ -406,7 +445,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
 
                     {/* Edit -- primary cyan action */}
                     <Link
-                      href={`/admin/blog/${post._id}`}
+                      href={`/saint-denis/blog/${post._id}`}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-pacific-cyan text-ink-black text-xs font-mono font-semibold hover:bg-pacific-cyan/90 transition-all shadow-[0_0_10px_rgba(24,155,173,0.2)] min-h-[36px]"
                       title="Edit article"
                     >
@@ -462,7 +501,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
               <button
                 type="button"
                 onClick={() => setPostToDelete(null)}
-                disabled={isPending}
+                disabled={isDeleting}
                 className="inline-flex items-center justify-center h-9 px-4 rounded-xl text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer select-none"
               >
                 Cancel
@@ -470,10 +509,10 @@ export default function BlogTable({ posts }: BlogTableProps) {
               <button
                 type="button"
                 onClick={handleDeleteConfirm}
-                disabled={isPending}
+                disabled={isDeleting}
                 className="inline-flex items-center justify-center gap-2 h-9 px-5 rounded-xl text-xs font-mono font-semibold bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-all cursor-pointer select-none whitespace-nowrap"
               >
-                {isPending ? (
+                {isDeleting ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span>Deleting...</span>

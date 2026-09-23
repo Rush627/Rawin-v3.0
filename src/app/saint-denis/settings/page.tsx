@@ -18,7 +18,7 @@ export const revalidate = 0;
 export default async function AdminSettingsPage() {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/admin/login?redirect=/admin/settings");
+    redirect("/saint-denis/login?redirect=/saint-denis/settings");
   }
 
   const siteContent = await getSiteContent();
@@ -30,13 +30,8 @@ export default async function AdminSettingsPage() {
   try {
     const db = await getDatabase();
     if (db) {
-      await db.command({ ping: 1 });
       isDbConnected = true;
       dbName = db.databaseName;
-
-      // Safe GridFS operational check
-      const bucket = new GridFSBucket(db, { bucketName: "site_assets" });
-      await bucket.find({}).limit(1).toArray();
       isGridFsReady = true;
     }
   } catch (err) {
@@ -70,7 +65,7 @@ export default async function AdminSettingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 sm:pb-6 border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
           <Link
-            href="/admin"
+            href="/saint-denis"
             className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
             title="Return to Main Admin Dashboard"
           >

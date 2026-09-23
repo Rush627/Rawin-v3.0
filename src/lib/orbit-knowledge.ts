@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { ObjectId } from "mongodb";
 import { getDatabase } from "./mongodb";
 
@@ -58,27 +60,14 @@ export async function ensureOrbitKnowledgeIndexes(): Promise<void> {
 /**
  * Returns all orbit knowledge items, optionally filtered by category and enabled flag.
  */
-export async function getOrbitKnowledgeList(filter?: {
-  category?: OrbitKnowledgeCategory;
-  enabledOnly?: boolean;
-}): Promise<OrbitKnowledgeItem[]> {
+async function fetchOrbitKnowledgeListFromDb(): Promise<OrbitKnowledgeItem[]> {
   try {
     const db = await getDatabase();
     if (!db) return [];
 
-    await ensureOrbitKnowledgeIndexes();
-
-    const query: Record<string, unknown> = {};
-    if (filter?.category) {
-      query.category = filter.category;
-    }
-    if (filter?.enabledOnly) {
-      query.enabled = true;
-    }
-
     const docs = await db
       .collection(COLLECTION_NAME)
-      .find(query)
+      .find({})
       .sort({ updatedAt: -1 })
       .toArray();
 
@@ -99,6 +88,30 @@ export async function getOrbitKnowledgeList(filter?: {
     return [];
   }
 }
+
+const getCachedOrbitKnowledgeAll = unstable_cache(
+  async () => fetchOrbitKnowledgeListFromDb(),
+  ["orbit-knowledge-all"],
+  {
+    tags: ["orbit-knowledge"],
+    revalidate: 3600,
+  }
+);
+
+export const getOrbitKnowledgeList = cache(async (filter?: {
+  category?: OrbitKnowledgeCategory;
+  enabledOnly?: boolean;
+}): Promise<OrbitKnowledgeItem[]> => {
+  const allItems = await getCachedOrbitKnowledgeAll();
+  if (!filter || (!filter.category && !filter.enabledOnly)) {
+    return allItems;
+  }
+  return allItems.filter((item) => {
+    if (filter.category && item.category !== filter.category) return false;
+    if (filter.enabledOnly && !item.enabled) return false;
+    return true;
+  });
+});
 
 /**
  * Returns a single orbit knowledge item by its string ID.
@@ -156,6 +169,10 @@ export async function createOrbitKnowledge(
 
   const result = await db.collection(COLLECTION_NAME).insertOne(docToInsert);
 
+  try {
+    revalidateTag("orbit-knowledge", "max");
+  } catch {}
+
   return {
     _id: result.insertedId.toString(),
     ...docToInsert,
@@ -197,6 +214,10 @@ export async function updateOrbitKnowledge(
 
   if (!result) return null;
 
+  try {
+    revalidateTag("orbit-knowledge", "max");
+  } catch {}
+
   return {
     _id: result._id.toString(),
     category: (result.category || "custom") as OrbitKnowledgeCategory,
@@ -219,7 +240,13 @@ export async function deleteOrbitKnowledge(id: string): Promise<boolean> {
     if (!db || !ObjectId.isValid(id)) return false;
 
     const result = await db.collection(COLLECTION_NAME).deleteOne({ _id: new ObjectId(id) });
-    return result.deletedCount === 1;
+    if (result.deletedCount === 1) {
+      try {
+        revalidateTag("orbit-knowledge", "max");
+      } catch {}
+      return true;
+    }
+    return false;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[OrbitKnowledge] Error deleting item:", msg);
@@ -247,7 +274,13 @@ export async function toggleOrbitKnowledgeEnabled(
         },
       }
     );
-    return result.matchedCount === 1;
+    if (result.matchedCount === 1) {
+      try {
+        revalidateTag("orbit-knowledge", "max");
+      } catch {}
+      return true;
+    }
+    return false;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[OrbitKnowledge] Error toggling item enabled state:", msg);

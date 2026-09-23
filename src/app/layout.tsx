@@ -9,16 +9,11 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
 };
-import SmoothScroll from "@/components/SmoothScroll";
 import PublicCustomCursor from "@/components/PublicCustomCursor";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import TorchSpotlight from "@/components/TorchSpotlight";
-import ParticleField from "@/components/ParticleField";
 import RawinErrorView from "@/components/RawinErrorView";
 import OfflineDetector from "@/components/OfflineDetector";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
-import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
+import { getSiteContent } from "@/lib/site-content";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -99,7 +94,7 @@ export default async function RootLayout({
     const pathname = headerList.get("x-pathname") || "";
 
     if (
-      !pathname.startsWith("/admin") &&
+      !pathname.startsWith("/saint-denis") &&
       !pathname.startsWith("/api/admin") &&
       !pathname.startsWith("/api/auth")
     ) {
@@ -148,11 +143,6 @@ export default async function RootLayout({
   }
 }
 
-  const footerCopyright =
-    content.global?.footerCopyright ||
-    DEFAULT_SITE_CONTENT.global.footerCopyright;
-  const currentYear = new Date().getFullYear();
-
   return (
     <html
       lang="en"
@@ -172,24 +162,7 @@ export default async function RootLayout({
       >
         <OfflineDetector />
         <AvailabilityWatcher />
-        <SmoothScroll>
-          <ParticleField />
-          <Navbar logo={content.assets?.logo} />
-          <div className="flex-1 flex flex-col relative z-10">
-            {children}
-          </div>
-          <Footer
-            content={content.global}
-            contact={{
-              ...content.contact,
-              phone: content.contact?.showPhoneNumber ? content.contact.phone : "",
-            }}
-            logo={content.assets?.logo}
-            footerCopyright={footerCopyright}
-            currentYear={currentYear}
-          />
-          <TorchSpotlight />
-        </SmoothScroll>
+        {children}
         <PublicCustomCursor />
       </body>
     </html>

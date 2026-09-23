@@ -9,7 +9,7 @@ import { loginAction, type LoginActionState } from "../actions";
 
 export default function AdminLoginPage() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/admin";
+  const redirectTo = searchParams.get("redirect") || "/saint-denis";
   const [state, formAction, isPending] = useActionState<LoginActionState, FormData>(
     loginAction,
     {}

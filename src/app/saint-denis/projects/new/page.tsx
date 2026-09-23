@@ -10,7 +10,7 @@ export const metadata = {
 export default async function NewProjectPage() {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/admin/login?redirect=/admin/projects/new");
+    redirect("/saint-denis/login?redirect=/saint-denis/projects/new");
   }
 
   return <ProjectForm action={createProjectAction} isEditing={false} />;

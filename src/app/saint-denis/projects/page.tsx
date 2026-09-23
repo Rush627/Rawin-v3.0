@@ -14,7 +14,7 @@ export const revalidate = 0;
 export default async function AdminProjectsPage() {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/admin/login?redirect=/admin/projects");
+    redirect("/saint-denis/login?redirect=/saint-denis/projects");
   }
 
   const projects = await getProjects();
@@ -37,7 +37,7 @@ export default async function AdminProjectsPage() {
         <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center gap-2 min-w-0">
             <Link
-              href="/admin"
+              href="/saint-denis"
               className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer shrink-0"
               title="Return to Main Admin Dashboard"
               aria-label="Return to Main Admin Dashboard"
@@ -52,7 +52,7 @@ export default async function AdminProjectsPage() {
           </div>
 
           <Link
-            href="/admin/projects/new"
+            href="/saint-denis/projects/new"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 transition-all shadow-[0_0_20px_rgba(24,155,173,0.35)] cursor-pointer shrink-0 ml-auto"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -65,7 +65,7 @@ export default async function AdminProjectsPage() {
       <div className="hidden sm:flex sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
           <Link
-            href="/admin"
+            href="/saint-denis"
             className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer"
             title="Return to Main Admin Dashboard"
           >
@@ -83,7 +83,7 @@ export default async function AdminProjectsPage() {
         </div>
 
         <Link
-          href="/admin/projects/new"
+          href="/saint-denis/projects/new"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-semibold bg-pacific-cyan text-ink-black hover:bg-pacific-cyan/90 transition-all shadow-[0_0_20px_rgba(24,155,173,0.35)] w-fit self-center cursor-pointer"
         >
           <Plus className="w-4 h-4" />

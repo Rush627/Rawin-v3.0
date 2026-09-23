@@ -198,8 +198,8 @@ export async function createProjectAction(
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
-  revalidatePath("/admin/projects");
-  redirect("/admin/projects");
+  revalidatePath("/saint-denis/projects");
+  redirect("/saint-denis/projects");
 }
 
 /**
@@ -386,8 +386,8 @@ export async function updateProjectAction(
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
-  revalidatePath("/admin/projects");
-  redirect("/admin/projects");
+  revalidatePath("/saint-denis/projects");
+  redirect("/saint-denis/projects");
 }
 
 /**
@@ -405,7 +405,6 @@ export async function toggleFeaturedAction(id: string, currentFeatured: boolean)
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
-  revalidatePath("/admin/projects");
 }
 
 /**
@@ -426,7 +425,6 @@ export async function deleteProjectAction(id: string): Promise<void> {
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
-  revalidatePath("/admin/projects");
 }
 
 // ─────────────────────────────────────────────
@@ -489,8 +487,8 @@ export async function uploadProjectPreviewAction(
     } catch {}
     revalidatePath("/");
     revalidatePath("/projects");
-    revalidatePath("/admin/projects");
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath("/saint-denis/projects");
+    revalidatePath(`/saint-denis/projects/${projectId}`);
 
     return { url };
   } catch (err: unknown) {
@@ -531,8 +529,8 @@ export async function removeProjectPreviewAction(
     } catch {}
     revalidatePath("/");
     revalidatePath("/projects");
-    revalidatePath("/admin/projects");
-    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath("/saint-denis/projects");
+    revalidatePath(`/saint-denis/projects/${projectId}`);
 
     return {};
   } catch (err: unknown) {

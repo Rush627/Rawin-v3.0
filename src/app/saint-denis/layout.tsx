@@ -25,7 +25,7 @@ export default async function AdminLayout({
     getSiteContent(),
   ]);
 
-  // If unauthenticated (e.g. at /admin/login), render isolated content without admin chrome
+  // If unauthenticated (e.g. at /saint-denis/login), render isolated content without admin chrome
   if (!session) {
     return <div data-admin-portal="true">{children}</div>;
   }
@@ -41,7 +41,7 @@ export default async function AdminLayout({
           {/* Brand Left */}
           <div className="flex items-center gap-2.5 sm:gap-4">
             <Link
-              href="/admin"
+              href="/saint-denis"
               className="flex items-center gap-2 sm:gap-2.5 group transition-opacity"
               aria-label="RAWIN Admin Dashboard"
             >

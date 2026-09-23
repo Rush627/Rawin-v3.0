@@ -209,9 +209,8 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
 /**
  * Retrieves all posts regardless of status (draft, published, archived) for the admin dashboard.
  */
-export async function getAllPostsAdmin(): Promise<BlogPost[]> {
+async function fetchAllPostsAdminFromDb(): Promise<BlogPost[]> {
   try {
-    await ensureBlogIndexes();
     const db = await getDatabase();
     if (!db) return [];
 
@@ -228,6 +227,19 @@ export async function getAllPostsAdmin(): Promise<BlogPost[]> {
     return [];
   }
 }
+
+const getCachedAllPostsAdmin = unstable_cache(
+  async () => fetchAllPostsAdminFromDb(),
+  ["blog-all-admin"],
+  {
+    tags: ["blog"],
+    revalidate: 3600,
+  }
+);
+
+export const getAllPostsAdmin = cache(async (): Promise<BlogPost[]> => {
+  return getCachedAllPostsAdmin();
+});
 
 /**
  * Creates a new blog post in MongoDB.

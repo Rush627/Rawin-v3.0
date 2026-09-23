@@ -111,7 +111,7 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
         {/* Back + Title */}
         <div className="flex items-center gap-3 min-w-0">
           <Link
-            href="/admin/blog"
+            href="/saint-denis/blog"
             className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center shrink-0"
             title="Return to Blog Posts List"
             aria-label="Return to Blog Posts List"
@@ -152,7 +152,7 @@ export default function PostForm({ initialData, action, isEditing = false }: Pos
 
           {/* Cancel */}
           <Link
-            href="/admin/blog"
+            href="/saint-denis/blog"
             className="inline-flex items-center justify-center h-9 sm:h-10 px-3.5 sm:px-5 rounded-xl text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer select-none whitespace-nowrap min-h-[38px]"
           >
             Cancel

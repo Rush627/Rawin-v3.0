@@ -12,7 +12,8 @@ export default function NotFound() {
       code="404"
       title="Page not found"
       message="The page you're looking for doesn't exist."
-      actionLabel="Refresh"
+      actionLabel="Back to home"
+      actionHref="/"
     />
   );
 }

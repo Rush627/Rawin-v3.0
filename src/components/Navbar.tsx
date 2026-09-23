@@ -45,7 +45,7 @@ export default function Navbar({ logo }: NavbarProps = {}) {
     setIsOpen(false);
   }, [pathname]);
 
-  if (pathname.startsWith("/admin") || pathname === "/ai" || pathname.startsWith("/ai/")) {
+  if (pathname.startsWith("/saint-denis") || pathname === "/ai" || pathname.startsWith("/ai/")) {
     return null;
   }
 

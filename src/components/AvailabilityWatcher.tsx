@@ -15,7 +15,7 @@ export default function AvailabilityWatcher({
   isServerFallback = false,
 }: AvailabilityWatcherProps) {
   const pathname = usePathname();
-  const isAdmin = Boolean(pathname?.startsWith("/admin"));
+  const isAdmin = Boolean(pathname?.startsWith("/saint-denis"));
 
   const [state, setState] = useState<PublicAvailability>({ status: initialStatus });
   const isCheckingRef = useRef(false);

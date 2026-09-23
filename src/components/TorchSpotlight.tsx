@@ -133,7 +133,7 @@ export default function TorchSpotlight() {
 
   // Intentionally hide on admin routes and AI experience only
   if (
-    pathname.startsWith("/admin") ||
+    pathname.startsWith("/saint-denis") ||
     pathname === "/ai" ||
     pathname.startsWith("/ai/")
   ) {

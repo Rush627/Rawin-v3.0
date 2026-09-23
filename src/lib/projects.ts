@@ -188,7 +188,6 @@ export const getProjectBySlug = cache(async (slug: string): Promise<Project | nu
  * Retrieves a single project by MongoDB ObjectId.
  */
 export async function getProjectById(id: string): Promise<Project | null> {
-  await ensureProjectIndexes();
   try {
     const db = await getDatabase();
     if (!db) return null;

@@ -147,8 +147,8 @@ export async function createPostAction(
   } catch {}
   revalidatePath("/blog");
   revalidatePath(`/blog/${slug}`);
-  revalidatePath("/admin/blog");
-  redirect("/admin/blog");
+  revalidatePath("/saint-denis/blog");
+  redirect("/saint-denis/blog");
 }
 
 /**
@@ -277,8 +277,8 @@ export async function updatePostAction(
   } catch {}
   revalidatePath("/blog");
   revalidatePath(`/blog/${slug}`);
-  revalidatePath("/admin/blog");
-  redirect("/admin/blog");
+  revalidatePath("/saint-denis/blog");
+  redirect("/saint-denis/blog");
 }
 
 /**
@@ -290,17 +290,13 @@ export async function togglePostFeaturedAction(id: string, currentFeatured: bool
     throw new Error("Unauthorized.");
   }
 
-  const post = await getPostById(id);
   await updatePost(id, { featured: !currentFeatured });
 
   try {
     revalidateTag("blog", "max");
   } catch {}
+  revalidatePath("/");
   revalidatePath("/blog");
-  if (post?.slug) {
-    revalidatePath(`/blog/${post.slug}`);
-  }
-  revalidatePath("/admin/blog");
 }
 
 /**
@@ -318,11 +314,11 @@ export async function setPostStatusAction(id: string, newStatus: BlogPostStatus)
   try {
     revalidateTag("blog", "max");
   } catch {}
+  revalidatePath("/");
   revalidatePath("/blog");
   if (post?.slug) {
     revalidatePath(`/blog/${post.slug}`);
   }
-  revalidatePath("/admin/blog");
 }
 
 /**
@@ -344,11 +340,11 @@ export async function deletePostAction(id: string): Promise<void> {
   try {
     revalidateTag("blog", "max");
   } catch {}
+  revalidatePath("/");
   revalidatePath("/blog");
   if (post?.slug) {
     revalidatePath(`/blog/${post.slug}`);
   }
-  revalidatePath("/admin/blog");
 }
 
 // ─────────────────────────────────────────────
@@ -414,8 +410,8 @@ export async function uploadBlogCoverAction(
     if (post?.slug) {
       revalidatePath(`/blog/${post.slug}`);
     }
-    revalidatePath("/admin/blog");
-    revalidatePath(`/admin/blog/${postId}`);
+    revalidatePath("/saint-denis/blog");
+    revalidatePath(`/saint-denis/blog/${postId}`);
 
     return { url };
   } catch (err: unknown) {
@@ -459,8 +455,8 @@ export async function removeBlogCoverAction(
     if (post?.slug) {
       revalidatePath(`/blog/${post.slug}`);
     }
-    revalidatePath("/admin/blog");
-    revalidatePath(`/admin/blog/${postId}`);
+    revalidatePath("/saint-denis/blog");
+    revalidatePath(`/saint-denis/blog/${postId}`);
 
     return {};
   } catch (err: unknown) {

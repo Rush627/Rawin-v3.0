@@ -1529,7 +1529,6 @@ export async function updateSiteSection<K extends ContentSectionKey>(
   data: Partial<SiteContent[K]>
 ): Promise<boolean> {
   try {
-    await ensureSiteContentIndexes();
     const db = await getDatabase();
     if (!db) {
       throw new Error("Database connection unavailable.");

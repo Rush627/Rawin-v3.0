@@ -11,7 +11,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
-import { uploadBlogCoverAction, removeBlogCoverAction } from "@/app/admin/blog/actions";
+import { uploadBlogCoverAction, removeBlogCoverAction } from "@/app/saint-denis/blog/actions";
 
 interface BlogCoverUploadProps {
   postId?: string;

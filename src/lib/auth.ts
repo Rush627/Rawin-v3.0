@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
@@ -223,8 +224,9 @@ export async function createAdminSession(email: string): Promise<void> {
 
 /**
  * Returns the active admin session if valid, or null.
+ * Memoized within the render cycle with React cache to prevent redundant cookie reads and JWT verifications.
  */
-export async function getAdminSession(): Promise<AdminSessionPayload | null> {
+async function fetchAdminSession(): Promise<AdminSessionPayload | null> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
 
@@ -234,6 +236,8 @@ export async function getAdminSession(): Promise<AdminSessionPayload | null> {
 
   return verifySessionToken(sessionCookie.value);
 }
+
+export const getAdminSession = cache(fetchAdminSession);
 
 /**
  * Destroys the admin session cookie.

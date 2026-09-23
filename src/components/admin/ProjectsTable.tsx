@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Edit3,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { GithubIcon } from "@/components/SocialIcons";
 import type { Project, ProjectStatus } from "@/lib/projects";
-import { toggleFeaturedAction, deleteProjectAction } from "@/app/admin/projects/actions";
+import { toggleFeaturedAction, deleteProjectAction } from "@/app/saint-denis/projects/actions";
 
 interface ProjectsTableProps {
   projects: Project[];
@@ -45,31 +45,60 @@ function StatusPill({ status }: { status: ProjectStatus }) {
 }
 
 export default function ProjectsTable({ projects }: ProjectsTableProps) {
+  const [localProjects, setLocalProjects] = useState<Project[]>(projects);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleToggleFeatured = (project: Project) => {
-    if (!project._id) return;
-    startTransition(async () => {
-      try {
-        await toggleFeaturedAction(project._id!, project.featured);
-      } catch (err: unknown) {
-        setErrorMessage("Failed to update featured status.");
-      }
-    });
+  useEffect(() => {
+    setLocalProjects(projects);
+  }, [projects]);
+
+  const handleToggleFeatured = async (project: Project) => {
+    if (!project._id || togglingId) return;
+    const targetId = project._id;
+    const prevFeatured = project.featured;
+    const nextFeatured = !prevFeatured;
+
+    // Instant optimistic update
+    setLocalProjects((prev) =>
+      prev.map((p) => (p._id === targetId ? { ...p, featured: nextFeatured } : p))
+    );
+    setTogglingId(targetId);
+
+    try {
+      await toggleFeaturedAction(targetId, prevFeatured);
+    } catch {
+      // Rollback on failure
+      setLocalProjects((prev) =>
+        prev.map((p) => (p._id === targetId ? { ...p, featured: prevFeatured } : p))
+      );
+      setErrorMessage("Failed to update featured status.");
+    } finally {
+      setTogglingId(null);
+    }
   };
 
-  const handleDeleteConfirm = () => {
-    if (!projectToDelete?._id) return;
-    startTransition(async () => {
-      try {
-        await deleteProjectAction(projectToDelete._id!);
-        setProjectToDelete(null);
-      } catch (err: unknown) {
-        setErrorMessage("Failed to delete project.");
-      }
-    });
+  const handleDeleteConfirm = async () => {
+    if (!projectToDelete?._id || isDeleting) return;
+    const targetId = projectToDelete._id;
+    const previousProjects = localProjects;
+    setIsDeleting(true);
+
+    // Instant optimistic removal from UI
+    setLocalProjects((prev) => prev.filter((p) => p._id !== targetId));
+    setProjectToDelete(null);
+
+    try {
+      await deleteProjectAction(targetId);
+    } catch {
+      // Rollback on failure
+      setLocalProjects(previousProjects);
+      setErrorMessage("Failed to delete project.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -83,12 +112,12 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
         </div>
       )}
 
-      {projects.length === 0 ? (
+      {localProjects.length === 0 ? (
         <div className="glass-card rounded-2xl p-12 text-center border border-white/[0.08] flex flex-col items-center gap-4">
           <Code2 className="w-8 h-8 text-muted/40" />
           <p className="text-muted text-sm font-mono">No projects found.</p>
           <Link
-            href="/admin/projects/new"
+            href="/saint-denis/projects/new"
             className="px-4 py-2 rounded-xl bg-pacific-cyan text-ink-black text-xs font-mono font-semibold"
           >
             Create Project
@@ -112,7 +141,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
-                  {projects.map((project) => (
+                  {localProjects.map((project) => (
                     <tr key={project._id || project.slug} className="hover:bg-white/[0.02] transition-colors">
                       <td className="px-5 py-4 text-muted/60 font-mono">
                         #{project.displayOrder}
@@ -145,7 +174,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                       <td className="px-5 py-4 text-center">
                         <button
                           onClick={() => handleToggleFeatured(project)}
-                          disabled={isPending}
+                          disabled={togglingId === project._id}
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold transition-all cursor-pointer ${
                             project.featured
                               ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30 hover:bg-pacific-cyan/25"
@@ -192,7 +221,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
-                            href={`/admin/projects/${project._id}`}
+                            href={`/saint-denis/projects/${project._id}`}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-foreground text-xs font-mono transition-colors"
                             title="Edit project"
                           >
@@ -218,7 +247,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
 
           {/* Smartphone Card List View (< 768px) */}
           <div className="flex md:hidden flex-col gap-3">
-            {projects.map((project) => (
+            {localProjects.map((project) => (
               <div
                 key={project._id || project.slug}
                 className="glass-card rounded-xl p-3.5 sm:p-4 border border-white/[0.08] flex flex-col gap-3 hover:border-white/[0.14] transition-colors"
@@ -242,7 +271,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                   </div>
 
                   <Link
-                    href={`/admin/projects/${project._id}`}
+                    href={`/saint-denis/projects/${project._id}`}
                     className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-pacific-cyan text-ink-black text-xs font-mono font-semibold hover:bg-pacific-cyan/90 transition-all shadow-[0_0_10px_rgba(24,155,173,0.25)] min-h-[34px]"
                     title="Edit project"
                   >
@@ -273,7 +302,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                     <button
                       type="button"
                       onClick={() => handleToggleFeatured(project)}
-                      disabled={isPending}
+                      disabled={togglingId === project._id}
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold transition-all cursor-pointer min-h-[30px] ${
                         project.featured
                           ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30 hover:bg-pacific-cyan/25"
@@ -358,7 +387,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
               <button
                 type="button"
                 onClick={() => setProjectToDelete(null)}
-                disabled={isPending}
+                disabled={isDeleting}
                 className="inline-flex items-center justify-center h-9 px-4 rounded-xl text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer select-none"
               >
                 Cancel
@@ -366,10 +395,10 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
               <button
                 type="button"
                 onClick={handleDeleteConfirm}
-                disabled={isPending}
+                disabled={isDeleting}
                 className="inline-flex items-center justify-center gap-2 h-9 px-5 rounded-xl text-xs font-mono font-semibold bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-all cursor-pointer select-none whitespace-nowrap"
               >
-                {isPending ? (
+                {isDeleting ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span>Deleting...</span>

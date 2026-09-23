@@ -19,16 +19,15 @@ export default async function AdminDashboardPage() {
   const session = await getAdminSession();
 
   if (!session) {
-    redirect("/admin/login");
+    redirect("/saint-denis/login");
   }
 
-  // Live database connectivity check
+  // Live database connectivity check from active connection pool
   let isDbConnected = false;
   let dbName = "unknown";
   try {
     const db = await getDatabase();
     if (db) {
-      await db.command({ ping: 1 });
       isDbConnected = true;
       dbName = db.databaseName;
     }
@@ -36,10 +35,11 @@ export default async function AdminDashboardPage() {
     isDbConnected = false;
   }
 
-  const projects = await getProjects();
+  const [projects, blogPosts] = await Promise.all([
+    getProjects(),
+    getAllPostsAdmin(),
+  ]);
   const projectCount = projects.length;
-
-  const blogPosts = await getAllPostsAdmin();
   const blogCount = blogPosts.length;
 
   const modules = [
@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
       status: `Active · ${projectCount} projects`,
       color: "text-pacific-cyan",
       border: "border-pacific-cyan/30",
-      href: "/admin/projects",
+      href: "/saint-denis/projects",
     },
     {
       title: "Blog",
@@ -57,7 +57,7 @@ export default async function AdminDashboardPage() {
       status: `Active · ${blogCount} articles`,
       color: "text-apricot-cream",
       border: "border-apricot-cream/30",
-      href: "/admin/blog",
+      href: "/saint-denis/blog",
     },
     {
       title: "Site Content",
@@ -65,7 +65,7 @@ export default async function AdminDashboardPage() {
       status: "Active · 7 sections",
       color: "text-emerald-400",
       border: "border-emerald-400/30",
-      href: "/admin/content",
+      href: "/saint-denis/content",
     },
     {
       title: "Settings",
@@ -73,7 +73,7 @@ export default async function AdminDashboardPage() {
       status: "Active",
       color: "text-pacific-cyan",
       border: "border-pacific-cyan/30",
-      href: "/admin/settings",
+      href: "/saint-denis/settings",
     },
   ];
 

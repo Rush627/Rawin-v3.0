@@ -11,7 +11,7 @@ export const metadata = {
 export default async function NewPostPage() {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/admin/login?redirect=/admin/blog/new");
+    redirect("/saint-denis/login?redirect=/saint-denis/blog/new");
   }
 
   return <PostForm action={createPostAction} isEditing={false} />;

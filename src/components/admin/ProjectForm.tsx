@@ -114,7 +114,7 @@ export default function ProjectForm({ initialData, action, isEditing = false }: 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
           <Link
-            href="/admin/projects"
+            href="/saint-denis/projects"
             className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
             title="Return to Projects List"
           >
@@ -153,7 +153,7 @@ export default function ProjectForm({ initialData, action, isEditing = false }: 
 
           {/* Cancel -- order-2 on smartphone (anchored right), sm:order-2 on desktop */}
           <Link
-            href="/admin/projects"
+            href="/saint-denis/projects"
             className="order-2 sm:order-2 inline-flex items-center justify-center h-9 sm:h-10 px-3.5 sm:px-5 rounded-xl text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer select-none whitespace-nowrap min-h-[38px]"
           >
             Cancel

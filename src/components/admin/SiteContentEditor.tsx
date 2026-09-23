@@ -92,7 +92,7 @@ import {
   uploadMilestoneImageAction,
   updateOrbitVerificationCodeAction,
   type ContentActionState,
-} from "@/app/admin/content/actions";
+} from "@/app/saint-denis/content/actions";
 
 const ICON_SELECT_OPTIONS: RawinSelectOption[] = [
   { value: "layers", label: "Layers", icon: <Layers className="w-3.5 h-3.5" /> },

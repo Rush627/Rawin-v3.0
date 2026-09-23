@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const result = await storeResumePdfFile(buffer, file.name, file.size);
 
     revalidatePath("/resume");
-    revalidatePath("/admin/content");
+    revalidatePath("/saint-denis/content");
 
     return NextResponse.json({
       success: true,
@@ -89,7 +89,7 @@ export async function DELETE() {
     await removeResumePdfFile();
 
     revalidatePath("/resume");
-    revalidatePath("/admin/content");
+    revalidatePath("/saint-denis/content");
 
     return NextResponse.json({
       success: true,

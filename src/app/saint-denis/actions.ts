@@ -16,7 +16,7 @@ export async function loginAction(
 ): Promise<LoginActionState> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const redirectTo = (formData.get("redirectTo") as string) || "/admin";
+  const redirectTo = (formData.get("redirectTo") as string) || "/saint-denis";
 
   // Determine client IP for rate limiting
   const headerList = await headers();
@@ -57,11 +57,11 @@ export async function loginAction(
   await createAdminSession(result.email);
 
   // Safe redirect URL
-  const target = redirectTo.startsWith("/admin") ? redirectTo : "/admin";
+  const target = redirectTo.startsWith("/saint-denis") ? redirectTo : "/saint-denis";
   redirect(target);
 }
 
 export async function logoutAction(): Promise<void> {
   await destroyAdminSession();
-  redirect("/admin/login");
+  redirect("/saint-denis/login");
 }

@@ -18,7 +18,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
   const { id } = await params;
 
   if (!session) {
-    redirect(`/admin/login?redirect=/admin/blog/${id}`);
+    redirect(`/saint-denis/login?redirect=/saint-denis/blog/${id}`);
   }
 
   const post = await getPostById(id);

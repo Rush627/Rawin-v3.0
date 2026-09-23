@@ -168,7 +168,7 @@ export async function saveAvailabilityAction({
       revalidateTag("site-content", "max");
     } catch {}
     revalidatePath("/", "layout");
-    revalidatePath("/admin/settings");
+    revalidatePath("/saint-denis/settings");
 
     return {
       success: true,
@@ -276,7 +276,7 @@ export async function saveLaunchExperienceAction(
       revalidateTag("site-content", "max");
     } catch {}
     revalidatePath("/", "layout");
-    revalidatePath("/admin/settings");
+    revalidatePath("/saint-denis/settings");
 
     return {
       success: true,

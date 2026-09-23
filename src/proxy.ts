@@ -10,7 +10,7 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-pathname", pathname);
 
   // Only protect admin routes
-  if (!pathname.startsWith("/admin")) {
+  if (!pathname.startsWith("/saint-denis")) {
     return NextResponse.next({
       request: {
         headers: requestHeaders,
@@ -35,11 +35,11 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 1. If user is at /admin/login:
-  if (pathname === "/admin/login") {
+  // 1. If user is at /saint-denis/login:
+  if (pathname === "/saint-denis/login") {
     if (isAuthenticated) {
       // Already logged in: redirect to admin dashboard
-      return NextResponse.redirect(new URL("/admin", request.url));
+      return NextResponse.redirect(new URL("/saint-denis", request.url));
     }
     return NextResponse.next({
       request: {
@@ -48,9 +48,9 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // 2. If user is at any other /admin route and not authenticated:
+  // 2. If user is at any other /saint-denis route and not authenticated:
   if (!isAuthenticated) {
-    const loginUrl = new URL("/admin/login", request.url);
+    const loginUrl = new URL("/saint-denis/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }

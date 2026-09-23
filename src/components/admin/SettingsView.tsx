@@ -31,7 +31,7 @@ import {
   saveAvailabilityAction,
   saveLaunchExperienceAction,
   type PasswordChangeState,
-} from "@/app/admin/settings/actions";
+} from "@/app/saint-denis/settings/actions";
 import type { MaintenanceContent, LaunchExperienceContent } from "@/lib/site-content";
 import LaunchExperience from "@/components/launch/LaunchExperience";
 
@@ -243,7 +243,6 @@ export default function SettingsView({
         type: "success",
         text: res.message || "Launch Experience saved successfully.",
       });
-      router.refresh();
     }
   };
 
@@ -291,8 +290,6 @@ export default function SettingsView({
             channel.close();
           } catch {}
         }
-
-        router.refresh();
       }
     } catch {
       setFeedback({ type: "error", text: "Failed to update availability settings" });
@@ -870,7 +867,7 @@ export default function SettingsView({
             </p>
             <button
               type="button"
-              onClick={() => router.push("/admin/login")}
+              onClick={() => router.push("/saint-denis/login")}
               className="mt-1 w-fit px-4 py-2 rounded-lg bg-pacific-cyan text-ink-black text-xs font-mono font-semibold hover:bg-pacific-cyan/90 transition-all cursor-pointer"
             >
               Proceed to Sign In
@@ -1716,7 +1713,7 @@ export default function SettingsView({
                 </p>
                 <button
                   type="button"
-                  onClick={() => router.push("/admin/login")}
+                  onClick={() => router.push("/saint-denis/login")}
                   className="mt-1 w-full py-2 rounded-lg bg-pacific-cyan text-ink-black text-xs font-mono font-semibold hover:bg-pacific-cyan/90 transition-all cursor-pointer text-center"
                 >
                   Proceed to Sign In

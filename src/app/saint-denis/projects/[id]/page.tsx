@@ -17,7 +17,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
   const { id } = await params;
 
   if (!session) {
-    redirect(`/admin/login?redirect=/admin/projects/${id}`);
+    redirect(`/saint-denis/login?redirect=/saint-denis/projects/${id}`);
   }
 
   const project = await getProjectById(id);

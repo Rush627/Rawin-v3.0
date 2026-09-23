@@ -32,7 +32,7 @@ import {
   deleteKnowledgeAction,
   toggleKnowledgeAction,
   type KnowledgeActionState,
-} from "@/app/admin/content/knowledge-actions";
+} from "@/app/saint-denis/content/knowledge-actions";
 
 interface OrbitKnowledgeManagerProps {
   initialItems: OrbitKnowledgeItem[];

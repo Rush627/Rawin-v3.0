@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 export default function CustomCursor() {
   const cursorRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
-  const isAdmin = Boolean(pathname?.startsWith("/admin"));
+  const isAdmin = Boolean(pathname?.startsWith("/saint-denis"));
 
   useEffect(() => {
     if (typeof window === "undefined") return;

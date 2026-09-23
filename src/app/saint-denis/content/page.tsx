@@ -16,7 +16,7 @@ export const revalidate = 0;
 export default async function AdminContentPage() {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/admin/login?redirect=/admin/content");
+    redirect("/saint-denis/login?redirect=/saint-denis/content");
   }
 
   const [content, knowledgeItems] = await Promise.all([
@@ -41,7 +41,7 @@ export default async function AdminContentPage() {
         {/* Lower Controls Area */}
         <div className="flex items-center gap-2">
           <Link
-            href="/admin"
+            href="/saint-denis"
             className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer shrink-0"
             title="Return to Main Admin Dashboard"
             aria-label="Return to Main Admin Dashboard"
@@ -60,7 +60,7 @@ export default async function AdminContentPage() {
       <div className="hidden sm:flex sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
           <Link
-            href="/admin"
+            href="/saint-denis"
             className="p-2 rounded-xl text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer"
             title="Return to Main Admin Dashboard"
           >

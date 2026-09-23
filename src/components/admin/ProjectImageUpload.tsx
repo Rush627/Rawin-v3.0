@@ -10,7 +10,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
-import { uploadProjectPreviewAction, removeProjectPreviewAction } from "@/app/admin/projects/actions";
+import { uploadProjectPreviewAction, removeProjectPreviewAction } from "@/app/saint-denis/projects/actions";
 
 interface ProjectImageUploadProps {
   projectId?: string;

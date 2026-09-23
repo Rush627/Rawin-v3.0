@@ -24,12 +24,7 @@ export default function ErrorPage({
       title="Something went wrong"
       message="Something went wrong while loading this page."
       actionLabel="Refresh"
-      onAction={() => {
-        try {
-          reset();
-        } catch {}
-        window.location.reload();
-      }}
+      onAction={() => reset()}
     />
   );
 }

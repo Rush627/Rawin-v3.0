@@ -225,7 +225,7 @@ export default function Footer({
 
   // Route Exception 1: Admin, AI Orbit, and individual Blog article pages have no marketing CTA or site footer
   if (
-    pathname.startsWith("/admin") ||
+    pathname.startsWith("/saint-denis") ||
     pathname === "/ai" ||
     pathname.startsWith("/ai/") ||
     pathname.startsWith("/blog/")

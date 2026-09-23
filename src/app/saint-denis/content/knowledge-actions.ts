@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getAdminSession } from "@/lib/auth";
 import {
   createOrbitKnowledge,
@@ -91,7 +91,9 @@ export async function createKnowledgeAction(
     });
 
     invalidateAuraKnowledgeCache();
-    revalidatePath("/admin/content");
+    try {
+      revalidateTag("orbit-knowledge", "max");
+    } catch {}
 
     return {
       success: true,
@@ -172,7 +174,9 @@ export async function updateKnowledgeAction(
     }
 
     invalidateAuraKnowledgeCache();
-    revalidatePath("/admin/content");
+    try {
+      revalidateTag("orbit-knowledge", "max");
+    } catch {}
 
     return {
       success: true,
@@ -206,7 +210,9 @@ export async function deleteKnowledgeAction(id: string): Promise<KnowledgeAction
     }
 
     invalidateAuraKnowledgeCache();
-    revalidatePath("/admin/content");
+    try {
+      revalidateTag("orbit-knowledge", "max");
+    } catch {}
 
     return {
       success: true,
@@ -242,7 +248,9 @@ export async function toggleKnowledgeAction(
     }
 
     invalidateAuraKnowledgeCache();
-    revalidatePath("/admin/content");
+    try {
+      revalidateTag("orbit-knowledge", "max");
+    } catch {}
 
     return {
       success: true,

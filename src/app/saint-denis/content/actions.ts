@@ -1055,17 +1055,10 @@ export async function updateSectionAction(
     return { error: "An unexpected error occurred while saving content. Please try again." };
   }
 
-  // Revalidate public pages and admin content editor
+  // Invalidate public site content cache tag on-demand
   try {
     revalidateTag("site-content", "max");
   } catch {}
-  revalidatePath("/");
-  revalidatePath("/about");
-  revalidatePath("/contact");
-  revalidatePath("/resume");
-  revalidatePath("/uses");
-  revalidatePath("/ai");
-  revalidatePath("/admin/content");
 
   const sectionDisplayName = section.charAt(0).toUpperCase() + section.slice(1);
   return {
@@ -1222,15 +1215,6 @@ function revalidateAllAssetPaths() {
   try {
     revalidateTag("site-content", "max");
   } catch {}
-  revalidatePath("/");
-  revalidatePath("/about");
-  revalidatePath("/contact");
-  revalidatePath("/resume");
-  revalidatePath("/uses");
-  revalidatePath("/ai");
-  revalidatePath("/admin");
-  revalidatePath("/admin/login");
-  revalidatePath("/admin/content");
 }
 
 /**
@@ -1283,7 +1267,7 @@ export async function uploadResumePdfAction(
       revalidateTag("site-content", "max");
     } catch {}
     revalidatePath("/resume");
-    revalidatePath("/admin/content");
+    revalidatePath("/saint-denis/content");
 
     return {
       success: true,
@@ -1313,7 +1297,7 @@ export async function removeResumePdfAction(): Promise<ContentActionState> {
       revalidateTag("site-content", "max");
     } catch {}
     revalidatePath("/resume");
-    revalidatePath("/admin/content");
+    revalidatePath("/saint-denis/content");
 
     return {
       success: true,
@@ -1366,7 +1350,7 @@ export async function uploadMilestoneImageAction(
       revalidateTag("site-content", "max");
     } catch {}
     revalidatePath("/about");
-    revalidatePath("/admin/content");
+    revalidatePath("/saint-denis/content");
 
     return { success: true, url };
   } catch (err: unknown) {
@@ -1414,7 +1398,7 @@ export async function updateOrbitVerificationCodeAction(
     return { error: result.error || "Failed to update verification code." };
   }
 
-  revalidatePath("/admin/content");
+  revalidatePath("/saint-denis/content");
   return { success: true, message: "Verification code updated." };
 }
 

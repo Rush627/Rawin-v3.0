@@ -6,7 +6,7 @@ import CustomCursor from "./CustomCursor";
 
 export default function PublicCustomCursor() {
   const pathname = usePathname();
-  const isAdmin = Boolean(pathname?.startsWith("/admin"));
+  const isAdmin = Boolean(pathname?.startsWith("/saint-denis"));
 
   // Ensure document cursor override is cleanly removed whenever on an admin route
   useEffect(() => {
