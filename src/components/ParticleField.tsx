@@ -32,11 +32,20 @@ export default function ParticleField() {
 
     // Detect device capabilities and reduced motion preference
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    const isSmallPhone = window.innerWidth < 768;
+    const isTouchDevice =
+      "ontouchstart" in window ||
+      (typeof navigator.maxTouchPoints === "number" && navigator.maxTouchPoints > 0) ||
+      window.matchMedia("(pointer: coarse)").matches;
+    const isTabletOrPhoneUA =
+      /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 0 && /Macintosh/i.test(navigator.userAgent)); // iPadOS desktop UA
+    const isUnderDesktop = window.innerWidth < 1024;
+    const isTouchTablet = isTouchDevice && (isTabletOrPhoneUA || window.matchMedia("(hover: none)").matches) && window.innerWidth <= 1366;
+    const isTouch = isTouchDevice;
 
-    // Small-screen mobile phones & reduced-motion: Disable particle engine completely for peak performance
-    if (prefersReducedMotion || (isTouch && isSmallPhone)) {
+    // Mobile phones (<768px), Tablets (768px-1023px, iPad Mini/Air/Pro, Android tablets),
+    // and reduced-motion: Disable particle engine completely for peak performance.
+    if (prefersReducedMotion || isUnderDesktop || isTouchTablet) {
       return;
     }
 
@@ -908,7 +917,7 @@ export default function ParticleField() {
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden hidden md:block"
+      className="fixed inset-0 pointer-events-none z-0 overflow-hidden hidden lg:block"
     />
   );
 }

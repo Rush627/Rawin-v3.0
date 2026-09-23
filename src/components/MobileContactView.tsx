@@ -30,7 +30,7 @@ export default function MobileContactView({
   const showPhone = Boolean(content.showPhoneNumber && content.phone);
 
   return (
-    <div className="w-full max-w-xl mx-auto pt-28 sm:pt-32 pb-14 px-4 sm:px-6 flex flex-col gap-6 sm:gap-7 relative">
+    <div className="w-full max-w-xl md:max-w-2xl mx-auto pt-28 sm:pt-32 pb-14 px-4 sm:px-6 md:px-8 flex flex-col gap-6 sm:gap-7 relative">
       {/* ─── Compact Mobile Hero Header ─── */}
       <header className="flex flex-col gap-3 pb-3 border-b border-white/[0.08]">
         <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium text-pacific-cyan bg-pacific-cyan/[0.08] border border-pacific-cyan/20 w-fit shadow-[inset_0_1px_0_rgba(24,155,173,0.2)]">
@@ -43,7 +43,7 @@ export default function MobileContactView({
           {content.title || "Let's talk."}
         </h1>
 
-        <p className="text-xs sm:text-sm text-muted/80 leading-relaxed font-sans max-w-sm">
+        <p className="text-xs sm:text-sm text-muted/80 leading-relaxed font-sans max-w-sm md:max-w-md">
           {content.description ||
             "Have an open role, project inquiry, or question? Send a note below."}
         </p>

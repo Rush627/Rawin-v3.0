@@ -21,7 +21,7 @@ function MobileProjectCardContent({
   return (
     <article
       data-particle-protected
-      className="relative w-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-[#161626]/98 via-[#131322]/95 to-[#101019]/98 p-4 sm:p-5.5 shadow-[0_-8px_24px_rgba(0,0,0,0.7),0_20px_50px_rgba(0,0,0,0.85),0_0_1px_1px_rgba(255,255,255,0.06)] flex flex-col gap-3 sm:gap-4 overflow-hidden transition-colors hover:border-pacific-cyan/25"
+      className="relative w-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-[#161626]/98 via-[#131322]/95 to-[#101019]/98 p-4 sm:p-5.5 md:p-7 shadow-[0_-8px_24px_rgba(0,0,0,0.7),0_20px_50px_rgba(0,0,0,0.85),0_0_1px_1px_rgba(255,255,255,0.06)] flex flex-col gap-3 sm:gap-4 overflow-hidden transition-colors hover:border-pacific-cyan/25"
     >
       {/* Subtle ambient radial highlight */}
       <div
@@ -84,7 +84,7 @@ function MobileProjectCardContent({
 
           {/* Zone 4: Project Preview Window Image */}
           {project.previewImage && project.previewImage !== "/images/profile.png" && (
-            <div className="relative w-full aspect-[16/9] max-h-[220px] sm:max-h-[260px] rounded-xl overflow-hidden border border-white/[0.08] bg-ink-black/60 my-0.5 group">
+            <div className="relative w-full aspect-[16/9] max-h-[220px] sm:max-h-[260px] md:max-h-[380px] rounded-xl overflow-hidden border border-white/[0.08] bg-ink-black/60 my-0.5 group">
               <Image
                 src={project.previewImage}
                 alt={project.title}

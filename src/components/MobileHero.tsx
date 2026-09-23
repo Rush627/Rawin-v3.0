@@ -70,7 +70,7 @@ export default function MobileHero({ homeContent, assets }: MobileHeroProps) {
       </div>
 
       {/* 3. Confident Typography & CMS Name & Lightweight Typing Role */}
-      <div className="flex flex-col items-center gap-1 sm:gap-1.5 w-full max-w-xl mx-auto px-1">
+      <div className="flex flex-col items-center gap-1 sm:gap-1.5 w-full max-w-xl md:max-w-2xl mx-auto px-1">
         <h1 className="text-[clamp(1.25rem,6.1vw,2.15rem)] sm:text-4xl font-bold tracking-tight text-foreground font-space leading-[1.15] whitespace-nowrap text-center">
           {homeContent.heroTitlePrefix}{" "}
           <span className="text-pacific-cyan" id="mobile-hero-name">
@@ -81,22 +81,22 @@ export default function MobileHero({ homeContent, assets }: MobileHeroProps) {
       </div>
 
       {/* 4. Bio Statement - Comfortable typography and wider readable line length */}
-      <p className="mt-4 sm:mt-5 w-full max-w-[348px] min-[400px]:max-w-[370px] sm:max-w-[400px] text-xs sm:text-sm text-muted/80 leading-relaxed font-sans mx-auto px-1">
+      <p className="mt-4 sm:mt-5 md:mt-6 w-full max-w-[348px] min-[400px]:max-w-[370px] sm:max-w-[400px] md:max-w-xl text-xs sm:text-sm md:text-base text-muted/80 leading-relaxed font-sans mx-auto px-1">
         {homeContent.heroBio}
       </p>
 
-      {/* 5. Primary & Secondary CTAs - Compact, centered, premium touch targets */}
-      <div className="flex flex-col items-stretch gap-3 sm:gap-3.5 mt-5 sm:mt-6 w-full max-w-[270px] min-[390px]:max-w-[290px] sm:max-w-[310px] mx-auto">
+      {/* 5. Primary & Secondary CTAs - Compact on mobile, balanced horizontal row on tablet */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-3 sm:gap-3.5 md:gap-4 mt-5 sm:mt-6 md:mt-7 w-full max-w-[270px] min-[390px]:max-w-[290px] sm:max-w-[310px] md:max-w-none mx-auto">
         <Link
           href="/projects"
-          className="w-full justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-xs sm:text-sm hover:bg-pacific-cyan/90 active:scale-[0.99] transition-all text-center min-h-[42px] sm:min-h-[44px] shadow-sm"
+          className="w-full md:w-auto justify-center inline-flex items-center gap-2 px-5 md:px-7 py-2.5 md:py-3 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-xs sm:text-sm hover:bg-pacific-cyan/90 active:scale-[0.99] transition-all text-center min-h-[42px] sm:min-h-[44px] shadow-sm"
         >
           <span className="truncate">{homeContent.heroPrimaryCtaText}</span>
           <ArrowRight className="w-4 h-4 shrink-0" />
         </Link>
         <Link
           href="/contact"
-          className="w-full justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#141420] border border-white/10 text-foreground font-medium text-xs sm:text-sm hover:border-pacific-cyan/40 active:scale-[0.99] transition-all text-center min-h-[42px] sm:min-h-[44px]"
+          className="w-full md:w-auto justify-center inline-flex items-center gap-2 px-5 md:px-7 py-2.5 md:py-3 rounded-xl bg-[#141420] border border-white/10 text-foreground font-medium text-xs sm:text-sm hover:border-pacific-cyan/40 active:scale-[0.99] transition-all text-center min-h-[42px] sm:min-h-[44px]"
         >
           <span className="truncate">{homeContent.heroSecondaryCtaText}</span>
           <Send className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
@@ -105,13 +105,13 @@ export default function MobileHero({ homeContent, assets }: MobileHeroProps) {
 
       {/* Subtle quiet separator with generous breathing space before capabilities */}
       <div
-        className="w-full max-w-[280px] min-[400px]:max-w-[320px] sm:max-w-[360px] mx-auto mt-8 mb-7 sm:mt-10 sm:mb-8 border-t border-white/[0.07]"
+        className="w-full max-w-[280px] min-[400px]:max-w-[320px] sm:max-w-[360px] md:max-w-2xl mx-auto mt-8 mb-7 sm:mt-10 sm:mb-8 md:mt-12 md:mb-10 border-t border-white/[0.07]"
         aria-hidden="true"
       />
 
-      {/* 6. Capabilities Section - 2x2 grid with enlarged areas and Pacific Cyan L-shaped corners */}
-      <div className="w-full max-w-[348px] min-[400px]:max-w-[364px] sm:max-w-[380px] mx-auto">
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+      {/* 6. Capabilities Section - 2x2 grid on mobile, sleek 4-column bar on tablet */}
+      <div className="w-full max-w-[348px] min-[400px]:max-w-[364px] sm:max-w-[380px] md:max-w-2xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-3">
           {/* Item 1: Next.js & React */}
           <div className="relative py-3 sm:py-3.5 px-3 flex flex-col items-center justify-center text-center select-none">
             <span

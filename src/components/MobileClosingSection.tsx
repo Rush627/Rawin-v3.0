@@ -44,7 +44,7 @@ export default function MobileClosingSection({
   return (
     <section
       id="mobile-closing-section"
-      className="relative w-full pt-14 sm:pt-20 pb-16 sm:pb-20 px-5 sm:px-8 bg-ink-black select-none overflow-hidden"
+      className="relative w-full pt-14 sm:pt-20 pb-16 sm:pb-20 px-5 sm:px-8 md:px-12 bg-ink-black select-none overflow-hidden"
       aria-label="Closing Call To Action"
     >
       {/* Ambient Subtle Background Cyan Glow (Continuous on page canvas) */}
@@ -53,7 +53,7 @@ export default function MobileClosingSection({
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[420px] h-[300px] sm:h-[420px] rounded-full bg-pacific-cyan/5 blur-[90px] pointer-events-none -z-10"
       />
 
-      <div className="max-w-xl mx-auto w-full flex flex-col">
+      <div className="max-w-xl md:max-w-2xl mx-auto w-full flex flex-col">
         {/* ========================================================= */}
         {/* EYEBROW: HAVE A PROJECT IN MIND?                          */}
         {/* Left-aligned, small, uppercase, letter-spaced             */}

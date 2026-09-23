@@ -37,7 +37,7 @@ export default function MobileUsesView({
   exploringItems,
 }: MobileUsesViewProps) {
   return (
-    <div className="w-full max-w-3xl mx-auto pt-32 sm:pt-36 pb-16 px-4 sm:px-6 flex flex-col gap-12 sm:gap-16">
+    <div className="w-full max-w-3xl md:max-w-4xl mx-auto pt-32 sm:pt-36 pb-16 px-4 sm:px-6 md:px-8 flex flex-col gap-12 sm:gap-16">
       
       {/* ─── Section 0: Page Header ─── */}
       <header className="flex flex-col gap-3.5">
@@ -77,7 +77,7 @@ export default function MobileUsesView({
         </div>
 
         {/* Technical Inventory List */}
-        <div className="divide-y divide-white/[0.08] border-y border-white/[0.08] bg-ink-black/40 rounded-xl overflow-hidden px-4">
+        <div className="divide-y divide-white/[0.08] border-y border-white/[0.08] bg-ink-black/40 rounded-xl overflow-hidden px-4 md:px-6">
           {dailyStack.map((tool, idx) => {
             const numStr = idx < 9 ? `0${idx + 1}` : `${idx + 1}`;
             return (

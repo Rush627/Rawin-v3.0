@@ -66,7 +66,7 @@ export default function ResumeMobileView({
   const subtitle = resume.subtitle || "Full Stack Developer · Web Craftsman";
 
   return (
-    <div className="w-full max-w-xl mx-auto pt-32 sm:pt-36 pb-16 px-4 sm:px-6 flex flex-col gap-10">
+    <div className="w-full max-w-xl md:max-w-3xl mx-auto pt-32 sm:pt-36 pb-16 px-4 sm:px-6 md:px-8 flex flex-col gap-10">
       
       {/* ─── Mobile Hero / Profile ─── */}
       <header className="flex flex-col gap-4 pb-6 border-b border-white/[0.08]">
@@ -93,11 +93,11 @@ export default function ResumeMobileView({
           </p>
         </div>
 
-        {/* Action Buttons: 2-column or full width touch targets */}
-        <div className="grid grid-cols-2 gap-2.5 pt-2">
+        {/* Action Buttons: 2-column on mobile, inline row on tablet */}
+        <div className="grid grid-cols-2 md:flex md:flex-row md:items-center gap-2.5 pt-2">
           <Link
             href="/contact"
-            className="inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-pacific-cyan text-ink-black font-semibold text-xs font-mono uppercase tracking-wider hover:bg-pacific-cyan/90 transition-all min-h-[42px] text-center"
+            className="inline-flex items-center justify-center gap-2 px-3 md:px-5 py-2.5 rounded-lg bg-pacific-cyan text-ink-black font-semibold text-xs font-mono uppercase tracking-wider hover:bg-pacific-cyan/90 transition-all min-h-[42px] text-center md:w-auto"
           >
             <Mail className="w-3.5 h-3.5 shrink-0" />
             <span>{resume.ctaText || "Hire Me"}</span>
@@ -107,7 +107,7 @@ export default function ResumeMobileView({
             <a
               href="/api/resume/download"
               download
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-white/[0.04] text-foreground border border-white/[0.08] hover:border-pacific-cyan/40 font-semibold text-xs font-mono uppercase tracking-wider transition-all min-h-[42px] text-center"
+              className="inline-flex items-center justify-center gap-1.5 px-3 md:px-5 py-2.5 rounded-lg bg-white/[0.04] text-foreground border border-white/[0.08] hover:border-pacific-cyan/40 font-semibold text-xs font-mono uppercase tracking-wider transition-all min-h-[42px] text-center md:w-auto"
               aria-label="Download Resume PDF"
             >
               <Download className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
@@ -224,7 +224,7 @@ export default function ResumeMobileView({
           </span>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {skillsList.map((group, idx) => (
             <div
               key={group.id || idx}
@@ -268,7 +268,7 @@ export default function ResumeMobileView({
           </span>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {educationList.map((edu, idx) => {
             const dateDisplay =
               edu.startDate && edu.endDate

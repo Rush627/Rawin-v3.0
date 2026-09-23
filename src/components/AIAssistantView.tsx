@@ -544,7 +544,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
           ========================================================================
         */
         <div className="flex-1 min-h-0 w-full flex flex-col justify-center items-center overflow-hidden lg:overflow-hidden overflow-y-auto px-3.5 sm:px-6 lg:px-12 pt-2 sm:pt-3 lg:pt-4 pb-3 sm:pb-4 lg:pb-16 relative z-10 select-text">
-          <div className="w-full max-w-md sm:max-w-lg lg:max-w-2xl mx-auto flex flex-col items-center justify-center text-center my-auto">
+          <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto flex flex-col items-center justify-center text-center my-auto">
             {/* Central Hero Glass Light Sphere */}
             <div
               className="mb-2 sm:mb-3 lg:mb-4 shrink-0 flex items-center justify-center pointer-events-none select-none"
@@ -564,7 +564,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
             </p>
 
             {/* Suggested Prompts Section - Compact AI-style 2-column grid, narrowed on smartphone */}
-            <div className="w-full max-w-[295px] sm:max-w-lg lg:max-w-2xl mx-auto flex flex-col gap-1 sm:gap-1.5 lg:gap-2">
+            <div className="w-full max-w-[295px] sm:max-w-lg md:max-w-2xl lg:max-w-2xl mx-auto flex flex-col gap-1 sm:gap-1.5 lg:gap-2">
               <span className="text-[9px] sm:text-[10px] lg:text-[11px] font-mono uppercase tracking-wider text-muted/50 text-left px-1">
                 {content?.suggestedPromptsLabel || "Suggested Prompts"}
               </span>
@@ -707,7 +707,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
         ========================================================================
       */}
       <div className="w-full shrink-0 px-5 sm:px-8 lg:px-8 pt-1 sm:pt-1.5 lg:pt-2 pb-[var(--orbit-composer-pb,max(1.25rem,calc(env(safe-area-inset-bottom)+0.75rem)))] sm:!pb-6 lg:!pb-12 z-20">
-        <div className="w-full max-w-[340px] sm:max-w-lg lg:max-w-3xl mx-auto flex flex-col gap-1.5 sm:gap-2">
+        <div className="w-full max-w-[340px] sm:max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto flex flex-col gap-1.5 sm:gap-2">
           {/* Character warning if near limit */}
           {input.length > 2500 && (
             <div className="text-[10px] font-mono text-right pr-3">
