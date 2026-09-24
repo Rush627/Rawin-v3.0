@@ -9,18 +9,22 @@ export interface GlobalContent {
   brandName: string;
   siteTitle: string;
   shortBio: string;
-  availabilityStatus: string;
-  availabilityBadge: string;
-  availabilityStatusColor?: "green" | "orange" | "red";
+  footerAvailabilityBadge?: string;
+  footerAvailabilityColor?: "green" | "orange" | "red";
   footerCopyright: string;
   footerBulletNotification?: string;
   contactEmail: string;
   location: string;
+  // Legacy fields retained for backward compatibility:
+  availabilityStatus?: string;
+  availabilityBadge?: string;
+  availabilityStatusColor?: "green" | "orange" | "red";
 }
 
 export interface HomeContent {
   heroStatus: string;
   heroBadge: string;
+  heroStatusColor?: "green" | "orange" | "red";
   heroTitlePrefix: string;
   heroName: string;
   heroBio: string;
@@ -375,8 +379,10 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     siteTitle: "Rushan Siddiqui : Full Stack Developer",
     shortBio:
       "Full Stack Developer building clean interfaces, thoughtful user experiences, and modern web applications.",
+    footerAvailabilityBadge: "Available for collaboration",
+    footerAvailabilityColor: "green",
+    availabilityBadge: "Available for collaboration",
     availabilityStatus: "Open to opportunities",
-    availabilityBadge: "Available for hire",
     availabilityStatusColor: "green",
     footerCopyright: "© 2026 RAWIN. All rights reserved. Designed & built by Rushan Siddiqui.",
     footerBulletNotification:
@@ -387,6 +393,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   home: {
     heroStatus: "Open to opportunities",
     heroBadge: "Available for hire",
+    heroStatusColor: "green",
     heroTitlePrefix: "Hi, I'm",
     heroName: "Rushan Siddiqui",
     heroBio:
@@ -1084,9 +1091,23 @@ export function mergeWithDefaults(doc: any): SiteContent {
       brandName: doc.global?.brandName || DEFAULT_SITE_CONTENT.global.brandName,
       siteTitle: doc.global?.siteTitle || DEFAULT_SITE_CONTENT.global.siteTitle,
       shortBio: doc.global?.shortBio || DEFAULT_SITE_CONTENT.global.shortBio,
+      footerAvailabilityBadge:
+        doc.global?.footerAvailabilityBadge ||
+        doc.global?.availabilityBadge ||
+        DEFAULT_SITE_CONTENT.global.footerAvailabilityBadge,
+      footerAvailabilityColor:
+        (doc.global?.footerAvailabilityColor as "green" | "orange" | "red") ||
+        (doc.global?.availabilityStatusColor as "green" | "orange" | "red") ||
+        "green",
+      availabilityBadge:
+        doc.global?.footerAvailabilityBadge ||
+        doc.global?.availabilityBadge ||
+        DEFAULT_SITE_CONTENT.global.footerAvailabilityBadge,
       availabilityStatus: doc.global?.availabilityStatus || DEFAULT_SITE_CONTENT.global.availabilityStatus,
-      availabilityBadge: doc.global?.availabilityBadge || DEFAULT_SITE_CONTENT.global.availabilityBadge,
-      availabilityStatusColor: (doc.global?.availabilityStatusColor as "green" | "orange" | "red") || "green",
+      availabilityStatusColor:
+        (doc.global?.footerAvailabilityColor as "green" | "orange" | "red") ||
+        (doc.global?.availabilityStatusColor as "green" | "orange" | "red") ||
+        "green",
       footerCopyright: doc.global?.footerCopyright || DEFAULT_SITE_CONTENT.global.footerCopyright,
       footerBulletNotification:
         (doc.global?.footerBulletNotification || DEFAULT_SITE_CONTENT.global.footerBulletNotification || "")
@@ -1098,6 +1119,10 @@ export function mergeWithDefaults(doc: any): SiteContent {
     home: {
       heroStatus: doc.home?.heroStatus || DEFAULT_SITE_CONTENT.home.heroStatus,
       heroBadge: doc.home?.heroBadge || DEFAULT_SITE_CONTENT.home.heroBadge,
+      heroStatusColor:
+        (doc.home?.heroStatusColor as "green" | "orange" | "red") ||
+        (doc.global?.availabilityStatusColor as "green" | "orange" | "red") ||
+        "green",
       heroTitlePrefix: doc.home?.heroTitlePrefix || DEFAULT_SITE_CONTENT.home.heroTitlePrefix,
       heroName: doc.home?.heroName || DEFAULT_SITE_CONTENT.home.heroName,
       heroBio: doc.home?.heroBio || DEFAULT_SITE_CONTENT.home.heroBio,

@@ -30,8 +30,10 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "brandName",
     "siteTitle",
     "shortBio",
-    "availabilityStatus",
+    "footerAvailabilityBadge",
+    "footerAvailabilityColor",
     "availabilityBadge",
+    "availabilityStatus",
     "availabilityStatusColor",
     "footerCopyright",
     "footerBulletNotification",
@@ -41,6 +43,7 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
   home: [
     "heroStatus",
     "heroBadge",
+    "heroStatusColor",
     "heroTitlePrefix",
     "heroName",
     "heroBio",
@@ -562,12 +565,28 @@ export async function updateSectionAction(
         continue;
       }
 
-      if (key === "availabilityStatusColor") {
+      if (
+        key === "heroStatusColor" ||
+        key === "footerAvailabilityColor" ||
+        key === "availabilityStatusColor"
+      ) {
         const lower = trimmed.toLowerCase();
         if (lower !== "green" && lower !== "orange" && lower !== "red") {
-          return { error: "Availability status color must be green, orange, or red." };
+          return { error: "Availability color must be green, orange, or red." };
         }
         payload[key] = lower;
+        if (key === "footerAvailabilityColor") {
+          payload["availabilityStatusColor"] = lower;
+        }
+        continue;
+      }
+
+      if (key === "footerAvailabilityBadge") {
+        if (trimmed.length > 100) {
+          return { error: "Footer availability badge cannot exceed 100 characters." };
+        }
+        payload[key] = trimmed;
+        payload["availabilityBadge"] = trimmed;
         continue;
       }
 
@@ -1069,6 +1088,8 @@ export async function updateSectionAction(
       revalidatePath("/contact");
     } else if (section === "home") {
       revalidatePath("/", "page");
+      revalidatePath("/", "layout");
+      revalidatePath("/");
     } else if (section === "about") {
       revalidatePath("/about", "page");
     } else if (section === "contact") {

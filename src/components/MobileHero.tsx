@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Send } from "lucide-react";
 import type { GlobalContent, HomeContent, SiteAssets } from "@/lib/site-content";
+import { DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 import MobileHeroRole from "@/components/MobileHeroRole";
 
 interface MobileHeroProps {
@@ -36,9 +37,12 @@ export default function MobileHero({ homeContent, globalContent, assets }: Mobil
   const profileAlt =
     assets?.profilePhoto?.alt || "Rushan Siddiqui : Full Stack Developer";
 
-  const availabilityStatus = globalContent?.availabilityStatus || homeContent.heroStatus;
-  const availabilityBadge = globalContent?.availabilityBadge || homeContent.heroBadge;
-  const statusColor = globalContent?.availabilityStatusColor || "green";
+  const availabilityStatus =
+    homeContent.heroStatus?.trim() || DEFAULT_SITE_CONTENT.home.heroStatus;
+  const availabilityBadge =
+    homeContent.heroBadge?.trim() || DEFAULT_SITE_CONTENT.home.heroBadge;
+  const statusColor =
+    homeContent.heroStatusColor || "green";
 
   const dotColorClass =
     statusColor === "red"

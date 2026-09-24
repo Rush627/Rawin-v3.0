@@ -296,18 +296,28 @@ export default function Footer({
     }
   );
 
-  // CMS Availability indicator color mapping
-  const statusColor = content?.availabilityStatusColor || "green";
+  // CMS Footer Availability indicator
+  const footerBadgeText =
+    content?.footerAvailabilityBadge ||
+    content?.availabilityBadge ||
+    "Available for collaboration";
+
+  const footerColor =
+    content?.footerAvailabilityColor ||
+    content?.availabilityStatusColor ||
+    "green";
+
   const badgeColorClasses =
-    statusColor === "orange"
+    footerColor === "orange"
       ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-      : statusColor === "red"
+      : footerColor === "red"
       ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
       : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+
   const dotColorClasses =
-    statusColor === "orange"
+    footerColor === "orange"
       ? "bg-amber-400"
-      : statusColor === "red"
+      : footerColor === "red"
       ? "bg-rose-400"
       : "bg-emerald-400";
 
@@ -497,7 +507,7 @@ export default function Footer({
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${badgeColorClasses}`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${dotColorClasses}`} />
-                    {content?.availabilityStatus || "Open to opportunities"}
+                    {footerBadgeText}
                   </span>
                 </div>
               </div>

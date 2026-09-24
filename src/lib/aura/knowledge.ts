@@ -74,7 +74,7 @@ export async function getAuraKnowledgeContext(): Promise<string> {
     sections.push("Relationship: Rushan Siddiqui founded RAWIN and is Orbit's developer. Orbit is an AI assistant created by Rushan for RAWIN.");
     sections.push("Role: Software Developer / Full Stack Engineer");
     sections.push(`Location: ${content.global?.location || "Uttar Pradesh, India"}`);
-    sections.push(`Availability: ${content.global?.availabilityStatus || "Open to select opportunities"}`);
+    sections.push(`Availability: ${content.home?.heroStatus || content.global?.availabilityStatus || "Open to select opportunities"}`);
 
     // 2. About Summary
     if (content.about?.leadText || content.about?.narrativeText || content.global?.shortBio) {

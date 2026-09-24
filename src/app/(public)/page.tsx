@@ -22,7 +22,7 @@ import MobileTechStack from "@/components/MobileTechStack";
 import MobileWhyWorkWithMe from "@/components/MobileWhyWorkWithMe";
 import MobileEngineeringJourney from "@/components/MobileEngineeringJourney";
 import { getFeaturedProjects } from "@/lib/projects";
-import { getSiteContent } from "@/lib/site-content";
+import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 import { TECH_ARSENAL } from "@/data/techArsenal";
 import { TIMELINE, VALUE_PROPOSITIONS } from "@/data/experience";
 import LaunchExperience from "@/components/launch/LaunchExperience";
@@ -37,9 +37,12 @@ export default async function HomePage() {
   const homeContent = siteContent.home;
   const globalContent = siteContent.global;
 
-  const availabilityStatus = globalContent?.availabilityStatus || homeContent.heroStatus;
-  const availabilityBadge = globalContent?.availabilityBadge || homeContent.heroBadge;
-  const statusColor = globalContent?.availabilityStatusColor || "green";
+  const availabilityStatus =
+    homeContent.heroStatus?.trim() || DEFAULT_SITE_CONTENT.home.heroStatus;
+  const availabilityBadge =
+    homeContent.heroBadge?.trim() || DEFAULT_SITE_CONTENT.home.heroBadge;
+  const statusColor =
+    homeContent.heroStatusColor || "green";
 
   const dotColorClass =
     statusColor === "red"

@@ -2827,29 +2827,22 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Availability Status</label>
+                  <label className="text-xs font-mono text-muted uppercase">Footer Availability Badge</label>
                   <input
                     type="text"
-                    name={!isMobile ? "availabilityStatus" : undefined}
-                    value={content.global.availabilityStatus}
-                    onChange={(e) => handleFieldChange("global", "availabilityStatus", e.target.value)}
+                    name={!isMobile ? "footerAvailabilityBadge" : undefined}
+                    value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || ""}
+                    onChange={(e) => {
+                      handleFieldChange("global", "footerAvailabilityBadge", e.target.value);
+                      handleFieldChange("global", "availabilityBadge", e.target.value);
+                    }}
+                    placeholder="Available for collaboration"
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Availability Badge Accent</label>
-                  <input
-                    type="text"
-                    name={!isMobile ? "availabilityBadge" : undefined}
-                    value={content.global.availabilityBadge}
-                    onChange={(e) => handleFieldChange("global", "availabilityBadge", e.target.value)}
-                    className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-mono text-muted uppercase">Availability Status Color</label>
+                  <label className="text-xs font-mono text-muted uppercase">Footer Availability Color</label>
                   <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-ink-black/60 border border-white/[0.08]">
                     {(
                       [
@@ -2858,12 +2851,18 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         { value: "red", label: "Red", dot: "bg-rose-400" },
                       ] as const
                     ).map((opt) => {
-                      const isSelected = (content.global.availabilityStatusColor || "green") === opt.value;
+                      const isSelected =
+                        (content.global.footerAvailabilityColor ||
+                          content.global.availabilityStatusColor ||
+                          "green") === opt.value;
                       return (
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => handleFieldChange("global", "availabilityStatusColor", opt.value)}
+                          onClick={() => {
+                            handleFieldChange("global", "footerAvailabilityColor", opt.value);
+                            handleFieldChange("global", "availabilityStatusColor", opt.value);
+                          }}
                           className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                             isSelected
                               ? "bg-white/10 text-foreground border border-white/20 shadow-sm"
@@ -2950,15 +2949,15 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span
                             className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                              content.global.availabilityStatusColor === "red"
+                              (content.global.footerAvailabilityColor || content.global.availabilityStatusColor) === "red"
                                 ? "bg-rose-400"
-                                : content.global.availabilityStatusColor === "orange"
+                                : (content.global.footerAvailabilityColor || content.global.availabilityStatusColor) === "orange"
                                 ? "bg-amber-400"
                                 : "bg-emerald-400"
                             }`}
                           />
                           <span className="text-[11px] font-mono text-muted truncate">
-                            {content.global.brandName || "RAWIN"} · {content.global.availabilityBadge || "Available for hire"}
+                            {content.global.brandName || "RAWIN"} · {content.global.footerAvailabilityBadge || content.global.availabilityBadge || "Available for collaboration"}
                           </span>
                         </div>
                       </div>
@@ -3031,35 +3030,24 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
 
                       <div className="flex flex-col gap-1.5">
                         <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
-                          Status
+                          Footer Availability Badge
                         </label>
                         <input
                           type="text"
-                          name={isMobile ? "availabilityStatus" : undefined}
-                          value={content.global.availabilityStatus}
-                          onChange={(e) => handleFieldChange("global", "availabilityStatus", e.target.value)}
+                          name={isMobile ? "footerAvailabilityBadge" : undefined}
+                          value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || ""}
+                          onChange={(e) => {
+                            handleFieldChange("global", "footerAvailabilityBadge", e.target.value);
+                            handleFieldChange("global", "availabilityBadge", e.target.value);
+                          }}
                           className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
-                          placeholder="Open to opportunity"
+                          placeholder="Available for collaboration"
                         />
                       </div>
 
                       <div className="flex flex-col gap-1.5">
                         <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
-                          Badge
-                        </label>
-                        <input
-                          type="text"
-                          name={isMobile ? "availabilityBadge" : undefined}
-                          value={content.global.availabilityBadge}
-                          onChange={(e) => handleFieldChange("global", "availabilityBadge", e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
-                          placeholder="Available for hire"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
-                          Color
+                          Footer Availability Color
                         </label>
                         <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-ink-black/80 border border-white/[0.08]">
                           {(
@@ -3069,12 +3057,18 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                               { value: "red", label: "Red", dot: "bg-rose-400" },
                             ] as const
                           ).map((opt) => {
-                            const isSelected = (content.global.availabilityStatusColor || "green") === opt.value;
+                            const isSelected =
+                              (content.global.footerAvailabilityColor ||
+                                content.global.availabilityStatusColor ||
+                                "green") === opt.value;
                             return (
                               <button
                                 key={opt.value}
                                 type="button"
-                                onClick={() => handleFieldChange("global", "availabilityStatusColor", opt.value)}
+                                onClick={() => {
+                                  handleFieldChange("global", "footerAvailabilityColor", opt.value);
+                                  handleFieldChange("global", "availabilityStatusColor", opt.value);
+                                }}
                                 className={`flex items-center justify-center gap-1.5 py-2 px-1 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer min-h-[38px] ${
                                   isSelected
                                     ? "bg-white/[0.12] text-foreground border border-white/20 shadow-sm font-semibold"
@@ -3195,8 +3189,23 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               {/* Shared Hidden Sync Inputs */}
               <input
                 type="hidden"
+                name="footerAvailabilityBadge"
+                value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || "Available for collaboration"}
+              />
+              <input
+                type="hidden"
+                name="footerAvailabilityColor"
+                value={content.global.footerAvailabilityColor || content.global.availabilityStatusColor || "green"}
+              />
+              <input
+                type="hidden"
+                name="availabilityBadge"
+                value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || "Available for collaboration"}
+              />
+              <input
+                type="hidden"
                 name="availabilityStatusColor"
-                value={content.global.availabilityStatusColor || "green"}
+                value={content.global.footerAvailabilityColor || content.global.availabilityStatusColor || "green"}
               />
               <input
                 type="hidden"
@@ -3220,10 +3229,15 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 content.home.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || []
               )}
             />
+            <input
+              type="hidden"
+              name="heroStatusColor"
+              value={content.home.heroStatusColor || "green"}
+            />
             {/* Desktop Presentation (>= sm) */}
             <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-mono text-muted uppercase">Hero Eyebrow Status</label>
+                <label className="text-xs font-mono text-muted uppercase">Hero Availability Status</label>
                 <input
                   type="text"
                   name={!isMobile ? "heroStatus" : undefined}
@@ -3234,7 +3248,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-mono text-muted uppercase">Hero Eyebrow Badge</label>
+                <label className="text-xs font-mono text-muted uppercase">Hero Availability Badge</label>
                 <input
                   type="text"
                   name={!isMobile ? "heroBadge" : undefined}
@@ -3242,6 +3256,36 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                   onChange={(e) => handleFieldChange("home", "heroBadge", e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
                 />
+              </div>
+
+              <div className="flex flex-col gap-2 sm:col-span-2">
+                <label className="text-xs font-mono text-muted uppercase">Hero Availability Color</label>
+                <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-ink-black/60 border border-white/[0.08] max-w-md">
+                  {(
+                    [
+                      { value: "green", label: "Green", dot: "bg-emerald-400" },
+                      { value: "orange", label: "Orange", dot: "bg-amber-400" },
+                      { value: "red", label: "Red", dot: "bg-rose-400" },
+                    ] as const
+                  ).map((opt) => {
+                    const isSelected = (content.home.heroStatusColor || "green") === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => handleFieldChange("home", "heroStatusColor", opt.value)}
+                        className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-white/10 text-foreground border border-white/20 shadow-sm"
+                            : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${opt.dot} ${isSelected ? "ring-2 ring-white/30" : ""}`} />
+                        <span>{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -3449,7 +3493,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
 
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
-                        Hero Eyebrow Status
+                        Hero Availability Status
                       </label>
                       <input
                         type="text"
@@ -3463,7 +3507,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
 
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
-                        Hero Eyebrow Badge
+                        Hero Availability Badge
                       </label>
                       <input
                         type="text"
@@ -3473,6 +3517,38 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
                         placeholder="Available for hire"
                       />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Hero Availability Color
+                      </label>
+                      <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-ink-black/80 border border-white/[0.08]">
+                        {(
+                          [
+                            { value: "green", label: "Green", dot: "bg-emerald-400" },
+                            { value: "orange", label: "Orange", dot: "bg-amber-400" },
+                            { value: "red", label: "Red", dot: "bg-rose-400" },
+                          ] as const
+                        ).map((opt) => {
+                          const isSelected = (content.home.heroStatusColor || "green") === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => handleFieldChange("home", "heroStatusColor", opt.value)}
+                              className={`flex items-center justify-center gap-1.5 py-2 px-1 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer min-h-[38px] ${
+                                isSelected
+                                  ? "bg-white/[0.12] text-foreground border border-white/20 shadow-sm font-semibold"
+                                  : "text-muted hover:text-foreground hover:bg-white/[0.04]"
+                              }`}
+                            >
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${opt.dot} ${isSelected ? "ring-2 ring-white/30" : ""}`} />
+                              <span className="truncate">{opt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
