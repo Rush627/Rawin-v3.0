@@ -81,20 +81,12 @@ function getClientPromise(): Promise<MongoClient> {
   return global._mongoClientPromise;
 }
 
-const clientPromise = uri ? getClientPromise() : Promise.reject(
-  new Error("MONGODB_URI is not configured in environment variables.")
-);
-
-/**
- * Returns the active MongoDB database instance.
- * Gracefully handles connection failures without crashing the application.
- */
 export async function getDatabase(): Promise<Db | null> {
   if (!uri) {
     return null;
   }
   try {
-    const connectedClient = await clientPromise;
+    const connectedClient = await getClientPromise();
     return connectedClient.db(dbName);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -103,4 +95,5 @@ export async function getDatabase(): Promise<Db | null> {
   }
 }
 
-export default clientPromise;
+export { getClientPromise };
+export default getClientPromise;

@@ -1509,13 +1509,7 @@ const getCachedSiteContent = unstable_cache(
 );
 
 export const getSiteContent = cache(async (): Promise<SiteContent> => {
-  try {
-    return await getCachedSiteContent();
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[SiteContent] Read error fallback (in-memory only):", msg);
-    return DEFAULT_SITE_CONTENT;
-  }
+  return await getCachedSiteContent();
 });
 
 /**
