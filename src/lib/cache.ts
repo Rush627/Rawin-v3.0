@@ -15,10 +15,11 @@ export function invalidateCacheTag(tag: string): void {
   try {
     updateTag(tag);
   } catch {
-    try {
-      revalidateTag(tag, { expire: 0 });
-    } catch {
-      // Suppress outside of active Next.js request context
-    }
+    // Expected outside of Server Actions
+  }
+  try {
+    revalidateTag(tag, { expire: 0 });
+  } catch {
+    // Suppress outside of active Next.js request context
   }
 }

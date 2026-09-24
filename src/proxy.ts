@@ -4,62 +4,67 @@ import { jwtVerify } from "jose";
 import { getSecretKey, SESSION_COOKIE_NAME } from "@/lib/auth-token";
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  try {
+    const { pathname } = request.nextUrl;
 
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-pathname", pathname);
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-pathname", pathname);
 
-  // Only protect admin routes
-  if (!pathname.startsWith("/saint-denis")) {
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-  }
-
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  let isAuthenticated = false;
-
-  if (sessionCookie) {
-    try {
-      const secretKey = getSecretKey();
-      const { payload } = await jwtVerify(sessionCookie, secretKey, {
-        algorithms: ["HS256"],
+    // Only protect admin routes
+    if (!pathname.startsWith("/saint-denis")) {
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
       });
-      if (payload.role === "admin" && typeof payload.email === "string") {
-        isAuthenticated = true;
-      }
-    } catch {
-      isAuthenticated = false;
     }
-  }
 
-  // 1. If user is at /saint-denis/login:
-  if (pathname === "/saint-denis/login") {
-    if (isAuthenticated) {
-      // Already logged in: redirect to admin dashboard
-      return NextResponse.redirect(new URL("/saint-denis", request.url));
+    const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    let isAuthenticated = false;
+
+    if (sessionCookie) {
+      try {
+        const secretKey = getSecretKey();
+        const { payload } = await jwtVerify(sessionCookie, secretKey, {
+          algorithms: ["HS256"],
+        });
+        if (payload.role === "admin" && typeof payload.email === "string") {
+          isAuthenticated = true;
+        }
+      } catch {
+        isAuthenticated = false;
+      }
     }
+
+    // 1. If user is at /saint-denis/login:
+    if (pathname === "/saint-denis/login") {
+      if (isAuthenticated) {
+        // Already logged in: redirect to admin dashboard
+        return NextResponse.redirect(new URL("/saint-denis", request.url));
+      }
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    }
+
+    // 2. If user is at any other /saint-denis route and not authenticated:
+    if (!isAuthenticated) {
+      const loginUrl = new URL("/saint-denis/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
     return NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     });
+  } catch (err) {
+    console.error("[Proxy] Unexpected error in middleware:", err);
+    return NextResponse.next();
   }
-
-  // 2. If user is at any other /saint-denis route and not authenticated:
-  if (!isAuthenticated) {
-    const loginUrl = new URL("/saint-denis/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
 }
 
 export { proxy as middleware };

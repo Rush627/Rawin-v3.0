@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -10,7 +9,6 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 import PublicCustomCursor from "@/components/PublicCustomCursor";
-import RawinErrorView from "@/components/RawinErrorView";
 import OfflineDetector from "@/components/OfflineDetector";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
 import { getSiteContent } from "@/lib/site-content";
@@ -86,62 +84,9 @@ export default async function RootLayout({
   const endsAtTime = content.maintenance?.endsAt ? new Date(content.maintenance.endsAt).getTime() : null;
   const isMaintenanceExpired = Boolean(endsAtTime && endsAtTime <= now);
   const isMaintenanceActive = Boolean(content.maintenance?.enabled && !isMaintenanceExpired);
-
-  // Server-Side Maintenance Gate:
-  // Only conditionally inspect headers when maintenance is actually active
-  if (isMaintenanceActive) {
-    const headerList = await headers();
-    const pathname = headerList.get("x-pathname") || "";
-
-    if (
-      !pathname.startsWith("/saint-denis") &&
-      !pathname.startsWith("/api/admin") &&
-      !pathname.startsWith("/api/auth")
-    ) {
-    const isMaintenanceMessage = content.maintenance.showMessage;
-    return (
-      <html
-        lang="en"
-        suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} dark`}
-      >
-        <head>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `if (typeof window !== "undefined") { if ("scrollRestoration" in window.history) { window.history.scrollRestoration = "manual"; } window.scrollTo(0, 0); }`,
-            }}
-          />
-        </head>
-        <body
-          suppressHydrationWarning
-          className="min-h-screen min-h-dvh bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans"
-        >
-          <AvailabilityWatcher
-            initialStatus={isMaintenanceMessage ? "maintenance" : "offline"}
-            isServerFallback={true}
-          />
-          <RawinErrorView
-            code="503"
-            title={isMaintenanceMessage ? "We'll be back soon." : "Site temporarily unavailable"}
-            message={
-              isMaintenanceMessage
-                ? "The site is undergoing scheduled maintenance."
-                : "The site is currently offline for updates."
-            }
-            maintenanceMessage={
-              isMaintenanceMessage ? content.maintenance.message : undefined
-            }
-            endsAt={
-              isMaintenanceMessage ? content.maintenance?.endsAt || undefined : undefined
-            }
-            actionLabel="Refresh"
-          />
-          <PublicCustomCursor />
-        </body>
-      </html>
-    );
-  }
-}
+  const initialStatus = isMaintenanceActive
+    ? (content.maintenance?.showMessage ? "maintenance" : "offline")
+    : "live";
 
   return (
     <html
@@ -161,7 +106,7 @@ export default async function RootLayout({
         className="min-h-screen min-h-dvh bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative"
       >
         <OfflineDetector />
-        <AvailabilityWatcher />
+        <AvailabilityWatcher initialStatus={initialStatus} isServerFallback={isMaintenanceActive} />
         {children}
         <PublicCustomCursor />
       </body>

@@ -168,8 +168,16 @@ export async function saveAvailabilityAction({
     try {
       invalidateCacheTag("site-content");
     } catch {}
-    revalidatePath("/", "layout");
-    revalidatePath("/saint-denis/settings");
+
+    const publicPaths = ["/", "/about", "/projects", "/blog", "/uses", "/resume", "/contact", "/saint-denis/settings"];
+    for (const p of publicPaths) {
+      try {
+        revalidatePath(p);
+      } catch {}
+    }
+    try {
+      revalidatePath("/", "layout");
+    } catch {}
 
     return {
       success: true,
