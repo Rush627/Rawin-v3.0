@@ -11,7 +11,7 @@ export const viewport: Viewport = {
 import PublicCustomCursor from "@/components/PublicCustomCursor";
 import OfflineDetector from "@/components/OfflineDetector";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
-import { getSiteContent } from "@/lib/site-content";
+import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,12 +36,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const faviconUrl = content.assets?.favicon?.url || "/favicon.png";
   const profilePhotoUrl = content.assets?.profilePhoto?.url || "/images/profile.png";
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").trim() || "https://rawin.world";
+  const siteTitle = content.global?.siteTitle?.trim() || DEFAULT_SITE_CONTENT.global.siteTitle;
+  const siteDescription =
+    content.global?.shortBio?.trim() ||
+    DEFAULT_SITE_CONTENT.global.shortBio;
+  const brandName = content.global?.brandName?.trim() || DEFAULT_SITE_CONTENT.global.brandName;
 
   return {
     metadataBase: new URL(siteUrl),
-    title: "RAWIN | Rushan Siddiqui : Full Stack Developer",
-    description:
-      "Portfolio of Rushan Siddiqui, Full Stack Developer crafting modern, minimal, high-performance web applications and digital experiences.",
+    title: siteTitle,
+    description: siteDescription,
     alternates: {
       canonical: "/",
     },
@@ -54,17 +58,16 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: faviconUrl,
     },
     openGraph: {
-      title: "RAWIN | Rushan Siddiqui : Full Stack Developer",
-      description:
-        "Full Stack Developer specializing in high-performance web applications, fluid interfaces, and scalable architectures.",
+      title: siteTitle,
+      description: siteDescription,
       url: siteUrl,
-      siteName: "RAWIN",
+      siteName: brandName,
       images: [
         {
           url: profilePhotoUrl,
           width: 800,
           height: 800,
-          alt: "Rushan Siddiqui",
+          alt: brandName,
         },
       ],
       locale: "en_US",
