@@ -401,6 +401,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     heroPrimaryCtaText: "Explore Case Studies",
     heroSecondaryCtaText: "Let's Connect",
     featuredHeading: "Featured Case Studies",
+    featuredDescription: "Selected Work",
     heroTypingPhrases: [
       "Full Stack Developer",
       "Creative Technologies",
@@ -489,6 +490,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     },
     principlesEyebrow: "HOW I BUILD",
     principlesHeading: "A few principles I keep close.",
+    principlesDescription: "Core rules that govern every line of code, architectural decision, and user experience.",
     principles: [
       {
         id: "principle-1",
@@ -1117,20 +1119,20 @@ export function mergeWithDefaults(doc: any): SiteContent {
       location: canonicalLocation,
     },
     home: {
-      heroStatus: doc.home?.heroStatus || DEFAULT_SITE_CONTENT.home.heroStatus,
-      heroBadge: doc.home?.heroBadge || DEFAULT_SITE_CONTENT.home.heroBadge,
+      heroStatus: doc?.home?.heroStatus || DEFAULT_SITE_CONTENT.home.heroStatus,
+      heroBadge: doc?.home?.heroBadge || DEFAULT_SITE_CONTENT.home.heroBadge,
       heroStatusColor:
-        (doc.home?.heroStatusColor as "green" | "orange" | "red") ||
-        (doc.global?.availabilityStatusColor as "green" | "orange" | "red") ||
+        (doc?.home?.heroStatusColor as "green" | "orange" | "red") ||
         "green",
-      heroTitlePrefix: doc.home?.heroTitlePrefix || DEFAULT_SITE_CONTENT.home.heroTitlePrefix,
-      heroName: doc.home?.heroName || DEFAULT_SITE_CONTENT.home.heroName,
-      heroBio: doc.home?.heroBio || DEFAULT_SITE_CONTENT.home.heroBio,
-      heroPrimaryCtaText: doc.home?.heroPrimaryCtaText || DEFAULT_SITE_CONTENT.home.heroPrimaryCtaText,
-      heroSecondaryCtaText: doc.home?.heroSecondaryCtaText || DEFAULT_SITE_CONTENT.home.heroSecondaryCtaText,
-      featuredHeading: doc.home?.featuredHeading || DEFAULT_SITE_CONTENT.home.featuredHeading,
+      heroTitlePrefix: doc?.home?.heroTitlePrefix || DEFAULT_SITE_CONTENT.home.heroTitlePrefix,
+      heroName: doc?.home?.heroName || DEFAULT_SITE_CONTENT.home.heroName,
+      heroBio: doc?.home?.heroBio || DEFAULT_SITE_CONTENT.home.heroBio,
+      heroPrimaryCtaText: doc?.home?.heroPrimaryCtaText || DEFAULT_SITE_CONTENT.home.heroPrimaryCtaText,
+      heroSecondaryCtaText: doc?.home?.heroSecondaryCtaText || DEFAULT_SITE_CONTENT.home.heroSecondaryCtaText,
+      featuredHeading: doc?.home?.featuredHeading || DEFAULT_SITE_CONTENT.home.featuredHeading,
+      featuredDescription: doc?.home?.featuredDescription || DEFAULT_SITE_CONTENT.home.featuredDescription || "",
       heroTypingPhrases:
-        Array.isArray(doc.home?.heroTypingPhrases) && doc.home.heroTypingPhrases.length > 0
+        Array.isArray(doc?.home?.heroTypingPhrases) && doc.home.heroTypingPhrases.length > 0
           ? doc.home.heroTypingPhrases
               .map((p: any) => String(p).trim())
               .filter(Boolean)
@@ -1214,9 +1216,13 @@ export function mergeWithDefaults(doc: any): SiteContent {
             ? doc.about.milestoneLabels.currentEra.trim().slice(0, 80)
             : DEFAULT_SITE_CONTENT.about.milestoneLabels?.currentEra || "CURRENT ERA",
       },
-      principlesEyebrow: doc.about?.principlesEyebrow || DEFAULT_SITE_CONTENT.about.principlesEyebrow,
-      principlesHeading: doc.about?.principlesHeading || DEFAULT_SITE_CONTENT.about.principlesHeading,
-      principles: Array.isArray(doc.about?.principles) && doc.about.principles.length > 0
+      principlesEyebrow: doc?.about?.principlesEyebrow || DEFAULT_SITE_CONTENT.about.principlesEyebrow,
+      principlesHeading: doc?.about?.principlesHeading || DEFAULT_SITE_CONTENT.about.principlesHeading,
+      principlesDescription:
+        typeof doc?.about?.principlesDescription === "string" && doc.about.principlesDescription.trim()
+          ? doc.about.principlesDescription.trim()
+          : DEFAULT_SITE_CONTENT.about.principlesDescription || "",
+      principles: Array.isArray(doc?.about?.principles) && doc.about.principles.length > 0
         ? doc.about.principles.map((p: any, idx: number) => ({
           id: String(p.id || `principle-${idx + 1}`),
           number: String(p.number || `0${idx + 1}`),
@@ -1465,61 +1471,32 @@ export function mergeWithDefaults(doc: any): SiteContent {
 }
 
 /**
- * Retrieves site content from MongoDB with automatic default seeding and graceful fallback.
+ * Retrieves site content from MongoDB with graceful fallback.
+ * Strictly READ-ONLY for public requests - never mutates the database.
  */
 async function fetchSiteContentFromDb(): Promise<SiteContent> {
-  try {
-    const db = await getDatabase();
-    if (!db) {
-      return DEFAULT_SITE_CONTENT;
-    }
-
-    const col = db.collection(COLLECTION_NAME);
-    let doc = await col.findOne({ key: "main" });
-
-    if (!doc) {
-      // Seed default document automatically
-      const now = new Date();
-      const { _id: _omittedId, ...safeSeedData } = DEFAULT_SITE_CONTENT;
-      await col.insertOne({
-        ...safeSeedData,
-        createdAt: now,
-        updatedAt: now,
-      });
-      return DEFAULT_SITE_CONTENT;
-    }
-
-    // Automatic Maintenance Expiry Check & Database Normalization:
-    // If maintenance was enabled with a duration timer that has now expired,
-    // persist the reset to MongoDB immediately so the next read and UI see STANDBY/LIVE.
-    if (doc.maintenance?.enabled && doc.maintenance?.endsAt) {
-      const endsTime = new Date(doc.maintenance.endsAt).getTime();
-      if (!isNaN(endsTime) && endsTime <= Date.now()) {
-        try {
-          await col.updateOne(
-            { key: "main" },
-            {
-              $set: {
-                "maintenance.enabled": false,
-                "maintenance.endsAt": null,
-                updatedAt: new Date(),
-              },
-            }
-          );
-          doc.maintenance.enabled = false;
-          doc.maintenance.endsAt = null;
-        } catch (updateErr) {
-          console.error("[SiteContent] Failed to persist expired maintenance reset:", updateErr);
-        }
-      }
-    }
-
-    return mergeWithDefaults(doc);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[SiteContent] Error fetching content (using fallback defaults):", msg);
-    return DEFAULT_SITE_CONTENT;
+  const db = await getDatabase();
+  if (!db) {
+    throw new Error("[SiteContent] Database connection unavailable.");
   }
+
+  const col = db.collection(COLLECTION_NAME);
+  const doc = await col.findOne({ key: "main" });
+
+  if (!doc) {
+    return mergeWithDefaults(null);
+  }
+
+  // In-memory maintenance expiration check (zero public DB writes)
+  if (doc.maintenance?.enabled && doc.maintenance?.endsAt) {
+    const endsTime = new Date(doc.maintenance.endsAt).getTime();
+    if (!isNaN(endsTime) && endsTime <= Date.now()) {
+      doc.maintenance.enabled = false;
+      doc.maintenance.endsAt = null;
+    }
+  }
+
+  return mergeWithDefaults(doc);
 }
 
 const getCachedSiteContent = unstable_cache(
@@ -1532,7 +1509,13 @@ const getCachedSiteContent = unstable_cache(
 );
 
 export const getSiteContent = cache(async (): Promise<SiteContent> => {
-  return getCachedSiteContent();
+  try {
+    return await getCachedSiteContent();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[SiteContent] Read error fallback (in-memory only):", msg);
+    return DEFAULT_SITE_CONTENT;
+  }
 });
 
 /**
@@ -2047,20 +2030,7 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
     if (endsAt) {
       const endsTime = new Date(endsAt).getTime();
       if (!isNaN(endsTime) && endsTime <= Date.now()) {
-        try {
-          await col.updateOne(
-            { key: "main" },
-            {
-              $set: {
-                "maintenance.enabled": false,
-                "maintenance.endsAt": null,
-                updatedAt: new Date(),
-              },
-            }
-          );
-        } catch (updateErr) {
-          console.error("[SiteContent] Failed to persist expired maintenance reset:", updateErr);
-        }
+        // Return live in-memory without performing public DB mutations
         return { status: "live" };
       }
     }

@@ -2802,13 +2802,25 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
           {/* Dynamic Fields Per Section */}
           {activeTab === "global" && (
             <>
+              {/* Canonical Hidden Inputs for Reliable Cross-Device Form Submission */}
+              <input type="hidden" name="brandName" value={content.global.brandName || ""} />
+              <input type="hidden" name="siteTitle" value={content.global.siteTitle || ""} />
+              <input type="hidden" name="shortBio" value={content.global.shortBio || ""} />
+              <input type="hidden" name="footerAvailabilityBadge" value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || ""} />
+              <input type="hidden" name="footerAvailabilityColor" value={content.global.footerAvailabilityColor || content.global.availabilityStatusColor || "green"} />
+              <input type="hidden" name="availabilityBadge" value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || ""} />
+              <input type="hidden" name="availabilityStatusColor" value={content.global.footerAvailabilityColor || content.global.availabilityStatusColor || "green"} />
+              <input type="hidden" name="footerCopyright" value={content.global.footerCopyright || ""} />
+              <input type="hidden" name="footerBulletNotification" value={content.global.footerBulletNotification || ""} />
+              <input type="hidden" name="contactEmail" value={content.contact?.email || content.global.contactEmail || ""} />
+              <input type="hidden" name="location" value={content.contact?.location || content.global.location || ""} />
+
               {/* Desktop Presentation (>= sm) */}
               <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-mono text-muted uppercase">Brand / Site Name</label>
                   <input
                     type="text"
-                    name={!isMobile ? "brandName" : undefined}
                     value={content.global.brandName}
                     onChange={(e) => handleFieldChange("global", "brandName", e.target.value)}
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -2819,7 +2831,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                   <label className="text-xs font-mono text-muted uppercase">Site Meta Title</label>
                   <input
                     type="text"
-                    name={!isMobile ? "siteTitle" : undefined}
                     value={content.global.siteTitle}
                     onChange={(e) => handleFieldChange("global", "siteTitle", e.target.value)}
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -2830,7 +2841,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                   <label className="text-xs font-mono text-muted uppercase">Footer Availability Badge</label>
                   <input
                     type="text"
-                    name={!isMobile ? "footerAvailabilityBadge" : undefined}
                     value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || ""}
                     onChange={(e) => {
                       handleFieldChange("global", "footerAvailabilityBadge", e.target.value);
@@ -2896,7 +2906,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                   <label className="text-xs font-mono text-muted uppercase">Footer Copyright Text</label>
                   <input
                     type="text"
-                    name={!isMobile ? "footerCopyright" : undefined}
                     value={content.global.footerCopyright}
                     onChange={(e) => handleFieldChange("global", "footerCopyright", e.target.value)}
                     className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -2907,7 +2916,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                   <label className="text-xs font-mono text-muted uppercase">Footer Bullet Notification</label>
                   <input
                     type="text"
-                    name={!isMobile ? "footerBulletNotification" : undefined}
                     value={content.global.footerBulletNotification || ""}
                     onChange={(e) => handleFieldChange("global", "footerBulletNotification", e.target.value)}
                     placeholder="BUILDING WITH INTENT • CRAFTING DIGITAL EXPERIENCES • ALWAYS LEARNING"
@@ -2994,7 +3002,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         </label>
                         <input
                           type="text"
-                          name={isMobile ? "brandName" : undefined}
                           value={content.global.brandName}
                           onChange={(e) => handleFieldChange("global", "brandName", e.target.value)}
                           className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
@@ -3008,7 +3015,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         </label>
                         <input
                           type="text"
-                          name={isMobile ? "siteTitle" : undefined}
                           value={content.global.siteTitle}
                           onChange={(e) => handleFieldChange("global", "siteTitle", e.target.value)}
                           className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
@@ -3034,7 +3040,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         </label>
                         <input
                           type="text"
-                          name={isMobile ? "footerAvailabilityBadge" : undefined}
                           value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || ""}
                           onChange={(e) => {
                             handleFieldChange("global", "footerAvailabilityBadge", e.target.value);
@@ -3136,7 +3141,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         </label>
                         <input
                           type="text"
-                          name={isMobile ? "footerCopyright" : undefined}
                           value={content.global.footerCopyright}
                           onChange={(e) => handleFieldChange("global", "footerCopyright", e.target.value)}
                           className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-base sm:text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
@@ -3150,7 +3154,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         </label>
                         <input
                           type="text"
-                          name={isMobile ? "footerBulletNotification" : undefined}
                           value={content.global.footerBulletNotification || ""}
                           onChange={(e) => handleFieldChange("global", "footerBulletNotification", e.target.value)}
                           placeholder="BUILDING WITH INTENT • CRAFTING DIGITAL EXPERIENCES • ALWAYS LEARNING"
@@ -3185,43 +3188,22 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                   </div>
                 </div>
               </div>
-
-              {/* Shared Hidden Sync Inputs */}
-              <input
-                type="hidden"
-                name="footerAvailabilityBadge"
-                value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || "Available for collaboration"}
-              />
-              <input
-                type="hidden"
-                name="footerAvailabilityColor"
-                value={content.global.footerAvailabilityColor || content.global.availabilityStatusColor || "green"}
-              />
-              <input
-                type="hidden"
-                name="availabilityBadge"
-                value={content.global.footerAvailabilityBadge || content.global.availabilityBadge || "Available for collaboration"}
-              />
-              <input
-                type="hidden"
-                name="availabilityStatusColor"
-                value={content.global.footerAvailabilityColor || content.global.availabilityStatusColor || "green"}
-              />
-              <input
-                type="hidden"
-                name="location"
-                value={content.contact?.location || content.global.location || ""}
-              />
-              <input
-                type="hidden"
-                name="contactEmail"
-                value={content.contact?.email || content.global.contactEmail || ""}
-              />
             </>
           )}
 
         {activeTab === "home" && (
           <>
+            {/* Canonical Hidden Inputs for Reliable Cross-Device Form Submission */}
+            <input type="hidden" name="heroStatus" value={content.home.heroStatus || ""} />
+            <input type="hidden" name="heroBadge" value={content.home.heroBadge || ""} />
+            <input type="hidden" name="heroStatusColor" value={content.home.heroStatusColor || "green"} />
+            <input type="hidden" name="heroTitlePrefix" value={content.home.heroTitlePrefix || ""} />
+            <input type="hidden" name="heroName" value={content.home.heroName || ""} />
+            <input type="hidden" name="heroBio" value={content.home.heroBio || ""} />
+            <input type="hidden" name="heroPrimaryCtaText" value={content.home.heroPrimaryCtaText || ""} />
+            <input type="hidden" name="heroSecondaryCtaText" value={content.home.heroSecondaryCtaText || ""} />
+            <input type="hidden" name="featuredHeading" value={content.home.featuredHeading || ""} />
+            <input type="hidden" name="featuredDescription" value={content.home.featuredDescription || ""} />
             <input
               type="hidden"
               name="heroTypingPhrases"
@@ -3229,18 +3211,13 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 content.home.heroTypingPhrases || DEFAULT_HERO_TYPING_PHRASES || []
               )}
             />
-            <input
-              type="hidden"
-              name="heroStatusColor"
-              value={content.home.heroStatusColor || "green"}
-            />
+
             {/* Desktop Presentation (>= sm) */}
             <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-mono text-muted uppercase">Hero Availability Status</label>
                 <input
                   type="text"
-                  name={!isMobile ? "heroStatus" : undefined}
                   value={content.home.heroStatus}
                   onChange={(e) => handleFieldChange("home", "heroStatus", e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -3251,7 +3228,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 <label className="text-xs font-mono text-muted uppercase">Hero Availability Badge</label>
                 <input
                   type="text"
-                  name={!isMobile ? "heroBadge" : undefined}
                   value={content.home.heroBadge}
                   onChange={(e) => handleFieldChange("home", "heroBadge", e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -3292,7 +3268,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 <label className="text-xs font-mono text-muted uppercase">Hero Title Prefix</label>
                 <input
                   type="text"
-                  name={!isMobile ? "heroTitlePrefix" : undefined}
                   value={content.home.heroTitlePrefix}
                   onChange={(e) => handleFieldChange("home", "heroTitlePrefix", e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -3303,7 +3278,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 <label className="text-xs font-mono text-muted uppercase">Hero Name Accent</label>
                 <input
                   type="text"
-                  name={!isMobile ? "heroName" : undefined}
                   value={content.home.heroName}
                   onChange={(e) => handleFieldChange("home", "heroName", e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -3314,7 +3288,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 <label className="text-xs font-mono text-muted uppercase">Hero Introduction Bio</label>
                 <textarea
                   rows={3}
-                  name={!isMobile ? "heroBio" : undefined}
                   value={content.home.heroBio}
                   onChange={(e) => handleFieldChange("home", "heroBio", e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors resize-y leading-relaxed"
@@ -3325,7 +3298,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 <label className="text-xs font-mono text-muted uppercase">Primary CTA Text</label>
                 <input
                   type="text"
-                  name={!isMobile ? "heroPrimaryCtaText" : undefined}
                   value={content.home.heroPrimaryCtaText}
                   onChange={(e) => handleFieldChange("home", "heroPrimaryCtaText", e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -3336,7 +3308,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 <label className="text-xs font-mono text-muted uppercase">Secondary CTA Text</label>
                 <input
                   type="text"
-                  name={!isMobile ? "heroSecondaryCtaText" : undefined}
                   value={content.home.heroSecondaryCtaText}
                   onChange={(e) => handleFieldChange("home", "heroSecondaryCtaText", e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
@@ -3347,9 +3318,19 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                 <label className="text-xs font-mono text-muted uppercase">Featured Section Heading</label>
                 <input
                   type="text"
-                  name={!isMobile ? "featuredHeading" : undefined}
                   value={content.home.featuredHeading}
                   onChange={(e) => handleFieldChange("home", "featuredHeading", e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2 sm:col-span-2">
+                <label className="text-xs font-mono text-muted uppercase">Featured Section Description</label>
+                <input
+                  type="text"
+                  value={content.home.featuredDescription || ""}
+                  onChange={(e) => handleFieldChange("home", "featuredDescription", e.target.value)}
+                  placeholder="Selected Work"
                   className="px-4 py-2.5 rounded-xl bg-ink-black/60 border border-white/[0.08] focus:border-pacific-cyan focus:ring-1 focus:ring-pacific-cyan/40 text-sm text-foreground outline-none transition-colors"
                 />
               </div>
@@ -3497,7 +3478,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </label>
                       <input
                         type="text"
-                        name={isMobile ? "heroStatus" : undefined}
                         value={content.home.heroStatus}
                         onChange={(e) => handleFieldChange("home", "heroStatus", e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
@@ -3511,7 +3491,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </label>
                       <input
                         type="text"
-                        name={isMobile ? "heroBadge" : undefined}
                         value={content.home.heroBadge}
                         onChange={(e) => handleFieldChange("home", "heroBadge", e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
@@ -3557,7 +3536,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </label>
                       <input
                         type="text"
-                        name={isMobile ? "heroTitlePrefix" : undefined}
                         value={content.home.heroTitlePrefix}
                         onChange={(e) => handleFieldChange("home", "heroTitlePrefix", e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
@@ -3571,7 +3549,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </label>
                       <input
                         type="text"
-                        name={isMobile ? "heroName" : undefined}
                         value={content.home.heroName}
                         onChange={(e) => handleFieldChange("home", "heroName", e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
@@ -3585,7 +3562,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </label>
                       <textarea
                         rows={4}
-                        name={isMobile ? "heroBio" : undefined}
                         value={content.home.heroBio}
                         onChange={(e) => handleFieldChange("home", "heroBio", e.target.value)}
                         className="w-full min-h-[96px] sm:min-h-[110px] px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all resize-y leading-relaxed font-sans placeholder:text-muted/40"
@@ -3678,7 +3654,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </label>
                       <input
                         type="text"
-                        name={isMobile ? "heroPrimaryCtaText" : undefined}
                         value={content.home.heroPrimaryCtaText}
                         onChange={(e) => handleFieldChange("home", "heroPrimaryCtaText", e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
@@ -3692,7 +3667,6 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </label>
                       <input
                         type="text"
-                        name={isMobile ? "heroSecondaryCtaText" : undefined}
                         value={content.home.heroSecondaryCtaText}
                         onChange={(e) => handleFieldChange("home", "heroSecondaryCtaText", e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
@@ -3715,11 +3689,23 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                       </label>
                       <input
                         type="text"
-                        name={isMobile ? "featuredHeading" : undefined}
                         value={content.home.featuredHeading}
                         onChange={(e) => handleFieldChange("home", "featuredHeading", e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
                         placeholder="Featured Case Studies"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                        Featured Section Description
+                      </label>
+                      <input
+                        type="text"
+                        value={content.home.featuredDescription || ""}
+                        onChange={(e) => handleFieldChange("home", "featuredDescription", e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-ink-black/70 border border-white/[0.08] focus:border-pacific-cyan/60 focus:bg-ink-black/95 focus:ring-1 focus:ring-pacific-cyan/30 text-sm text-foreground outline-none transition-all placeholder:text-muted/40 font-mono sm:font-sans"
+                        placeholder="Selected Work"
                       />
                     </div>
                   </div>
@@ -6041,7 +6027,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-mono text-muted uppercase">Semantic Indicator Color</label>
                       <RawinSelect
-                        name="statusIndicator"
+                        name="statusIndicatorSelect"
                         value={content.resume.status?.indicator || "green"}
                         onChange={(val) => handleResumeStatus("indicator", val)}
                         options={STATUS_INDICATOR_OPTIONS}

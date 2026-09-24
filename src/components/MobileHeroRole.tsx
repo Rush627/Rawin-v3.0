@@ -9,8 +9,9 @@ interface MobileHeroRoleProps {
 
 const DEFAULT_ROLES = [
   "Full Stack Developer",
-  "Creative Technologies",
-  "UI/UX Designer",
+  "Digital Experience Builder",
+  "Product Creator",
+  "Creative Problem Solver",
 ];
 
 /**
@@ -26,16 +27,22 @@ export default function MobileHeroRole({
   roles,
   phrases,
 }: MobileHeroRoleProps) {
-  const sourceList =
-    phrases && phrases.length > 0
-      ? phrases
-      : roles && roles.length > 0
-      ? roles
-      : DEFAULT_ROLES;
-  const activeRoles = sourceList;
+  const activeRoles = React.useMemo(() => {
+    if (phrases && phrases.length > 0) return phrases;
+    if (roles && roles.length > 0) return roles;
+    return DEFAULT_ROLES;
+  }, [phrases, roles]);
+
   const [roleIndex, setRoleIndex] = useState(0);
-  const [currentText, setCurrentText] = useState(activeRoles[0]);
+  const [currentText, setCurrentText] = useState(activeRoles[0] || "");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Synchronize if phrases change dynamically via CMS
+  useEffect(() => {
+    setRoleIndex(0);
+    setCurrentText(activeRoles[0] || "");
+    setIsDeleting(false);
+  }, [activeRoles]);
 
   useEffect(() => {
     const currentRole = activeRoles[roleIndex] || activeRoles[0];

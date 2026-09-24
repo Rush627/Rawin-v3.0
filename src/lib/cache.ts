@@ -14,8 +14,9 @@ import { revalidateTag, updateTag } from "next/cache";
 export function invalidateCacheTag(tag: string): void {
   try {
     updateTag(tag);
+    return;
   } catch {
-    // Expected outside of Server Actions
+    // Expected outside of Server Actions (Error E872)
   }
   try {
     revalidateTag(tag, { expire: 0 });

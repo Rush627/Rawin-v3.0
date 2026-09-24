@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
-const ROLES = [
+const DEFAULT_ROLES = [
   "Full Stack Developer",
+  "Creative Technologies",
   "UI/UX Designer",
-  "Creative Technologist",
 ];
 
 const TYPING_SPEED = 50;      // Snappy character typing
@@ -18,10 +18,21 @@ interface HeroRoleTypingProps {
 }
 
 export default function HeroRoleTyping({ phrases }: HeroRoleTypingProps = {}) {
-  const activeRoles = phrases && phrases.length > 0 ? phrases : ROLES;
+  const activeRoles = useMemo(() => {
+    return phrases && phrases.length > 0 ? phrases : DEFAULT_ROLES;
+  }, [phrases]);
+
   const [roleIndex, setRoleIndex] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    if (roleIndex >= activeRoles.length) {
+      setRoleIndex(0);
+      setCurrentText("");
+      setIsDeleting(false);
+    }
+  }, [activeRoles, roleIndex]);
 
   useEffect(() => {
     const currentFullRole = activeRoles[roleIndex] || activeRoles[0];

@@ -50,6 +50,7 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "heroPrimaryCtaText",
     "heroSecondaryCtaText",
     "featuredHeading",
+    "featuredDescription",
     "heroTypingPhrases",
   ],
   about: [
@@ -77,6 +78,7 @@ const SECTION_ALLOWED_KEYS: Record<ContentSectionKey, string[]> = {
     "currentEraLabel",
     "principlesEyebrow",
     "principlesHeading",
+    "principlesDescription",
     "principles",
     "journeyEyebrow",
     "journeyHeading",
@@ -1083,24 +1085,34 @@ export async function updateSectionAction(
   // Revalidate relevant routes based on mutated section
   try {
     if (section === "global") {
+      const publicPaths = ["/", "/about", "/projects", "/blog", "/uses", "/resume", "/contact", "/ai"];
+      for (const p of publicPaths) {
+        try {
+          revalidatePath(p, "page");
+          revalidatePath(p);
+        } catch {}
+      }
       revalidatePath("/", "layout");
-      revalidatePath("/");
-      revalidatePath("/contact");
     } else if (section === "home") {
       revalidatePath("/", "page");
       revalidatePath("/", "layout");
       revalidatePath("/");
     } else if (section === "about") {
       revalidatePath("/about", "page");
+      revalidatePath("/about");
     } else if (section === "contact") {
       revalidatePath("/contact", "page");
+      revalidatePath("/contact");
       revalidatePath("/", "layout");
     } else if (section === "resume") {
       revalidatePath("/resume", "page");
+      revalidatePath("/resume");
     } else if (section === "uses") {
       revalidatePath("/uses", "page");
+      revalidatePath("/uses");
     } else if (section === "ai") {
       revalidatePath("/ai", "page");
+      revalidatePath("/ai");
     }
     revalidatePath("/saint-denis/content");
   } catch {}
