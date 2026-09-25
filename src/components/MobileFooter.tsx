@@ -133,25 +133,44 @@ export default function MobileFooter({
       </div>
 
       {/* Giant Outlined RAWIN Typography Signature — intentionally clipped.
-          Extends INTO the bottom unsafe area so it visually passes behind
-          Safari's Liquid Glass pill and similar translucent browser chrome. */}
+          The wordmark is deliberately oversized. The clip container is shorter
+          than the text so only the upper portion is visible, creating the
+          illusion that the letters continue below the screen.
+
+          Two-layer approach for cross-browser reliability:
+          1. Outer clip container: simple clamp() height — always valid CSS,
+             never falls back to auto. Clips the wordmark consistently.
+          2. Inner safe-area spacer: extends the visible region into the
+             bottom unsafe area on notched/pill-UI devices so the wordmark
+             passes behind translucent browser chrome (e.g. Safari Liquid Glass). */}
       <div
-        className="w-full select-none flex justify-center items-start pointer-events-none mt-1 sm:mt-2"
+        className="w-full select-none pointer-events-none mt-1 sm:mt-2"
         aria-hidden="true"
         style={{
-          /* Base visible height + extend into the unsafe area behind browser chrome */
-          height: 'calc(clamp(2.8rem, 12vw, 6.5rem) + env(safe-area-inset-bottom, 0px))',
+          /* Deterministic clip height — plain clamp, no calc/env that could
+             be invalidated. Always shorter than the text (text ≈ 23vw×0.76,
+             container ≈ 12vw), guaranteeing the clip on every browser. */
+          height: 'clamp(2.8rem, 12vw, 6.5rem)',
           overflowX: 'clip',
           overflowY: 'clip',
         }}
       >
-        <span
-          className="font-space font-black tracking-[0.03em] sm:tracking-[0.05em] text-[clamp(5.2rem,23vw,12rem)] leading-[0.76] text-center block whitespace-nowrap"
-          aria-label="RAWIN"
+        {/* Safe-area extension: on devices with bottom browser chrome,
+            this padding pushes the visible region downward into the unsafe
+            area so the wordmark passes behind the translucent pill. On
+            devices without a safe area, this resolves to 0 and is a no-op. */}
+        <div
+          className="flex justify-center items-start w-full"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
-          <span className="rawin-outline-raw">RAW</span>
-          <span className="rawin-outline-in">IN</span>
-        </span>
+          <span
+            className="font-space font-black tracking-[0.03em] sm:tracking-[0.05em] text-[clamp(5.2rem,23vw,12rem)] leading-[0.76] text-center block whitespace-nowrap"
+            aria-label="RAWIN"
+          >
+            <span className="rawin-outline-raw">RAW</span>
+            <span className="rawin-outline-in">IN</span>
+          </span>
+        </div>
       </div>
     </footer>
   );
