@@ -132,10 +132,16 @@ export default function MobileFooter({
         </p>
       </div>
 
-      {/* Giant Outlined RAWIN Typography Signature */}
+      {/* Giant Outlined RAWIN Typography Signature — intentionally clipped */}
       <div
-        className="w-full overflow-hidden select-none flex justify-center items-start pointer-events-none mt-1 sm:mt-2 h-[calc(clamp(2.5rem,10.8vw,6.2rem)+env(safe-area-inset-bottom,0px))]"
+        className="w-full select-none flex justify-center items-start pointer-events-none mt-1 sm:mt-2 pb-[env(safe-area-inset-bottom,0px)]"
         aria-hidden="true"
+        style={{
+          /* Show only the top ~55-60% of the wordmark; clip the rest */
+          height: 'clamp(2.8rem, 12vw, 6.5rem)',
+          overflowX: 'clip',
+          overflowY: 'clip',
+        }}
       >
         <span
           className="font-space font-black tracking-[0.03em] sm:tracking-[0.05em] text-[clamp(5.2rem,23vw,12rem)] leading-[0.76] text-center block whitespace-nowrap"
