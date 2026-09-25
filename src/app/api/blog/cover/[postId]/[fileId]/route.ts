@@ -3,19 +3,20 @@ import { Readable } from "stream";
 import { getBlogCoverStream } from "@/lib/blog";
 import { ObjectId } from "mongodb";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _req: NextRequest,
-  context: { params: Promise<{ postId: string }> }
+  context: { params: Promise<{ postId: string; fileId: string }> }
 ) {
-  const { postId } = await context.params;
+  const { postId, fileId } = await context.params;
 
-  // Strict allowlist: only valid MongoDB ObjectIds accepted : no arbitrary browsing
-  if (!postId || !ObjectId.isValid(postId)) {
-    return NextResponse.json({ error: "Invalid post ID" }, { status: 400 });
+  if (!postId || !ObjectId.isValid(postId) || !fileId || !ObjectId.isValid(fileId)) {
+    return NextResponse.json({ error: "Invalid post ID or file ID" }, { status: 400 });
   }
 
   try {
-    const cover = await getBlogCoverStream(postId);
+    const cover = await getBlogCoverStream(postId, fileId);
 
     if (!cover) {
       return NextResponse.json({ error: "Cover image not found" }, { status: 404 });
@@ -26,12 +27,12 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": cover.contentType,
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        "Cache-Control": "public, max-age=31536000, immutable",
         "Content-Disposition": `inline; filename="${cover.filename}"`,
       },
     });
   } catch (err) {
-    console.warn(`[BlogCoverAPI] Notice serving cover for post ${postId}:`, err);
+    console.warn(`[BlogCoverAPI] Notice serving cover ${fileId} for post ${postId}:`, err);
     return NextResponse.json({ error: "Cover image unavailable" }, { status: 404 });
   }
 }

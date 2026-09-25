@@ -13,6 +13,8 @@ export interface ContentActionState {
   error?: string;
   success?: boolean;
   message?: string;
+  url?: string;
+  fileId?: string;
 }
 
 const ALLOWED_SECTIONS: ContentSectionKey[] = [
@@ -1252,12 +1254,14 @@ export async function updateAssetAction(
         .replace(/[^a-zA-Z0-9._-]/g, "_")
         .slice(-60);
 
-      await storeAssetFile(assetType, buffer, fileType, sanitizedName, alt);
+      const result = await storeAssetFile(assetType, buffer, fileType, sanitizedName, alt);
       revalidateAllAssetPaths();
 
       return {
         success: true,
         message: `${label} uploaded and updated across the site successfully.`,
+        url: result.url,
+        fileId: result.fileId,
       };
     } catch (err: unknown) {
       console.error(`[SiteContent Action Error] Unexpected failure uploading "${assetType}":`, err);

@@ -1574,7 +1574,11 @@ export async function updateSiteSection<K extends ContentSectionKey>(
 const ASSET_BUCKET_NAME = "site_assets";
 
 /**
- * Stores an uploaded asset file buffer into MongoDB GridFS and updates the asset metadata.
+ * Stores an uploaded asset file buffer into MongoDB GridFS using atomic replacement.
+ * 1. Uploads new binary stream first to obtain new GridFS ObjectId.
+ * 2. Updates site_content document with the immutable path-based URL (/api/assets/${assetType}/${fileId}).
+ * 3. Deletes prior files for this assetType ONLY after MongoDB update succeeds.
+ * 4. If MongoDB update fails, rolls back newly uploaded GridFS file.
  */
 export async function storeAssetFile(
   assetType: AssetKey,
@@ -1590,20 +1594,9 @@ export async function storeAssetFile(
 
   const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
 
-  // Delete prior GridFS files for this assetType to prevent orphaned files
-  try {
-    const existingFiles = await bucket
-      .find({ "metadata.assetType": assetType })
-      .toArray();
-    for (const file of existingFiles) {
-      await bucket.delete(file._id).catch(() => { });
-    }
-  } catch (cleanErr) {
-    console.warn("[SiteContent] Clean prior asset notice:", cleanErr);
-  }
-
-  // Upload new file stream into GridFS
-  const uploadStream = bucket.openUploadStream(filename, {
+  // 1. Upload new file stream into GridFS FIRST
+  const sanitizedName = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
+  const uploadStream = bucket.openUploadStream(sanitizedName, {
     metadata: {
       contentType: mimeType,
       assetType,
@@ -1619,10 +1612,10 @@ export async function storeAssetFile(
   });
 
   const fileId = uploadStream.id.toString();
-  const url = `/api/assets/${assetType}?v=${Date.now()}`;
+  const url = `/api/assets/${assetType}/${fileId}`;
   const now = new Date();
 
-  // Update site_content document with the asset URL reference
+  // 2. Update site_content document with the asset URL reference
   const col = db.collection(COLLECTION_NAME);
   const updatePayload: Record<string, any> = {
     [`assets.${assetType}.url`]: url,
@@ -1633,7 +1626,28 @@ export async function storeAssetFile(
     updatePayload[`assets.${assetType}.alt`] = alt.trim();
   }
 
-  await col.updateOne({ key: "main" }, { $set: updatePayload }, { upsert: true });
+  try {
+    await col.updateOne({ key: "main" }, { $set: updatePayload }, { upsert: true });
+  } catch (dbErr) {
+    // Rollback: delete newly uploaded file if DB update fails
+    await bucket.delete(uploadStream.id).catch(() => {});
+    throw dbErr;
+  }
+
+  // 3. Delete prior GridFS files for this assetType ONLY after successful DB update
+  try {
+    const existingFiles = await bucket
+      .find({
+        "metadata.assetType": assetType,
+        _id: { $ne: uploadStream.id },
+      })
+      .toArray();
+    for (const file of existingFiles) {
+      await bucket.delete(file._id).catch(() => { });
+    }
+  } catch (cleanErr) {
+    console.warn("[SiteContent] Clean prior asset notice:", cleanErr);
+  }
 
   try {
     invalidateCacheTag("site-content");
@@ -1646,25 +1660,44 @@ export async function storeAssetFile(
 
 /**
  * Retrieves an asset file stream and metadata from MongoDB GridFS.
+ * When fileId is supplied, retrieves the exact file by its GridFS ObjectId.
+ * When fileId is omitted, falls back to the most recent file for the assetType (legacy compatibility).
  */
 export async function getAssetFile(
-  assetType: AssetKey | string
+  assetType: AssetKey | string,
+  fileId?: string
 ): Promise<{ stream: Readable; contentType: string; filename: string } | null> {
   const db = await getDatabase();
   if (!db) return null;
 
   const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
-  const files = await bucket
-    .find({ "metadata.assetType": assetType })
-    .sort({ uploadDate: -1 })
-    .limit(1)
-    .toArray();
+  let file: any = null;
 
-  if (!files || files.length === 0) {
+  if (fileId) {
+    if (!ObjectId.isValid(fileId)) return null;
+    const files = await bucket
+      .find({ _id: new ObjectId(fileId) })
+      .limit(1)
+      .toArray();
+    if (files && files.length > 0) {
+      file = files[0];
+    }
+  } else {
+    // Legacy fallback: retrieve newest file for assetType
+    const files = await bucket
+      .find({ "metadata.assetType": assetType })
+      .sort({ uploadDate: -1 })
+      .limit(1)
+      .toArray();
+    if (files && files.length > 0) {
+      file = files[0];
+    }
+  }
+
+  if (!file) {
     return null;
   }
 
-  const file = files[0];
   const stream = bucket.openDownloadStream(file._id);
   const contentType =
     (file.metadata as any)?.contentType ||
@@ -1765,7 +1798,7 @@ export async function resetAssetToDefault(assetType: AssetKey): Promise<boolean>
 }
 
 /**
- * Stores an uploaded milestone image file buffer into MongoDB GridFS.
+ * Stores an uploaded milestone image file buffer into MongoDB GridFS using atomic replacement.
  */
 export async function storeMilestoneImage(
   milestoneId: string,
@@ -1781,18 +1814,7 @@ export async function storeMilestoneImage(
   const assetType = `evolution-${milestoneId}`;
   const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
 
-  // Delete prior GridFS file for this milestone
-  try {
-    const existingFiles = await bucket
-      .find({ "metadata.assetType": assetType })
-      .toArray();
-    for (const file of existingFiles) {
-      await bucket.delete(file._id).catch(() => { });
-    }
-  } catch (cleanErr) {
-    console.warn("[SiteContent] Clean prior milestone image notice:", cleanErr);
-  }
-
+  // 1. Upload new file stream into GridFS FIRST
   const sanitizedName = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
   const uploadStream = bucket.openUploadStream(sanitizedName, {
     metadata: {
@@ -1809,13 +1831,32 @@ export async function storeMilestoneImage(
     uploadStream.end();
   });
 
-  return `/api/assets/${assetType}?v=${Date.now()}`;
+  const fileId = uploadStream.id.toString();
+  const url = `/api/assets/${assetType}/${fileId}`;
+
+  // 2. Delete prior GridFS file for this milestone (excluding the newly uploaded one)
+  try {
+    const existingFiles = await bucket
+      .find({
+        "metadata.assetType": assetType,
+        _id: { $ne: uploadStream.id },
+      })
+      .toArray();
+    for (const file of existingFiles) {
+      await bucket.delete(file._id).catch(() => { });
+    }
+  } catch (cleanErr) {
+    console.warn("[SiteContent] Clean prior milestone image notice:", cleanErr);
+  }
+
+  return url;
 }
 
 const RESUME_PDF_ASSET_TYPE = "resumePdf";
 
 /**
  * Stores an uploaded resume PDF file buffer into MongoDB GridFS and updates the resume.pdf metadata.
+ * Uses atomic replacement: uploads binary first, updates database, then cleans up prior PDF files.
  */
 export async function storeResumePdfFile(
   fileBuffer: Buffer,
@@ -1846,7 +1887,7 @@ export async function storeResumePdfFile(
 
   const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
 
-  // Upload new file stream into GridFS FIRST
+  // 1. Upload new file stream into GridFS FIRST
   const sanitizedName = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
   const uploadStream = bucket.openUploadStream(sanitizedName, {
     metadata: {
@@ -1866,10 +1907,35 @@ export async function storeResumePdfFile(
   });
 
   const fileId = uploadStream.id.toString();
-  const url = `/api/resume/download?v=${Date.now()}`;
+  const url = `/api/resume/download/${fileId}`;
   const now = new Date();
 
-  // Delete prior GridFS files for resumePdf
+  // 2. Update site_content document
+  const col = db.collection(COLLECTION_NAME);
+  try {
+    await col.updateOne(
+      { key: "main" },
+      {
+        $set: {
+          "resume.pdf": {
+            fileId,
+            filename: sanitizedName,
+            url,
+            size,
+            updatedAt: now.toISOString(),
+          },
+          updatedAt: now,
+        },
+      },
+      { upsert: true }
+    );
+  } catch (dbErr) {
+    // Rollback: delete newly uploaded file if DB update fails
+    await bucket.delete(uploadStream.id).catch(() => {});
+    throw dbErr;
+  }
+
+  // 3. Delete prior GridFS files for resumePdf ONLY after DB update succeeds
   try {
     const existingFiles = await bucket
       .find({
@@ -1884,25 +1950,6 @@ export async function storeResumePdfFile(
     console.warn("[SiteContent] Clean prior resume PDF notice:", cleanErr);
   }
 
-  // Update site_content document
-  const col = db.collection(COLLECTION_NAME);
-  await col.updateOne(
-    { key: "main" },
-    {
-      $set: {
-        "resume.pdf": {
-          fileId,
-          filename: sanitizedName,
-          url,
-          size,
-          updatedAt: now.toISOString(),
-        },
-        updatedAt: now,
-      },
-    },
-    { upsert: true }
-  );
-
   try {
     invalidateCacheTag("site-content");
   } catch {
@@ -1914,8 +1961,12 @@ export async function storeResumePdfFile(
 
 /**
  * Retrieves the active resume PDF file stream and metadata from MongoDB GridFS.
+ * When fileId is supplied, retrieves the exact file by its GridFS ObjectId.
+ * When fileId is omitted, falls back to the fileId in site_content or latest resumePdf in GridFS.
  */
-export async function getResumePdfFile(): Promise<{
+export async function getResumePdfFile(
+  fileId?: string
+): Promise<{
   stream: Readable;
   contentType: string;
   filename: string;
@@ -1924,21 +1975,38 @@ export async function getResumePdfFile(): Promise<{
   const db = await getDatabase();
   if (!db) return null;
 
-  const col = db.collection(COLLECTION_NAME);
-  const doc = await col.findOne({ key: "main" });
-  if (!doc?.resume?.pdf?.fileId) {
-    return null;
-  }
-
   const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
-  let objectId: ObjectId;
-  try {
-    objectId = new ObjectId(doc.resume.pdf.fileId);
-  } catch {
-    return null;
+  let targetObjectId: ObjectId | null = null;
+  let filename = "Rushan-Siddiqui-Resume.pdf";
+
+  if (fileId) {
+    if (!ObjectId.isValid(fileId)) return null;
+    targetObjectId = new ObjectId(fileId);
+  } else {
+    const col = db.collection(COLLECTION_NAME);
+    const doc = await col.findOne({ key: "main" });
+    if (doc?.resume?.pdf?.fileId && ObjectId.isValid(doc.resume.pdf.fileId)) {
+      targetObjectId = new ObjectId(doc.resume.pdf.fileId);
+      if (doc.resume.pdf.filename) {
+        filename = doc.resume.pdf.filename;
+      }
+    }
   }
 
-  const files = await bucket.find({ _id: objectId }).limit(1).toArray();
+  let files: any[] = [];
+  if (targetObjectId) {
+    files = await bucket.find({ _id: targetObjectId }).limit(1).toArray();
+  }
+
+  // Fallback: if not found by ID or no ID, get newest resumePdf file in GridFS
+  if (!files || files.length === 0) {
+    files = await bucket
+      .find({ "metadata.assetType": RESUME_PDF_ASSET_TYPE })
+      .sort({ uploadDate: -1 })
+      .limit(1)
+      .toArray();
+  }
+
   if (!files || files.length === 0) {
     return null;
   }
@@ -1949,7 +2017,7 @@ export async function getResumePdfFile(): Promise<{
   return {
     stream: stream as unknown as Readable,
     contentType: "application/pdf",
-    filename: doc.resume.pdf.filename || "Rushan-Siddiqui-Resume.pdf",
+    filename: file.filename || filename,
     size: file.length,
   };
 }

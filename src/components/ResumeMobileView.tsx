@@ -105,7 +105,7 @@ export default function ResumeMobileView({
 
           {resume.pdf ? (
             <a
-              href="/api/resume/download"
+              href={resume.pdf.url || "/api/resume/download"}
               download
               className="inline-flex items-center justify-center gap-1.5 px-3 md:px-5 py-2.5 rounded-lg bg-white/[0.04] text-foreground border border-white/[0.08] hover:border-pacific-cyan/40 font-semibold text-xs font-mono uppercase tracking-wider transition-all min-h-[42px] text-center md:w-auto"
               aria-label="Download Resume PDF"

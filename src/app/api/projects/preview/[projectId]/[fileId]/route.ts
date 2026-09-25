@@ -3,19 +3,20 @@ import { Readable } from "stream";
 import { getProjectPreviewStream } from "@/lib/projects";
 import { ObjectId } from "mongodb";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _req: NextRequest,
-  context: { params: Promise<{ projectId: string }> }
+  context: { params: Promise<{ projectId: string; fileId: string }> }
 ) {
-  const { projectId } = await context.params;
+  const { projectId, fileId } = await context.params;
 
-  // Strict allowlist: only valid MongoDB ObjectIds accepted : no arbitrary browsing
-  if (!projectId || !ObjectId.isValid(projectId)) {
-    return NextResponse.json({ error: "Invalid project ID" }, { status: 400 });
+  if (!projectId || !ObjectId.isValid(projectId) || !fileId || !ObjectId.isValid(fileId)) {
+    return NextResponse.json({ error: "Invalid project ID or file ID" }, { status: 400 });
   }
 
   try {
-    const preview = await getProjectPreviewStream(projectId);
+    const preview = await getProjectPreviewStream(projectId, fileId);
 
     if (!preview) {
       return NextResponse.json({ error: "Preview image not found" }, { status: 404 });
@@ -26,12 +27,12 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": preview.contentType,
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        "Cache-Control": "public, max-age=31536000, immutable",
         "Content-Disposition": `inline; filename="${preview.filename}"`,
       },
     });
   } catch (err) {
-    console.warn(`[ProjectPreviewAPI] Notice serving preview for project ${projectId}:`, err);
+    console.warn(`[ProjectPreviewAPI] Notice serving preview ${fileId} for project ${projectId}:`, err);
     return NextResponse.json({ error: "Preview image unavailable" }, { status: 404 });
   }
 }

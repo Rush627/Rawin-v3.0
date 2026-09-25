@@ -376,8 +376,11 @@ const BLOG_ASSET_BUCKET = "site_assets";
 const BLOG_COVER_ASSET_TYPE = "blogCover";
 
 /**
- * Stores a blog post cover image in GridFS, replacing any prior cover for the same post.
- * Updates the post document's coverImage field with a cache-busted URL reference.
+ * Stores a blog post cover image in GridFS using atomic replacement.
+ * 1. Uploads new binary stream first to obtain new GridFS ObjectId.
+ * 2. Updates the post document's coverImage with the immutable path-based URL (/api/blog/cover/${postId}/${fileId}).
+ * 3. Deletes prior cover files ONLY after MongoDB update succeeds.
+ * 4. If MongoDB update fails, rolls back newly uploaded GridFS file.
  */
 export async function storeBlogCoverFile(
   postId: string,
@@ -391,19 +394,7 @@ export async function storeBlogCoverFile(
 
   const bucket = new GridFSBucket(db, { bucketName: BLOG_ASSET_BUCKET });
 
-  // Remove any prior GridFS files for this post's cover
-  try {
-    const existing = await bucket
-      .find({ "metadata.assetType": BLOG_COVER_ASSET_TYPE, "metadata.postId": postId })
-      .toArray();
-    for (const f of existing) {
-      await bucket.delete(f._id).catch(() => {});
-    }
-  } catch (cleanErr) {
-    console.warn("[Blog] Cover cleanup notice:", cleanErr);
-  }
-
-  // Upload new binary
+  // 1. Upload new binary FIRST
   const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
   const uploadStream = bucket.openUploadStream(safeFilename, {
     metadata: {
@@ -421,13 +412,36 @@ export async function storeBlogCoverFile(
     uploadStream.end();
   });
 
-  const url = `/api/blog/cover/${postId}?v=${Date.now()}`;
+  const fileId = uploadStream.id.toString();
+  const url = `/api/blog/cover/${postId}/${fileId}`;
 
-  // Update the blog post document with the new URL reference
-  await db.collection(COLLECTION_NAME).updateOne(
-    { _id: new ObjectId(postId) },
-    { $set: { coverImage: url, updatedAt: new Date() } }
-  );
+  // 2. Update the blog post document with the new path-based URL reference
+  try {
+    await db.collection(COLLECTION_NAME).updateOne(
+      { _id: new ObjectId(postId) },
+      { $set: { coverImage: url, updatedAt: new Date() } }
+    );
+  } catch (dbErr) {
+    // Rollback: delete newly uploaded file if DB update fails
+    await bucket.delete(uploadStream.id).catch(() => {});
+    throw dbErr;
+  }
+
+  // 3. Delete prior GridFS files for this post ONLY after successful DB update
+  try {
+    const existing = await bucket
+      .find({
+        "metadata.assetType": BLOG_COVER_ASSET_TYPE,
+        "metadata.postId": postId,
+        _id: { $ne: uploadStream.id },
+      })
+      .toArray();
+    for (const f of existing) {
+      await bucket.delete(f._id).catch(() => {});
+    }
+  } catch (cleanErr) {
+    console.warn("[Blog] Cover cleanup notice:", cleanErr);
+  }
 
   try {
     invalidateCacheTag("blog");
@@ -440,24 +454,44 @@ export async function storeBlogCoverFile(
 
 /**
  * Retrieves the cover image stream for a blog post from GridFS.
+ * When fileId is supplied, retrieves the exact file by its GridFS ObjectId.
+ * When fileId is omitted, falls back to the most recent cover file for the post (legacy compatibility).
  */
 export async function getBlogCoverStream(
-  postId: string
+  postId: string,
+  fileId?: string
 ): Promise<{ stream: Readable; contentType: string; filename: string } | null> {
   const db = await getDatabase();
   if (!db) return null;
   if (!ObjectId.isValid(postId)) return null;
 
   const bucket = new GridFSBucket(db, { bucketName: BLOG_ASSET_BUCKET });
-  const files = await bucket
-    .find({ "metadata.assetType": BLOG_COVER_ASSET_TYPE, "metadata.postId": postId })
-    .sort({ uploadDate: -1 })
-    .limit(1)
-    .toArray();
 
-  if (!files || files.length === 0) return null;
+  let file: any = null;
 
-  const file = files[0];
+  if (fileId) {
+    if (!ObjectId.isValid(fileId)) return null;
+    const files = await bucket
+      .find({ _id: new ObjectId(fileId) })
+      .limit(1)
+      .toArray();
+    if (files && files.length > 0) {
+      file = files[0];
+    }
+  } else {
+    // Legacy fallback: retrieve newest cover for post
+    const files = await bucket
+      .find({ "metadata.assetType": BLOG_COVER_ASSET_TYPE, "metadata.postId": postId })
+      .sort({ uploadDate: -1 })
+      .limit(1)
+      .toArray();
+    if (files && files.length > 0) {
+      file = files[0];
+    }
+  }
+
+  if (!file) return null;
+
   const stream = bucket.openDownloadStream(file._id);
   const contentType =
     (file.metadata as any)?.contentType ||

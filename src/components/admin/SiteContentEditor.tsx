@@ -709,16 +709,16 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
       setFeedback(res);
       if (res.success) {
         setSelectedFiles((prev) => ({ ...prev, [assetType]: null }));
-        const cacheBustUrl = `/api/assets/${assetType}?v=${Date.now()}`;
+        const newUrl = res.url || (res.fileId ? `/api/assets/${assetType}/${res.fileId}` : `/api/assets/${assetType}`);
         setPreviewUrls((prev) => ({ ...prev, [assetType]: null }));
-        setAssetUrls((prev) => ({ ...prev, [assetType]: cacheBustUrl }));
+        setAssetUrls((prev) => ({ ...prev, [assetType]: newUrl }));
         setContent((prev) => ({
           ...prev,
           assets: {
             ...prev.assets,
             [assetType]: {
               ...prev.assets[assetType],
-              url: cacheBustUrl,
+              url: newUrl,
               alt: assetAlts[assetType],
             },
           },
@@ -1737,7 +1737,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
           pdf: data.pdf || {
             fileId: "uploaded",
             filename: selectedPdfFile.name,
-            url: `/api/resume/download?v=${Date.now()}`,
+            url: "/api/resume/download",
             size: selectedPdfFile.size,
             updatedAt: new Date().toISOString(),
           },
@@ -6167,7 +6167,7 @@ export default function SiteContentEditor({ initialContent, initialKnowledge = [
                         {/* Action buttons row: grid on mobile, inline on desktop */}
                         <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/[0.06]">
                           <a
-                            href="/api/resume/download"
+                            href={content.resume?.pdf?.url || "/api/resume/download"}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="w-full sm:w-auto min-h-[38px] h-9 px-3.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-mono text-foreground inline-flex items-center justify-center gap-1.5 transition-colors select-none"

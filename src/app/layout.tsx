@@ -33,7 +33,12 @@ const spaceGrotesk = Space_Grotesk({
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getSiteContent();
-  const faviconUrl = content.assets?.favicon?.url || "/favicon.png";
+  const rawFaviconUrl = content.assets?.favicon?.url;
+  const isCmsFavicon = Boolean(
+    rawFaviconUrl &&
+    rawFaviconUrl.startsWith("/api/assets/favicon/")
+  );
+  const faviconUrl = isCmsFavicon ? rawFaviconUrl! : "/favicon.png";
   const profilePhotoUrl = content.assets?.profilePhoto?.url || "/images/profile.png";
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").trim() || "https://rawin.world";
   const siteTitle = content.global?.siteTitle?.trim() || DEFAULT_SITE_CONTENT.global.siteTitle;
@@ -49,14 +54,20 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: "/",
     },
-    icons: {
-      icon: [
-        { url: faviconUrl },
-        { url: "/favicon.ico", sizes: "any" },
-      ],
-      shortcut: faviconUrl,
-      apple: faviconUrl,
-    },
+    icons: isCmsFavicon
+      ? {
+          icon: [{ url: faviconUrl }],
+          shortcut: faviconUrl,
+          apple: faviconUrl,
+        }
+      : {
+          icon: [
+            { url: "/favicon.png", type: "image/png" },
+            { url: "/favicon.ico", sizes: "any" },
+          ],
+          shortcut: "/favicon.png",
+          apple: "/favicon.png",
+        },
     openGraph: {
       title: siteTitle,
       description: siteDescription,

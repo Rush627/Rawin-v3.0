@@ -310,8 +310,11 @@ const PROJECT_ASSET_BUCKET = "site_assets";
 const PROJECT_PREVIEW_ASSET_TYPE = "projectPreview";
 
 /**
- * Stores a project preview image in GridFS, replacing any prior preview for the same project.
- * Updates the project document's previewImage field with a cache-busted URL reference.
+ * Stores a project preview image in GridFS using atomic replacement.
+ * 1. Uploads new binary stream first to obtain new GridFS ObjectId.
+ * 2. Updates the project document's previewImage with the immutable path-based URL (/api/projects/preview/${projectId}/${fileId}).
+ * 3. Deletes prior preview files ONLY after MongoDB update succeeds.
+ * 4. If MongoDB update fails, rolls back newly uploaded GridFS file.
  */
 export async function storeProjectPreviewFile(
   projectId: string,
@@ -325,19 +328,7 @@ export async function storeProjectPreviewFile(
 
   const bucket = new GridFSBucket(db, { bucketName: PROJECT_ASSET_BUCKET });
 
-  // Remove any prior GridFS files for this project's preview
-  try {
-    const existing = await bucket
-      .find({ "metadata.assetType": PROJECT_PREVIEW_ASSET_TYPE, "metadata.projectId": projectId })
-      .toArray();
-    for (const f of existing) {
-      await bucket.delete(f._id).catch(() => {});
-    }
-  } catch (cleanErr) {
-    console.warn("[Projects] Preview cleanup notice:", cleanErr);
-  }
-
-  // Upload new binary
+  // 1. Upload new binary FIRST
   const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
   const uploadStream = bucket.openUploadStream(safeFilename, {
     metadata: {
@@ -355,13 +346,36 @@ export async function storeProjectPreviewFile(
     uploadStream.end();
   });
 
-  const url = `/api/projects/preview/${projectId}?v=${Date.now()}`;
+  const fileId = uploadStream.id.toString();
+  const url = `/api/projects/preview/${projectId}/${fileId}`;
 
-  // Update the project document with the new URL reference
-  await db.collection(COLLECTION_NAME).updateOne(
-    { _id: new ObjectId(projectId) },
-    { $set: { previewImage: url, updatedAt: new Date() } }
-  );
+  // 2. Update the project document with the new path-based URL reference
+  try {
+    await db.collection(COLLECTION_NAME).updateOne(
+      { _id: new ObjectId(projectId) },
+      { $set: { previewImage: url, updatedAt: new Date() } }
+    );
+  } catch (dbErr) {
+    // Rollback: delete newly uploaded file if DB update fails so we don't leave orphaned files
+    await bucket.delete(uploadStream.id).catch(() => {});
+    throw dbErr;
+  }
+
+  // 3. Delete prior GridFS files for this project ONLY after successful DB update
+  try {
+    const existing = await bucket
+      .find({
+        "metadata.assetType": PROJECT_PREVIEW_ASSET_TYPE,
+        "metadata.projectId": projectId,
+        _id: { $ne: uploadStream.id },
+      })
+      .toArray();
+    for (const f of existing) {
+      await bucket.delete(f._id).catch(() => {});
+    }
+  } catch (cleanErr) {
+    console.warn("[Projects] Prior preview cleanup notice:", cleanErr);
+  }
 
   try {
     invalidateCacheTag("projects");
@@ -374,24 +388,44 @@ export async function storeProjectPreviewFile(
 
 /**
  * Retrieves the preview image stream for a project from GridFS.
+ * When fileId is supplied, retrieves the exact file by its GridFS ObjectId.
+ * When fileId is omitted, falls back to the most recent preview file for the project (legacy compatibility).
  */
 export async function getProjectPreviewStream(
-  projectId: string
+  projectId: string,
+  fileId?: string
 ): Promise<{ stream: Readable; contentType: string; filename: string } | null> {
   const db = await getDatabase();
   if (!db) return null;
   if (!ObjectId.isValid(projectId)) return null;
 
   const bucket = new GridFSBucket(db, { bucketName: PROJECT_ASSET_BUCKET });
-  const files = await bucket
-    .find({ "metadata.assetType": PROJECT_PREVIEW_ASSET_TYPE, "metadata.projectId": projectId })
-    .sort({ uploadDate: -1 })
-    .limit(1)
-    .toArray();
 
-  if (!files || files.length === 0) return null;
+  let file: any = null;
 
-  const file = files[0];
+  if (fileId) {
+    if (!ObjectId.isValid(fileId)) return null;
+    const files = await bucket
+      .find({ _id: new ObjectId(fileId) })
+      .limit(1)
+      .toArray();
+    if (files && files.length > 0) {
+      file = files[0];
+    }
+  } else {
+    // Legacy fallback: retrieve newest preview for project
+    const files = await bucket
+      .find({ "metadata.assetType": PROJECT_PREVIEW_ASSET_TYPE, "metadata.projectId": projectId })
+      .sort({ uploadDate: -1 })
+      .limit(1)
+      .toArray();
+    if (files && files.length > 0) {
+      file = files[0];
+    }
+  }
+
+  if (!file) return null;
+
   const stream = bucket.openDownloadStream(file._id);
   const contentType =
     (file.metadata as any)?.contentType ||

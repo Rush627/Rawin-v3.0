@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAssetFile, type AssetKey } from "@/lib/site-content";
 import { Readable } from "stream";
+import { ObjectId } from "mongodb";
+
+export const dynamic = "force-dynamic";
 
 const FALLBACK_ASSETS: Record<AssetKey, string> = {
   profilePhoto: "/images/profile.png",
@@ -10,9 +13,13 @@ const FALLBACK_ASSETS: Record<AssetKey, string> = {
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ type: string }> }
+  context: { params: Promise<{ type: string; fileId: string }> }
 ) {
-  const { type: rawType } = await context.params;
+  const { type: rawType, fileId } = await context.params;
+
+  if (!fileId || !ObjectId.isValid(fileId)) {
+    return NextResponse.json({ error: "Invalid asset file ID" }, { status: 400 });
+  }
 
   let assetKey: string;
   let fallbackUrl: string;
@@ -34,25 +41,23 @@ export async function GET(
   }
 
   try {
-    const asset = await getAssetFile(assetKey);
+    const asset = await getAssetFile(assetKey, fileId);
 
     if (asset && asset.stream) {
       const webStream = Readable.toWeb(asset.stream) as ReadableStream;
-      const cacheControl = "public, max-age=60, stale-while-revalidate=300";
-
       return new Response(webStream, {
         status: 200,
         headers: {
           "Content-Type": asset.contentType,
-          "Cache-Control": cacheControl,
+          "Cache-Control": "public, max-age=31536000, immutable",
           "Content-Disposition": `inline; filename="${asset.filename}"`,
         },
       });
     }
   } catch (err) {
-    console.warn(`[AssetAPI] Notice while serving asset (${assetKey}):`, err);
+    console.warn(`[AssetAPI] Notice while serving versioned asset (${assetKey}/${fileId}):`, err);
   }
 
-  // Graceful fallback to static file if not in GridFS or database is unavailable
+  // Graceful fallback to static file if not in GridFS
   return NextResponse.redirect(new URL(fallbackUrl, req.url), 307);
 }

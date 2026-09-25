@@ -29,11 +29,7 @@ interface MobileHeroProps {
  * - 100% connected to existing CMS / MongoDB data pipeline via props
  */
 export default function MobileHero({ homeContent, globalContent, assets }: MobileHeroProps) {
-  const rawProfileUrl = assets?.profilePhoto?.url || "/images/profile.png";
-  // Strip cache-busting query strings so Next/Image optimizer processes local API route cleanly
-  const profileUrl = rawProfileUrl.startsWith("/api/")
-    ? rawProfileUrl.split("?")[0]
-    : rawProfileUrl;
+  const profileUrl = assets?.profilePhoto?.url || "/images/profile.png";
   const profileAlt =
     assets?.profilePhoto?.alt || "Rushan Siddiqui : Full Stack Developer";
 
@@ -79,6 +75,7 @@ export default function MobileHero({ homeContent, globalContent, assets }: Mobil
             width={144}
             height={144}
             priority
+            unoptimized={profileUrl.startsWith("/api/")}
             sizes="(max-width: 640px) 128px, 144px"
             className="w-full h-full object-cover rounded-full bg-surface"
           />
