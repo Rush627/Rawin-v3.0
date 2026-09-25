@@ -125,20 +125,22 @@ export default function MobileFooter({
         })}
       </div>
 
-      {/* Dynamic CMS Copyright Text */}
-      <div className="w-full flex justify-center px-2 sm:px-4 mb-2 sm:mb-3">
+      {/* Dynamic CMS Copyright Text — safe-area protected */}
+      <div className="w-full flex justify-center px-2 sm:px-4 mb-2 sm:mb-3 pb-[env(safe-area-inset-bottom,0px)]">
         <p className="text-[clamp(9.5px,2.65vw,12px)] font-sans text-muted/70 tracking-tight whitespace-nowrap text-center select-none">
           {copyrightText}
         </p>
       </div>
 
-      {/* Giant Outlined RAWIN Typography Signature — intentionally clipped */}
+      {/* Giant Outlined RAWIN Typography Signature — intentionally clipped.
+          Extends INTO the bottom unsafe area so it visually passes behind
+          Safari's Liquid Glass pill and similar translucent browser chrome. */}
       <div
-        className="w-full select-none flex justify-center items-start pointer-events-none mt-1 sm:mt-2 pb-[env(safe-area-inset-bottom,0px)]"
+        className="w-full select-none flex justify-center items-start pointer-events-none mt-1 sm:mt-2"
         aria-hidden="true"
         style={{
-          /* Show only the top ~55-60% of the wordmark; clip the rest */
-          height: 'clamp(2.8rem, 12vw, 6.5rem)',
+          /* Base visible height + extend into the unsafe area behind browser chrome */
+          height: 'calc(clamp(2.8rem, 12vw, 6.5rem) + env(safe-area-inset-bottom, 0px))',
           overflowX: 'clip',
           overflowY: 'clip',
         }}
