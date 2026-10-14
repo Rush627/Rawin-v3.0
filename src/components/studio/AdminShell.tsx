@@ -59,18 +59,18 @@ export default function AdminShell({ email, brand, signOut, children }: { email:
 
   return (
     <UnsavedChangesProvider>
-      <div data-admin-portal="true" className="admin-studio relative min-h-screen min-h-dvh w-full bg-bg text-fg flex">
+      <div data-admin-portal="true" className="admin-studio relative h-screen h-dvh max-h-dvh w-full bg-bg text-fg flex flex-col lg:flex-row overflow-hidden">
         <a href="#studio-main" className="skip-link btn btn-primary btn-sm">
           Skip to content
         </a>
 
         {/* Desktop rail */}
-        <aside className="hidden lg:flex relative z-20 w-[248px] shrink-0 flex-col border-r border-line bg-bg-raised">
-          <div className="sticky top-0 h-screen h-dvh flex flex-col p-4">
-            <Link href="/saint-denis" className="flex items-center h-12 px-3 mb-6 rounded-xl" aria-label="RAWIN Studio overview">
+        <aside className="hidden lg:flex relative z-20 w-[248px] shrink-0 h-full flex-col border-r border-line bg-bg-raised overflow-y-auto overscroll-contain">
+          <div className="min-h-full flex flex-col p-4">
+            <Link href="/saint-denis" className="flex items-center h-12 px-3 mb-6 rounded-xl shrink-0" aria-label="RAWIN Studio overview">
               <StudioBrand brand={brand} />
             </Link>
-            <nav aria-label="Studio" className="flex flex-col gap-0.5">
+            <nav aria-label="Studio" className="flex flex-col gap-0.5 shrink-0">
               {STUDIO_NAV.map((item) => {
                 const active = isActive(pathname, item.href, "exact" in item ? item.exact : false);
                 const Icon = item.icon;
@@ -89,7 +89,7 @@ export default function AdminShell({ email, brand, signOut, children }: { email:
                 );
               })}
             </nav>
-            <div className="mt-auto flex flex-col gap-2">
+            <div className="mt-auto pt-4 flex flex-col gap-2 shrink-0">
               <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between h-11 px-3 rounded-xl text-[14px] text-fg-muted hover:text-fg hover:bg-surface/60">
                 View site
                 <ArrowUpRight aria-hidden="true" className="w-4 h-4" />
@@ -106,9 +106,9 @@ export default function AdminShell({ email, brand, signOut, children }: { email:
           </div>
         </aside>
 
-        <div className="relative z-10 flex-1 min-w-0 flex flex-col">
+        <div className="relative z-10 flex-1 min-w-0 h-full flex flex-col overflow-hidden">
           {/* Phone / tablet top bar */}
-          <header className="lg:hidden sticky top-0 z-40 border-b border-line bg-bg/95 backdrop-blur px-4 pt-[env(safe-area-inset-top)]">
+          <header className="lg:hidden shrink-0 z-40 border-b border-line bg-bg/95 backdrop-blur px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
             <div className="flex items-center justify-between gap-3 h-14">
               <Link href="/saint-denis" className="flex items-center min-h-11 min-w-0" aria-label="RAWIN Studio overview">
                 <StudioBrand brand={brand} compact />
@@ -122,8 +122,10 @@ export default function AdminShell({ email, brand, signOut, children }: { email:
             </div>
           </header>
 
-          <main id="studio-main" tabIndex={-1} className="flex-1 w-full max-w-[1100px] mx-auto px-4 sm:px-8 lg:px-12 pt-6 sm:pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-16 focus:outline-none">
-            {children}
+          <main id="studio-main" tabIndex={-1} className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain focus:outline-none">
+            <div className="w-full max-w-[1100px] mx-auto px-4 sm:px-8 lg:px-12 pt-6 sm:pt-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-16">
+              {children}
+            </div>
           </main>
         </div>
 

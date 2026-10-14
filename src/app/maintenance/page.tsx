@@ -19,15 +19,19 @@ export default async function MaintenancePage() {
   const m = content?.maintenance;
   const withMessage = Boolean(m?.enabled && m.showMessage);
   return (
-    <main className="min-h-screen min-h-dvh flex flex-col justify-center items-center w-full relative z-10">
-      <RawinErrorView
-        code="503"
-        title={withMessage ? "We'll be back soon." : "Site temporarily unavailable"}
-        message={withMessage ? "The site is undergoing scheduled maintenance." : "The site is currently offline for updates."}
-        maintenanceMessage={withMessage ? m?.message : undefined}
-        endsAt={withMessage ? m?.endsAt || undefined : undefined}
-        actionLabel="Refresh"
-      />
-    </main>
+    <RawinErrorView
+      code="503"
+      title={withMessage ? "We'll be back soon." : "Site temporarily unavailable"}
+      message={withMessage ? "The site is undergoing scheduled maintenance." : "The site is currently offline for updates."}
+      maintenanceMessage={withMessage ? m?.message : undefined}
+      endsAt={withMessage ? m?.endsAt || undefined : undefined}
+      actionLabel="Refresh"
+      brandMode={content?.global?.headerBrand === "logo" ? "logo" : "wordmark"}
+      logos={
+        content?.assets
+          ? { light: content.assets.logoLight, dark: content.assets.logoDark }
+          : undefined
+      }
+    />
   );
 }

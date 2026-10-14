@@ -113,18 +113,6 @@ function mediaError(e: unknown): VoiceError {
   return ERR.unexpected;
 }
 
-/** Ask for the microphone on the visitor's click, then release it immediately. */
-async function confirmMicrophone(): Promise<VoiceError | null> {
-  if (!navigator.mediaDevices?.getUserMedia) return null; // let recognition report what it can
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach((t) => t.stop());
-    return null;
-  } catch (e) {
-    return mediaError(e);
-  }
-}
-
 function joinText(existing: string, addition: string) {
   const a = existing.replace(/\s+$/, "");
   const b = addition.trim();
@@ -145,84 +133,121 @@ export function useDictation(onText: (text: string) => void) {
   const [error, setError] = useState<VoiceError | null>(null);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const busyRef = useRef(false);
+  const sessionIdRef = useRef(0);
   const onTextRef = useRef(onText);
   useEffect(() => {
     onTextRef.current = onText;
   }, [onText]);
 
-  const stop = useCallback(() => {
-    recRef.current?.stop();
+  // Cancel explicitly terminates the current session and invalidates any pending results
+  const cancel = useCallback(() => {
+    sessionIdRef.current += 1;
+    const rec = recRef.current;
+    if (rec) {
+      rec.onresult = null;
+      rec.onerror = null;
+      rec.onend = null;
+      try {
+        rec.abort();
+      } catch {
+        // ignore
+      }
+    }
+    recRef.current = null;
+    busyRef.current = false;
+    setListening(false);
+    setStarting(false);
   }, []);
+
+  const stop = useCallback(() => {
+    const rec = recRef.current;
+    if (rec) {
+      try {
+        rec.stop();
+      } catch {
+        cancel();
+      }
+    }
+  }, [cancel]);
 
   const start = useCallback(async (existing: string) => {
     if (busyRef.current || recRef.current) return;
     const Ctor = getRecognitionCtor();
     if (!Ctor) return setError(ERR.unsupported);
     if (!window.isSecureContext) return setError(ERR.insecure);
+
+    const session = ++sessionIdRef.current;
     busyRef.current = true;
     setStarting(true);
     setError(null);
-
-    const micError = await confirmMicrophone();
-    if (micError) {
-      setError(micError);
-      busyRef.current = false;
-      setStarting(false);
-      return;
-    }
 
     const rec = new Ctor();
     rec.lang = document.documentElement.lang || navigator.language || "en-US";
     rec.continuous = true;
     rec.interimResults = true;
     let finalText = "";
+
     rec.onresult = (e) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (session !== sessionIdRef.current) return;
+      let finalStr = "";
+      let interimStr = "";
+      for (let i = 0; i < e.results.length; i++) {
         const r = e.results[i];
-        if (r.isFinal) finalText += r[0].transcript;
-        else interim += r[0].transcript;
+        if (r.isFinal) finalStr += r[0].transcript;
+        else interimStr += r[0].transcript;
       }
-      onTextRef.current(joinText(existing, finalText + interim));
+      finalText = finalStr;
+      onTextRef.current(joinText(existing, finalStr + interimStr));
     };
+
     rec.onerror = (e) => {
-      const mapped = recognitionError(e.error, true);
+      if (session !== sessionIdRef.current) return;
+      const mapped = recognitionError(e.error, false);
       if (mapped) setError(mapped);
+      busyRef.current = false;
+      setStarting(false);
     };
+
     rec.onend = () => {
+      if (session !== sessionIdRef.current) return;
       setListening(false);
+      setStarting(false);
       recRef.current = null;
       busyRef.current = false;
       // Settle on the final words only (drops a dangling interim fragment)
-      onTextRef.current(joinText(existing, finalText));
+      if (finalText) {
+        onTextRef.current(joinText(existing, finalText));
+      }
     };
+
     recRef.current = rec;
     try {
       rec.start();
-      setListening(true);
+      if (session === sessionIdRef.current) {
+        setListening(true);
+      }
     } catch {
-      recRef.current = null;
-      busyRef.current = false;
-      setError(ERR.unexpected);
+      if (session === sessionIdRef.current) {
+        recRef.current = null;
+        busyRef.current = false;
+        setListening(false);
+        setError(ERR.unexpected);
+      }
     } finally {
-      setStarting(false);
+      if (session === sessionIdRef.current) {
+        setStarting(false);
+      }
     }
   }, []);
 
   useEffect(
     () => () => {
-      const rec = recRef.current;
-      if (rec) {
-        rec.onend = null;
-        rec.onresult = null;
-        rec.onerror = null;
-        rec.abort();
-      }
+      cancel();
     },
-    []
+    [cancel]
   );
 
-  return { supported, listening, starting, error, start, stop, clearError: () => setError(null) };
+  return { supported, listening, starting, error, start, stop, cancel, clearError: () => setError(null) };
 }
 
 /* ------------------------------------------------------------------ Recording fallback */
@@ -416,25 +441,32 @@ export function useSpeech() {
     }
   });
   const runRef = useRef(0); // invalidates queued chunks of a cancelled reply
+  const watchdogRef = useRef<number | undefined>(undefined);
+
+  const getRankedVoices = useCallback(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return [];
+    const raw = (document.documentElement.lang || navigator.language || "en-US").toLowerCase();
+    const lang = raw.includes("-") ? raw : `${raw}-us`;
+    const available = window.speechSynthesis.getVoices();
+    if (!available.length) return [];
+    return available
+      .map((v) => ({ v, s: scoreVoice(v, lang) }))
+      .filter((x) => x.s > -1000)
+      .sort((a, b) => b.s - a.s)
+      .map((x) => x.v);
+  }, []);
 
   // Voices load asynchronously in Chrome; rank them again on voiceschanged.
   useEffect(() => {
     if (!("speechSynthesis" in window)) return;
-    const raw = (document.documentElement.lang || navigator.language || "en-US").toLowerCase();
-    const lang = raw.includes("-") ? raw : `${raw}-us`;
     const load = () => {
-      const ranked = window.speechSynthesis
-        .getVoices()
-        .map((v) => ({ v, s: scoreVoice(v, lang) }))
-        .filter((x) => x.s > -1000)
-        .sort((a, b) => b.s - a.s)
-        .map((x) => x.v);
-      setVoices(ranked);
+      const ranked = getRankedVoices();
+      if (ranked.length > 0) setVoices(ranked);
     };
     load();
     window.speechSynthesis.addEventListener("voiceschanged", load);
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
-  }, []);
+  }, [getRankedVoices]);
 
   const setVoiceURI = useCallback((uri: string) => {
     setVoiceURIState(uri);
@@ -448,7 +480,14 @@ export function useSpeech() {
 
   const stop = useCallback(() => {
     runRef.current += 1;
-    if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    window.clearTimeout(watchdogRef.current);
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // ignore
+      }
+    }
     setSpeakingId(null);
   }, []);
 
@@ -465,28 +504,56 @@ export function useSpeech() {
       const synth = window.speechSynthesis;
       runRef.current += 1;
       const run = runRef.current;
-      synth.cancel();
+      window.clearTimeout(watchdogRef.current);
+
+      try {
+        synth.cancel();
+        if (synth.paused) {
+          synth.resume();
+        }
+      } catch {
+        // ignore
+      }
       setError(null);
+
+      const currentVoices = voices.length ? voices : getRankedVoices();
+      if (!voices.length && currentVoices.length) {
+        setVoices(currentVoices);
+      }
+      const voiceToUse = currentVoices.find((v) => v.voiceURI === voiceURI) || currentVoices[0] || activeVoice;
+
       const parts = chunkSentences(content);
       let index = 0;
+
       const next = () => {
         if (run !== runRef.current) return;
         if (index >= parts.length) {
           setSpeakingId((cur) => (cur === id ? null : cur));
           return;
         }
+
         const u = new SpeechSynthesisUtterance(parts[index++]);
-        if (activeVoice) {
-          u.voice = activeVoice;
-          u.lang = activeVoice.lang;
+        if (voiceToUse) {
+          u.voice = voiceToUse;
+          u.lang = voiceToUse.lang;
         } else {
-          u.lang = document.documentElement.lang || "en-US";
+          u.lang = document.documentElement.lang || navigator.language || "en-US";
         }
         u.rate = 0.98;
         u.pitch = 1;
         u.volume = 1;
+
+        u.onstart = () => {
+          if (run === runRef.current) {
+            window.clearTimeout(watchdogRef.current);
+            setSpeakingId(id);
+          }
+        };
+
         u.onend = next;
+
         u.onerror = (e) => {
+          window.clearTimeout(watchdogRef.current);
           const code = (e as SpeechSynthesisErrorEvent).error;
           if (code === "interrupted" || code === "canceled" || run !== runRef.current) return;
           setSpeakingId((cur) => (cur === id ? null : cur));
@@ -496,12 +563,33 @@ export function useSpeech() {
               : "This reply couldn't be read aloud."
           );
         };
-        synth.speak(u);
+
+        // Fallback watchdog: if onstart does not fire within 1500ms, try resuming
+        // or clear the active state to prevent false speaking indication on Android
+        window.clearTimeout(watchdogRef.current);
+        watchdogRef.current = window.setTimeout(() => {
+          if (run === runRef.current && synth.speaking) {
+            synth.resume();
+          } else if (run === runRef.current) {
+            setSpeakingId((cur) => (cur === id ? null : cur));
+          }
+        }, 1500);
+
+        try {
+          synth.speak(u);
+          if (synth.paused) {
+            synth.resume();
+          }
+        } catch {
+          window.clearTimeout(watchdogRef.current);
+          setSpeakingId((cur) => (cur === id ? null : cur));
+          setError("This reply couldn't be read aloud.");
+        }
       };
-      setSpeakingId(id);
-      next();
+
+      setTimeout(next, 10);
     },
-    [activeVoice]
+    [activeVoice, voices, voiceURI, getRankedVoices]
   );
 
   const toggle = useCallback(
@@ -515,7 +603,14 @@ export function useSpeech() {
   useEffect(
     () => () => {
       runRef.current += 1;
-      if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      window.clearTimeout(watchdogRef.current);
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch {
+          // ignore
+        }
+      }
     },
     []
   );

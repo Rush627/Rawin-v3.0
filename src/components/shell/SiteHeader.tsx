@@ -282,24 +282,33 @@ export default function SiteHeader({ brandMode = "wordmark", logos, email, socia
               </ul>
 
               <motion.div
-                className="relative mt-auto pt-4 sm:pt-10 grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 sm:gap-6 text-sm"
+                className="relative mt-auto pt-4 sm:pt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
                 initial={reduced ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: reduced ? 0 : 0.55, duration: 0.5 }}
               >
-                <div className="flex flex-col gap-1 sm:gap-2">
-                  <span className="label-mono text-fg-subtle">Write</span>
+                <div className="flex flex-col gap-1 sm:gap-2 min-w-0">
+                  <span className="label-mono text-fg-subtle text-[11px] sm:text-xs">Write</span>
                   {email && (
-                    <a href={`mailto:${email}`} className="text-fg [overflow-wrap:anywhere] link-draw w-fit inline-flex items-center min-h-8">
+                    <a
+                      href={`mailto:${email}`}
+                      className="text-fg [word-break:break-word] link-draw w-fit inline-flex items-center min-h-8 text-[13px] min-[380px]:text-sm"
+                    >
                       {email}
                     </a>
                   )}
                 </div>
-                <div className="flex flex-col gap-1 sm:gap-2">
-                  <span className="label-mono text-fg-subtle">Elsewhere</span>
-                  <div className="flex flex-wrap gap-x-5 gap-y-1">
+                <div className="flex flex-col gap-1 sm:gap-2 min-w-0">
+                  <span className="label-mono text-fg-subtle text-[11px] sm:text-xs">Elsewhere</span>
+                  <div className="flex flex-wrap gap-x-4 sm:gap-x-5 gap-y-1">
                     {socialLinks.map((s) => (
-                      <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-fg link-draw inline-flex items-center min-h-8">
+                      <a
+                        key={s.id}
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-fg whitespace-nowrap link-draw inline-flex items-center min-h-8 text-[13px] min-[380px]:text-sm"
+                      >
                         {s.name}
                       </a>
                     ))}

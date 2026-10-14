@@ -296,6 +296,8 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
 
     setErrorMessage(null);
     setInput("");
+    dictation.cancel();
+    recorder.cancel();
     speech.stop();
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";

@@ -63,8 +63,18 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(SITE_URL),
     title: home.title,
     description: home.description,
-    // Favicons are rendered in <head> below (they follow the active theme); each page sets its
-    // own canonical URL, so none is declared here.
+    icons: {
+      icon: [
+        { url: content.assets.faviconDark.url, sizes: "32x32", type: "image/png" },
+        { url: "/brand/favicon-dark-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/favicon.ico", sizes: "any" },
+      ],
+      apple: [
+        { url: `${BUNDLED.appleTouchIcon}?v=3`, sizes: "180x180", type: "image/png" },
+      ],
+      shortcut: ["/favicon.ico"],
+    },
+    manifest: "/manifest.webmanifest",
     openGraph: {
       title: home.title,
       description: home.description,
@@ -109,14 +119,16 @@ export default async function RootLayout({
       data-favicon-dark={content.assets.faviconDark.url}
     >
       <head>
-        {/* Theme-aware identity: the boot script creates the favicon link for the active theme
-            (the visitor's own choice included, not only the OS preference) from the
-            data-favicon-* URLs on <html>, and every theme change swaps it. Light theme = dark-ink
-            mark on a light tile, and vice versa. Without JavaScript the dark tile is used. */}
+        {/* Canonical icon declarations: static links for search crawlers and mobile browsers,
+            with id="rawin-favicon" for theme-aware dynamic switching by the inline boot script. */}
+        <link id="rawin-favicon" rel="icon" href={content.assets.faviconDark.url} sizes="32x32" type="image/png" />
+        <link rel="icon" href="/brand/favicon-dark-192.png" sizes="192x192" type="image/png" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="apple-touch-icon" href={`${BUNDLED.appleTouchIcon}?v=3`} sizes="180x180" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <noscript>
           <link rel="icon" href={content.assets.faviconDark.url} />
         </noscript>
-        <link rel="apple-touch-icon" href={BUNDLED.appleTouchIcon} />
         <meta
           id="rawin-theme-color"
           suppressHydrationWarning

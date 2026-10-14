@@ -54,6 +54,6 @@ export const config = {
      * Pages only: framework files, API routes, bundled asset folders and static files never
      * need this gate (each excluded request is one less proxy invocation).
      */
-    "/((?!_next/static|_next/image|api/|brand/|defaults/|icons/|images/|favicon.ico|icon.png|.*\\.(?:png|jpe?g|webp|gif|svg|ico|pdf|txt|xml|json|woff2?|mp4|webm)$).*)",
+    "/((?!_next/static|_next/image|api/|brand/|defaults/|icons/|images/|favicon.ico|icon.png|manifest.webmanifest|.*\\.(?:png|jpe?g|webp|gif|svg|ico|pdf|txt|xml|json|webmanifest|woff2?|mp4|webm)$).*)",
   ],
 };

@@ -49,24 +49,24 @@ export default async function PublicLayout({
     await shortenPageLifetimeForMaintenance();
     const isMaintenanceMessage = content.maintenance?.showMessage;
     return (
-      <main className="min-h-screen min-h-dvh flex flex-col justify-center items-center w-full relative z-10">
-        <RawinErrorView
-          code="503"
-          title={isMaintenanceMessage ? "We'll be back soon." : "Site temporarily unavailable"}
-          message={
-            isMaintenanceMessage
-              ? "The site is undergoing scheduled maintenance."
-              : "The site is currently offline for updates."
-          }
-          maintenanceMessage={
-            isMaintenanceMessage ? content.maintenance?.message : undefined
-          }
-          endsAt={
-            isMaintenanceMessage ? content.maintenance?.endsAt || undefined : undefined
-          }
-          actionLabel="Refresh"
-        />
-      </main>
+      <RawinErrorView
+        code="503"
+        title={isMaintenanceMessage ? "We'll be back soon." : "Site temporarily unavailable"}
+        message={
+          isMaintenanceMessage
+            ? "The site is undergoing scheduled maintenance."
+            : "The site is currently offline for updates."
+        }
+        maintenanceMessage={
+          isMaintenanceMessage ? content.maintenance?.message : undefined
+        }
+        endsAt={
+          isMaintenanceMessage ? content.maintenance?.endsAt || undefined : undefined
+        }
+        actionLabel="Refresh"
+        brandMode={content.global?.headerBrand === "logo" ? "logo" : "wordmark"}
+        logos={{ light: content.assets.logoLight, dark: content.assets.logoDark }}
+      />
     );
   }
 
