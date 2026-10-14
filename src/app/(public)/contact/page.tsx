@@ -1,12 +1,10 @@
-import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/site-content";
 import ContactView from "@/components/ContactView";
+import { pageMetadata } from "@/lib/page-metadata";
 
-export const metadata: Metadata = {
-  title: "Contact & Inquiries | Rushan Siddiqui : Full Stack Developer",
-  description:
-    "Direct communication channel for Rushan Siddiqui : Full Stack Developer. Open to full-time developer roles, freelance contracts, and software architecture consultancies.",
-};
+export function generateMetadata() {
+  return pageMetadata("contact", "/contact");
+}
 
 export const revalidate = 3600;
 
@@ -19,5 +17,5 @@ export default async function ContactPage() {
     phone: content.contact.showPhoneNumber ? content.contact.phone : "",
   };
 
-  return <ContactView content={contactForClient} global={content.global} />;
+  return <ContactView content={contactForClient} availability={content.availability} />;
 }

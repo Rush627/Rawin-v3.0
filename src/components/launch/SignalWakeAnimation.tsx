@@ -1,33 +1,27 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import LaunchCanvas from "./LaunchCanvas";
-import CrtTransitionOverlay from "./CrtTransitionOverlay";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { triggerHaptic } from "@/lib/haptics";
 
 export interface SignalWakeAnimationProps {
   primaryMessage?: string;
   secondaryMessage?: string;
-  duration?: number; // Total timeline duration in seconds, e.g. 10.0 to 15.0
+  duration?: number; // Total timeline duration in seconds (CMS-controlled)
   onComplete?: () => void;
   isReducedMotion?: boolean;
 }
 
 /**
- * Launch Experience 2.0 Renderer: Rebuilt around the RAWIN Home Canvas Field-Particle Engine.
+ * "Signal Wake" launch sequence — Spectral Editorial edition.
  *
- * Visual Sequence:
- * 1. Dark launch environment appears with ambient dust field.
- * 2. "RAWIN v3.0" materializes directly from dense glyph-origin particles.
- * 3. Title shimmers in Pacific Cyan and bright white sparks on letter contours.
- * 4. Particles disperse organically outward using authentic field physics.
- * 5. Full-screen particle field fills the viewport.
- * 6. CRT convergence closes toward center from top and bottom.
- * 7. Concentrated white ignition flash appears at center.
- * 8. White illumination expands vertically from center to top and bottom.
- * 9. Live RAWIN website is revealed.
+ * 1. A single point of spectral light ignites at centre.
+ * 2. The light blooms into a slow, breathing aurora field.
+ * 3. The primary message rises through a typographic mask; the secondary follows.
+ * 4. A hairline traces the remaining time across the base of the frame.
+ * 5. An aperture closes over the scene to reveal the live website.
  *
- * Strictly adheres to the zero em dash constraint across all code and comments.
+ * Skippable at any time with click, tap, Enter, Space or Escape. Honours the CMS
+ * duration and reduced-motion preference. CSS-only rendering: zero GPU loops.
  */
 export default function SignalWakeAnimation({
   primaryMessage = "RAWIN v3.0",
@@ -36,168 +30,149 @@ export default function SignalWakeAnimation({
   onComplete,
   isReducedMotion = false,
 }: SignalWakeAnimationProps) {
-  // Visual states:
-  // contentRevealed: controls initial semantic elements (badge, cyan line, secondary message)
-  // crtActive: triggers the CRT convergence, flash, and vertical expansion
-  const [contentRevealed, setContentRevealed] = useState<boolean>(false);
-  const [crtActive, setCrtActive] = useState<boolean>(false);
-  const [isTouch, setIsTouch] = useState<boolean>(false);
-
+  const [phase, setPhase] = useState<"ignite" | "reveal" | "exit">("ignite");
+  const [isTouch, setIsTouch] = useState(false);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
-  const isInterruptedRef = useRef(false);
+  const exitingRef = useRef(false);
+
+  const total = Math.max(3, duration) * 1000;
+  const exitMs = isReducedMotion ? 300 : 1000;
+
+  const beginExit = useCallback(() => {
+    if (exitingRef.current) return;
+    exitingRef.current = true;
+    setPhase("exit");
+    window.setTimeout(() => onCompleteRef.current?.(), exitMs);
+  }, [exitMs]);
 
   useEffect(() => {
     setIsTouch("ontouchstart" in window || navigator.maxTouchPoints > 0);
-
-    if (isReducedMotion) {
-      setContentRevealed(true);
-      const timerExit = setTimeout(() => {
-        setCrtActive(true);
-      }, Math.max(1200, duration * 250));
-      return () => clearTimeout(timerExit);
-    }
-
-    // Reveal semantic elements (badge, cyan line, secondary message) as title materializes (~1.0s at 12s)
-    const revealDelay = Math.max(800, duration * 80);
-    const tReveal = setTimeout(() => {
-      setContentRevealed(true);
-    }, revealDelay);
-
+    const tReveal = window.setTimeout(() => setPhase((p) => (p === "ignite" ? "reveal" : p)), isReducedMotion ? 0 : 900);
+    const tExit = window.setTimeout(beginExit, isReducedMotion ? Math.max(1500, total * 0.25) : total - exitMs);
     return () => {
-      clearTimeout(tReveal);
+      window.clearTimeout(tReveal);
+      window.clearTimeout(tExit);
     };
-  }, [duration, isReducedMotion]);
+  }, [total, exitMs, isReducedMotion, beginExit]);
 
-  // Milestone: Canvas has reached the CRT phase naturally
-  const handleTriggerCrt = useCallback(() => {
-    if (!isInterruptedRef.current) {
-      setCrtActive(true);
-    }
-  }, []);
-
-  // Manual skip handler (click, tap, or keypress)
-  const handleManualContinue = useCallback(() => {
-    if (crtActive) return;
-    isInterruptedRef.current = true;
-    triggerHaptic(10);
-    setCrtActive(true);
-  }, [crtActive]);
-
-  // Keyboard accessibility: Escape, Enter, Space
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        handleManualContinue();
+        triggerHaptic(10);
+        beginExit();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleManualContinue]);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [beginExit]);
 
-  const handleFinalComplete = useCallback(() => {
-    onCompleteRef.current?.();
-  }, []);
+  const revealed = phase !== "ignite";
+  const exiting = phase === "exit";
 
   return (
     <div
-      onClick={handleManualContinue}
+      onClick={() => {
+        triggerHaptic(10);
+        beginExit();
+      }}
       role="status"
       aria-live="polite"
       aria-label={`${primaryMessage}. ${secondaryMessage}`}
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#101019] select-none cursor-pointer overflow-hidden transition-opacity duration-500 ease-out ${
-        crtActive ? "pointer-events-none" : "opacity-100"
-      }`}
+      className="fixed inset-0 z-[9999] bg-bg text-fg select-none cursor-pointer overflow-hidden"
       style={{
-        paddingTop: "env(safe-area-inset-top, 0px)",
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
         height: "100dvh",
-        maxHeight: "100dvh",
+        clipPath: isReducedMotion ? undefined : exiting ? "circle(0% at 50% 50%)" : "circle(150% at 50% 50%)",
+        opacity: isReducedMotion && exiting ? 0 : 1,
+        transition: isReducedMotion
+          ? `opacity ${exitMs}ms ease`
+          : `clip-path ${exitMs}ms cubic-bezier(0.65, 0, 0.35, 1)`,
       }}
     >
-      {/* Full-Screen WebGL Canvas Particle Engine */}
-      <LaunchCanvas
-        primaryMessage={primaryMessage}
-        duration={duration}
-        onTriggerCrt={handleTriggerCrt}
-        isReducedMotion={isReducedMotion}
-      />
+      <style>{`
+        @keyframes rawin-wake-breathe { 0%,100% { transform: translate(-50%,-50%) scale(1) rotate(0deg); } 50% { transform: translate(-50%,-50%) scale(1.12) rotate(12deg); } }
+        @keyframes rawin-wake-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+      `}</style>
 
-      {/* Subtle background scanline veil */}
+      {/* Aurora field */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.035] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px]"
         aria-hidden="true"
+        className="absolute left-1/2 top-1/2 rounded-full blur-[80px] transition-[width,height,opacity] ease-[cubic-bezier(0.2,0.7,0.1,1)]"
+        style={{
+          width: revealed ? "min(120vw, 1100px)" : "8px",
+          height: revealed ? "min(120vw, 1100px)" : "8px",
+          opacity: revealed ? 0.55 : 1,
+          background:
+            "conic-gradient(from 120deg, var(--accent), #c9bcff, var(--mint), var(--ember), var(--accent))",
+          transitionDuration: isReducedMotion ? "0ms" : "2200ms",
+          transform: "translate(-50%,-50%)",
+          animation: isReducedMotion ? undefined : "rawin-wake-breathe 9s ease-in-out infinite",
+        }}
+      />
+      <div aria-hidden="true" className="rawin-atmosphere !absolute" />
+
+      {/* Ignition point */}
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-fg transition-opacity duration-700"
+        style={{ opacity: revealed ? 0 : 1, boxShadow: "0 0 40px 12px var(--accent)" }}
       />
 
-      {/* Semantic Content & Layout Layer */}
+      {/* Content */}
       <div
-        className={`relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-xl mx-auto pointer-events-none select-none transition-opacity duration-700 ease-out ${
-          crtActive ? "opacity-0" : "opacity-100"
-        }`}
+        className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6"
+        style={{
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
       >
-        {/* Status indicator pill */}
-        <div
-          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] sm:text-xs font-mono tracking-widest uppercase mb-3 sm:mb-4 border transition-all duration-700 ease-out ${
-            contentRevealed && !crtActive
-              ? "opacity-100 translate-y-0 text-pacific-cyan bg-pacific-cyan/10 border-pacific-cyan/25"
-              : "opacity-0 -translate-y-2 text-muted border-transparent"
-          }`}
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-pacific-cyan animate-pulse" />
-          <span>SYSTEM ONLINE</span>
-        </div>
-
-        {/* Anchor spacer reserved for Canvas particle title with semantic accessible h1 */}
-        <div
-          id="launch-title-anchor"
-          className="h-14 sm:h-20 md:h-24 flex items-center justify-center w-full"
-          aria-hidden="true"
-        >
-          <h1 className="sr-only">{primaryMessage}</h1>
-        </div>
-
-        {/* Cyan Horizontal Accent Line strictly BELOW the Title with deliberate gap */}
-        <div className="w-full flex items-center justify-center my-3 sm:my-5">
-          <div
-            className={`h-[1.5px] bg-pacific-cyan rounded-full transition-all ease-out ${
-              contentRevealed && !crtActive
-                ? "w-32 sm:w-48 md:w-60 opacity-80 shadow-[0_0_15px_#189BAD]"
-                : "w-0 opacity-0"
-            }`}
-            style={{
-              transitionDuration: isReducedMotion ? "300ms" : "700ms",
-            }}
-          />
-        </div>
-
-        {/* Secondary Message */}
         <p
-          className={`text-xs sm:text-sm md:text-base font-mono text-muted/90 max-w-md mx-auto mb-6 sm:mb-8 transition-all duration-700 ease-out ${
-            contentRevealed && !crtActive
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-2"
-          }`}
+          className="label-mono text-fg-muted transition-all duration-1000"
+          style={{ opacity: revealed ? 1 : 0, transform: revealed ? "none" : "translateY(8px)" }}
+        >
+          Signal received
+        </p>
+        <h1 className="mt-6 overflow-hidden pb-[0.1em]">
+          <span
+            className="block display-lg text-fg transition-transform duration-[1300ms] ease-[cubic-bezier(0.2,0.7,0.1,1)]"
+            style={{ transform: revealed ? "translateY(0)" : "translateY(110%)" }}
+          >
+            {primaryMessage}
+          </span>
+        </h1>
+        <p
+          className="mt-6 max-w-md text-base sm:text-lg text-fg-muted transition-all duration-1000 delay-300"
+          style={{ opacity: revealed ? 1 : 0, transform: revealed ? "none" : "translateY(10px)" }}
         >
           {secondaryMessage}
         </p>
-
-        {/* Subdued continue instruction */}
-        <div
-          className={`text-[10px] font-mono text-muted/40 tracking-wider transition-opacity duration-500 ${
-            contentRevealed && !crtActive ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          {isTouch ? "[ TAP TO CONTINUE ]" : "[ CLICK OR TAP TO CONTINUE ]"}
-        </div>
       </div>
 
-      {/* CRT Transition Overlay */}
-      <CrtTransitionOverlay
-        active={crtActive}
-        onComplete={handleFinalComplete}
-        isReducedMotion={isReducedMotion}
-      />
+      {/* Base: progress + instruction */}
+      <div
+        className="absolute inset-x-0 bottom-0 z-10 px-6 sm:px-10 pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+1rem))]"
+        style={{ opacity: revealed ? 1 : 0, transition: "opacity 1s ease" }}
+      >
+        <div className="flex items-center justify-between label-mono text-fg-subtle mb-3">
+          <span>RAWIN / v3</span>
+          <span>{isTouch ? "Tap to enter" : "Click or press Enter"}</span>
+        </div>
+        <div className="h-px w-full bg-line overflow-hidden">
+          <div
+            className="h-full w-full origin-left"
+            style={{
+              background: "var(--spectrum)",
+              animation: isReducedMotion ? undefined : `rawin-wake-progress ${total}ms linear forwards`,
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -8,10 +8,16 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
 };
-import PublicCustomCursor from "@/components/PublicCustomCursor";
 import OfflineDetector from "@/components/OfflineDetector";
+import EntranceIntro from "@/components/launch/EntranceIntro";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
-import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { GlassProvider } from "@/components/glass/GlassProvider";
+import { buildThemeBootScript, THEME_COLOR } from "@/components/theme/theme-script";
+import { seoFor } from "@/lib/cms/fields";
+import { BUNDLED } from "@/lib/brand-assets";
+import { getSiteContent, DEFAULT_SITE_CONTENT, maintenanceActiveNow } from "@/lib/site-content";
+import { SITE_URL } from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,57 +31,36 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
   subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
   display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getSiteContent();
-  const rawFaviconUrl = content.assets?.favicon?.url;
-  const isCmsFavicon = Boolean(
-    rawFaviconUrl &&
-    rawFaviconUrl.startsWith("/api/assets/favicon/")
-  );
-  const faviconUrl = isCmsFavicon ? rawFaviconUrl! : "/favicon.png";
-  const profilePhotoUrl = content.assets?.profilePhoto?.url || "/images/profile.png";
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").trim() || "https://rawin.world";
   const siteTitle = content.global?.siteTitle?.trim() || DEFAULT_SITE_CONTENT.global.siteTitle;
-  const siteDescription =
-    content.global?.shortBio?.trim() ||
-    DEFAULT_SITE_CONTENT.global.shortBio;
+  const siteDescription = content.global?.shortBio?.trim() || DEFAULT_SITE_CONTENT.global.shortBio;
   const brandName = content.global?.brandName?.trim() || DEFAULT_SITE_CONTENT.global.brandName;
+  // The homepage SEO override (Site Content → SEO) falls back to the site title and short bio
+  const home = seoFor(content.seo, "home", { title: siteTitle, description: siteDescription });
 
   return {
-    metadataBase: new URL(siteUrl),
-    title: siteTitle,
-    description: siteDescription,
-    alternates: {
-      canonical: "/",
-    },
-    icons: isCmsFavicon
-      ? {
-          icon: [{ url: faviconUrl }],
-          shortcut: faviconUrl,
-          apple: faviconUrl,
-        }
-      : {
-          icon: [
-            { url: "/favicon.png", type: "image/png" },
-            { url: "/favicon.ico", sizes: "any" },
-          ],
-          shortcut: "/favicon.png",
-          apple: "/favicon.png",
-        },
+    metadataBase: new URL(SITE_URL),
+    title: home.title,
+    description: home.description,
+    // Favicons are rendered in <head> below (they follow the active theme); each page sets its
+    // own canonical URL, so none is declared here.
     openGraph: {
-      title: siteTitle,
-      description: siteDescription,
-      url: siteUrl,
+      title: home.title,
+      description: home.description,
+      url: SITE_URL,
       siteName: brandName,
       images: [
         {
-          url: profilePhotoUrl,
+          url: content.assets.profilePhoto.url,
           width: 800,
           height: 800,
           alt: brandName,
@@ -94,10 +79,8 @@ export default async function RootLayout({
 }) {
   const content = await getSiteContent();
 
-  const now = Date.now();
-  const endsAtTime = content.maintenance?.endsAt ? new Date(content.maintenance.endsAt).getTime() : null;
-  const isMaintenanceExpired = Boolean(endsAtTime && endsAtTime <= now);
-  const isMaintenanceActive = Boolean(content.maintenance?.enabled && !isMaintenanceExpired);
+  // content may be cached for a while: the end of a timed window is checked at request time
+  const isMaintenanceActive = maintenanceActiveNow(content.maintenance);
   const initialStatus = isMaintenanceActive
     ? (content.maintenance?.showMessage ? "maintenance" : "offline")
     : "live";
@@ -106,23 +89,51 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} dark`}
+      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable}`}
+      data-favicon-light={content.assets.faviconLight.url}
+      data-favicon-dark={content.assets.faviconDark.url}
     >
       <head>
+        {/* Theme-aware identity: the boot script creates the favicon link for the active theme
+            (the visitor's own choice included, not only the OS preference) from the
+            data-favicon-* URLs on <html>, and every theme change swaps it. Light theme = dark-ink
+            mark on a light tile, and vice versa. Without JavaScript the dark tile is used. */}
+        <noscript>
+          <link rel="icon" href={content.assets.faviconDark.url} />
+        </noscript>
+        <link rel="apple-touch-icon" href={BUNDLED.appleTouchIcon} />
+        <meta
+          id="rawin-theme-color"
+          suppressHydrationWarning
+          name="theme-color"
+          content={THEME_COLOR.dark}
+          data-light={THEME_COLOR.light}
+          data-dark={THEME_COLOR.dark}
+        />
+        {/* CMS defaults (global.themeDefault*) are inlined so a first visit paints in the right theme */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `if (typeof window !== "undefined") { if ("scrollRestoration" in window.history) { window.history.scrollRestoration = "manual"; } window.scrollTo(0, 0); }`,
+            __html: buildThemeBootScript({
+              desktop: content.global?.themeDefaultDesktop === "light" ? "light" : "dark",
+              mobile: content.global?.themeDefaultMobile === "dark" ? "dark" : "light",
+            }),
           }}
         />
       </head>
       <body
         suppressHydrationWarning
-        className="min-h-screen min-h-dvh bg-ink-black text-foreground antialiased selection:bg-pacific-cyan/30 selection:text-foreground flex flex-col font-sans relative"
+        className="min-h-screen min-h-dvh text-fg antialiased flex flex-col font-sans relative"
       >
-        <OfflineDetector />
-        <AvailabilityWatcher initialStatus={initialStatus} isServerFallback={isMaintenanceActive} />
-        {children}
-        <PublicCustomCursor />
+        <ThemeProvider>
+          <GlassProvider>
+            {/* Rendered in the root shell so it covers the first paint (incl. streaming); it
+                only activates when the pre-paint script flags html[data-intro] on "/". */}
+            <EntranceIntro />
+            <OfflineDetector />
+            <AvailabilityWatcher initialStatus={initialStatus} isServerFallback={isMaintenanceActive} />
+            {children}
+          </GlassProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

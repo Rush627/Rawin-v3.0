@@ -4,6 +4,29 @@ import { invalidateCacheTag } from "./cache";
 import { getDatabase } from "./mongodb";
 import { GridFSBucket, ObjectId } from "mongodb";
 import type { Readable } from "stream";
+import { DEFAULT_BLOG_CATEGORIES, DEFAULT_PROJECT_CATEGORIES } from "./taxonomy";
+import { DEFAULT_WELCOME_MESSAGES, welcomeMessagesFrom } from "./orbit-welcome";
+import { BUNDLED, BUNDLED_EVOLUTION, evolutionFallback, resolveAssetUrl } from "./brand-assets";
+import {
+  DEFAULT_AVAILABILITY,
+  DEFAULT_CAPABILITIES,
+  DEFAULT_CLOSING,
+  DEFAULT_JOURNEY,
+  DEFAULT_VALUES,
+  normalizeAvailability,
+  normalizeCapabilities,
+  normalizeJourney,
+  normalizeSeo,
+  normalizeValues,
+  splitLedgerDescription,
+  type AvailabilityContent,
+  type CapabilityGroup,
+  type JourneyItem,
+  type SeoContent,
+  type ValueItem,
+} from "./cms/fields";
+
+export type { AvailabilityContent, CapabilityGroup, JourneyItem, SeoContent, ValueItem };
 
 export interface GlobalContent {
   brandName: string;
@@ -13,8 +36,24 @@ export interface GlobalContent {
   footerAvailabilityColor?: "green" | "orange" | "red";
   footerCopyright: string;
   footerBulletNotification?: string;
+  /** Optional small label above the closing contact scene ("One last thing") */
+  footerClosingLabel?: string;
+  /** Closing scene copy: the invitation (one *word* in asterisks is emphasised), the label
+   *  above the email address, and the call-to-action button. */
+  closingInvite?: string;
+  closingPrompt?: string;
+  closingCta?: string;
   contactEmail: string;
   location: string;
+  /** Header brand presentation: typographic wordmark (default) or the uploaded logo asset */
+  headerBrand?: "wordmark" | "logo";
+  /**
+   * First-visit theme per device class, applied only while a visitor has made no choice of
+   * their own (an explicit toggle always wins). Smartphone = viewport below 768px (the md
+   * breakpoint); tablets and wider use the desktop default.
+   */
+  themeDefaultDesktop?: "light" | "dark";
+  themeDefaultMobile?: "light" | "dark";
   // Legacy fields retained for backward compatibility:
   availabilityStatus?: string;
   availabilityBadge?: string;
@@ -33,6 +72,18 @@ export interface HomeContent {
   featuredHeading: string;
   featuredDescription?: string;
   heroTypingPhrases?: string[];
+  /** Optional homepage section visibility (all default to visible) */
+  showCapabilities?: boolean;
+  showValues?: boolean;
+  showJourney?: boolean;
+  /** Optional hero glass panels (all default to visible) */
+  showHeroFocus?: boolean;
+  showHeroAvailability?: boolean;
+  showHeroWork?: boolean;
+  /** "The working toolkit" (section 02) */
+  capabilities: CapabilityGroup[];
+  /** "Why work with me" (section 03) */
+  values: ValueItem[];
 }
 
 export interface EvolutionMilestoneItem {
@@ -106,6 +157,8 @@ export interface AboutContent {
   journeyEyebrow?: string;
   journeyHeading: string;
   journeyDescription: string;
+  /** The engineering journey, shared by the About page and the homepage (section 04). */
+  journey: JourneyItem[];
   focusEyebrow?: string;
   focusHeading?: string;
   focusDescription?: string;
@@ -144,6 +197,8 @@ export interface ContactContent {
   form: ContactFormPlaceholders;
   successTitle: string;
   successMessage: string;
+  /** Expected reply time shown beside the location (when the phone number is not shown). */
+  responseTime: string;
 }
 
 export type ResumeStatusIndicator = "green" | "orange" | "cyan" | "gray";
@@ -209,6 +264,22 @@ export interface ResumeContent {
   subtitle: string;
   summary: string;
   ctaText: string;
+  /** Download button label (hero and closing actions). */
+  pdfLabel: string;
+  /** Section names (the numbered headings and the hero index). */
+  profileLabel: string;
+  skillsLabel: string;
+  experienceLabel: string;
+  educationLabel: string;
+  /** Label over the closing call to action (the open end of the timeline). */
+  ctaEyebrow: string;
+  /** Heading of the hero contents column (wide desktops). */
+  indexLabel: string;
+  /** Labels of the hero profile plate (values come from the resume itself). */
+  statusLabel: string;
+  roleLabel: string;
+  locationLabel: string;
+  sinceLabel: string;
   contact: ResumeContact;
   status: ResumeStatus;
   skills: ResumeSkillGroup[];
@@ -275,7 +346,11 @@ export interface UsesContent {
   eyebrow: string;
   title: string;
   description: string;
+  /** Ledger readout in the hero: label, description and year are stored separately and
+   *  composed as "<description> · <year>" on the page, so the year is never baked in. */
+  ledgerLabel?: string;
   updatedYear: string;
+  /** Ledger description (e.g. "UPDATED REGULARLY"); legacy values may still end in "· 2026" */
   updateLabel?: string;
   dailyStack: DailyStackItem[];
   developmentStack: DevStackItem[];
@@ -292,8 +367,24 @@ export interface AIContent {
   inputPlaceholder: string;
   mobileComposerPlaceholder?: string;
   desktopComposerPlaceholder?: string;
-  suggestedPrompts: string[];
-  suggestedPromptsLabel?: string;
+  /**
+   * Short greeting by the visitor's local time (the page picks one: morning 05–12,
+   * afternoon 12–17, evening 17–22, late night 22–05; see lib/orbit-greeting).
+   */
+  greetingMorning: string;
+  greetingAfternoon: string;
+  greetingEvening: string;
+  greetingLateNight: string;
+  /** Shown after the greeting; one is drawn at random on each visit (lib/orbit-welcome). */
+  welcomeMessages: string[];
+  /** Small note under the composer. */
+  disclaimer: string;
+  /** Orbit capabilities — each independently switchable in the CMS */
+  voiceInput?: boolean;
+  voicePlayback?: boolean;
+  fileAttachments?: boolean;
+  /** Voice fallback: record in the browser, transcribe with Workers AI Whisper */
+  serverTranscription?: boolean;
 }
 
 export interface AssetMeta {
@@ -304,8 +395,14 @@ export interface AssetMeta {
 
 export interface SiteAssets {
   profilePhoto: AssetMeta;
+  /** retired single-variant slots (still read for compatibility, no longer editable) */
   logo: AssetMeta;
   favicon: AssetMeta;
+  /** theme variants: Light = shown on the light theme (dark ink), Dark = on the dark theme */
+  logoLight: AssetMeta;
+  logoDark: AssetMeta;
+  faviconLight: AssetMeta;
+  faviconDark: AssetMeta;
 }
 
 export interface MaintenanceContent {
@@ -327,7 +424,17 @@ export interface LaunchExperienceContent {
   launchVersion: string;
 }
 
-export type AssetKey = "profilePhoto" | "logo" | "favicon";
+export interface TaxonomyContent {
+  /** Admin-managed project categories. Existing project values stay valid even if not listed. */
+  projectCategories: string[];
+  /** Admin-managed blog categories (optional per post). */
+  blogCategories: string[];
+}
+
+export { DEFAULT_BLOG_CATEGORIES, DEFAULT_PROJECT_CATEGORIES };
+
+/** profilePhoto + theme variants; `logo` and `favicon` are the retired single-variant slots. */
+export type AssetKey = "profilePhoto" | "logo" | "favicon" | "logoLight" | "logoDark" | "faviconLight" | "faviconDark";
 
 export interface SiteContent {
   _id?: string;
@@ -342,6 +449,11 @@ export interface SiteContent {
   assets: SiteAssets;
   maintenance: MaintenanceContent;
   launchExperience: LaunchExperienceContent;
+  taxonomy: TaxonomyContent;
+  /** The one canonical availability (hero, footer, contact, resume, Orbit derive from it). */
+  availability: AvailabilityContent;
+  /** Per-page title/description overrides (empty = the page's built-in wording). */
+  seo: SeoContent;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -356,23 +468,30 @@ export type ContentSectionKey =
   | "ai"
   | "assets"
   | "maintenance"
-  | "launchExperience";
+  | "launchExperience"
+  | "taxonomy"
+  | "availability"
+  | "seo";
 
 export const DEFAULT_SITE_CONTENT: SiteContent = {
   key: "main",
   assets: {
     profilePhoto: {
-      url: "/images/profile.png",
+      url: BUNDLED.profilePhoto,
       alt: "Rushan Siddiqui : Full Stack Developer",
     },
     logo: {
-      url: "/images/logo.png",
+      url: BUNDLED.logoDark,
       alt: "RAWIN Logo",
     },
     favicon: {
-      url: "/favicon.png",
+      url: BUNDLED.faviconDark,
       alt: "RAWIN Favicon",
     },
+    logoLight: { url: BUNDLED.logoLight, alt: "RAWIN" },
+    logoDark: { url: BUNDLED.logoDark, alt: "RAWIN" },
+    faviconLight: { url: BUNDLED.faviconLight, alt: "RAWIN" },
+    faviconDark: { url: BUNDLED.faviconDark, alt: "RAWIN" },
   },
   global: {
     brandName: "RAWIN",
@@ -389,6 +508,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       "BUILDING WITH INTENT • CRAFTING DIGITAL EXPERIENCES • ALWAYS LEARNING",
     contactEmail: "rushansiddiqui5262@gmail.com",
     location: "Jaunpur, Uttar Pradesh, India",
+    themeDefaultDesktop: "dark",
+    themeDefaultMobile: "light",
   },
   home: {
     heroStatus: "Open to opportunities",
@@ -407,6 +528,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       "Creative Technologies",
       "UI/UX Designer",
     ],
+    capabilities: DEFAULT_CAPABILITIES,
+    values: DEFAULT_VALUES,
   },
   about: {
     eyebrow: "ABOUT",
@@ -441,7 +564,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         url: "https://rush627.github.io/Rushansidd.in",
         status: "archived",
         isCurrent: false,
-        preview: "/images/evolution-2022.png",
+        preview: BUNDLED_EVOLUTION["2022"],
         previewAlt: "The First Build (2022) preview",
         ctaText: "VIEW WEBSITE",
         displayOrder: 1,
@@ -459,7 +582,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         url: "https://rush627.github.io/Rushan.in",
         status: "archived",
         isCurrent: false,
-        preview: "/images/evolution-2023.png",
+        preview: BUNDLED_EVOLUTION["2023"],
         previewAlt: "RAWIN V2.0 (2023) preview",
         ctaText: "VIEW WEBSITE",
         displayOrder: 2,
@@ -476,7 +599,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         technologies: ["Next.js", "React", "TypeScript", "Tailwind CSS"],
         status: "current",
         isCurrent: true,
-        preview: "/images/evolution-2026.png",
+        preview: BUNDLED_EVOLUTION["2026"],
         previewAlt: "RAWIN 3.0 (2026) preview",
         ctaText: "YOU ARE HERE",
         displayOrder: 3,
@@ -572,6 +695,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     ctaDescription: "Open to full-time roles, freelance projects, and collaborations.",
     ctaResumeText: "View Resume",
     ctaContactText: "Get in Touch",
+    journey: DEFAULT_JOURNEY,
   },
   contact: {
     eyebrow: "Get in Touch",
@@ -595,6 +719,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       subjectPlaceholder: "Project Inquiry / Job Opportunity",
       messagePlaceholder: "Describe your goals, project timeline, or questions...",
     },
+    responseTime: "Usually within a day",
     successTitle: "Message Sent Successfully",
     successMessage:
       "Thank you for reaching out! Your message has been sent. I will review it and get back to you shortly.",
@@ -606,6 +731,17 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     summary:
       "Full stack developer focused on building fast, reliable web applications with Next.js, TypeScript, and modern backend systems. Passionate about interface craft, performance, and writing clean, maintainable code.",
     ctaText: "Hire Me",
+    pdfLabel: "Download PDF",
+    profileLabel: "Profile",
+    skillsLabel: "Technical skills",
+    experienceLabel: "Experience",
+    educationLabel: "Education",
+    ctaEyebrow: "Next chapter",
+    indexLabel: "Contents",
+    statusLabel: "Status",
+    roleLabel: "Current role",
+    locationLabel: "Based in",
+    sinceLabel: "Building since",
     contact: {
       location: "Aligarh, India",
       email: "rushansiddiqui5262@gmail.com",
@@ -711,8 +847,9 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     title: "What I Use",
     description:
       "The tools, software, and workflows I actually reach for when building, designing, debugging, and shipping.",
+    ledgerLabel: "Ledger",
     updatedYear: "2026",
-    updateLabel: "UPDATED REGULARLY · 2026",
+    updateLabel: "UPDATED REGULARLY",
     dailyStack: [
       {
         id: "daily-vscode",
@@ -967,16 +1104,12 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     inputPlaceholder: "Ask Orbit",
     mobileComposerPlaceholder: "Ask Orbit",
     desktopComposerPlaceholder: "Only Ask Orbit",
-    suggestedPromptsLabel: "Suggested Prompts",
-    suggestedPrompts: [
-      "What is RAWIN?",
-      "Who founded RAWIN?",
-      "Tell me about Rushan's projects",
-      "What technologies does Rushan use?",
-      "Tell me about Rawin Horizon",
-      "What is Rawin Orbit?",
-      "Tell me about Strata Commerce",
-    ],
+    greetingMorning: "Good morning.",
+    greetingAfternoon: "Good afternoon.",
+    greetingEvening: "Good evening.",
+    greetingLateNight: "Still up?",
+    welcomeMessages: [...DEFAULT_WELCOME_MESSAGES],
+    disclaimer: "Orbit is an AI assistant. It can make mistakes.",
   },
   maintenance: {
     enabled: false,
@@ -995,7 +1128,23 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     endDate: "2026-10-12",
     launchVersion: "2026-v3-launch",
   },
+  taxonomy: {
+    projectCategories: DEFAULT_PROJECT_CATEGORIES,
+    blogCategories: DEFAULT_BLOG_CATEGORIES,
+  },
+  availability: DEFAULT_AVAILABILITY,
+  seo: normalizeSeo(null),
 };
+
+export { splitLedgerDescription };
+
+/** Whether maintenance/offline is in force right now (a timed window may have ended since caching). */
+export function maintenanceActiveNow(m: MaintenanceContent | undefined): boolean {
+  if (!m?.enabled) return false;
+  if (!m.endsAt) return true;
+  const end = new Date(m.endsAt).getTime();
+  return Number.isNaN(end) || end > Date.now();
+}
 
 const COLLECTION_NAME = "site_content";
 
@@ -1115,8 +1264,17 @@ export function mergeWithDefaults(doc: any): SiteContent {
         (doc.global?.footerBulletNotification || DEFAULT_SITE_CONTENT.global.footerBulletNotification || "")
           .trim()
           .slice(0, 300),
+      footerClosingLabel:
+        typeof doc.global?.footerClosingLabel === "string" ? doc.global.footerClosingLabel.trim().slice(0, 40) : "",
+      closingInvite: (typeof doc.global?.closingInvite === "string" && doc.global.closingInvite.trim()) || DEFAULT_CLOSING.closingInvite,
+      closingPrompt: (typeof doc.global?.closingPrompt === "string" && doc.global.closingPrompt.trim()) || DEFAULT_CLOSING.closingPrompt,
+      closingCta: (typeof doc.global?.closingCta === "string" && doc.global.closingCta.trim()) || DEFAULT_CLOSING.closingCta,
       contactEmail: canonicalEmail,
       location: canonicalLocation,
+      headerBrand: doc.global?.headerBrand === "logo" ? "logo" : "wordmark",
+      // missing or invalid values fall back to the shipped defaults (desktop dark, phones light)
+      themeDefaultDesktop: doc.global?.themeDefaultDesktop === "light" ? "light" : "dark",
+      themeDefaultMobile: doc.global?.themeDefaultMobile === "dark" ? "dark" : "light",
     },
     home: {
       heroStatus: doc?.home?.heroStatus || DEFAULT_SITE_CONTENT.home.heroStatus,
@@ -1137,6 +1295,14 @@ export function mergeWithDefaults(doc: any): SiteContent {
               .map((p: any) => String(p).trim())
               .filter(Boolean)
           : DEFAULT_SITE_CONTENT.home.heroTypingPhrases,
+      showCapabilities: readFlag(doc?.home?.showCapabilities, true),
+      showValues: readFlag(doc?.home?.showValues, true),
+      showJourney: readFlag(doc?.home?.showJourney, true),
+      showHeroFocus: readFlag(doc?.home?.showHeroFocus, true),
+      showHeroAvailability: readFlag(doc?.home?.showHeroAvailability, true),
+      showHeroWork: readFlag(doc?.home?.showHeroWork, true),
+      capabilities: normalizeCapabilities(doc?.home?.capabilities),
+      values: normalizeValues(doc?.home?.values),
     },
     about: {
       eyebrow: doc.about?.eyebrow || DEFAULT_SITE_CONTENT.about.eyebrow,
@@ -1192,7 +1358,8 @@ export function mergeWithDefaults(doc: any): SiteContent {
           url: typeof m.url === "string" && m.url.trim() ? m.url.trim() : undefined,
           status: m.isCurrent || m.status === "current" ? ("current" as const) : ("archived" as const),
           isCurrent: Boolean(m.isCurrent || m.status === "current"),
-          preview: String(m.preview || `/images/evolution-${m.year || "2026"}.png`),
+          // retired /images/* paths resolve to the bundled screenshots
+          preview: resolveAssetUrl(m.preview, evolutionFallback(m.year, m.id)),
           previewAlt: typeof m.previewAlt === "string" ? m.previewAlt : `${m.title || ""} (${m.year || ""}) preview`,
           ctaText: String(m.ctaText || (m.isCurrent ? "YOU ARE HERE" : "VIEW WEBSITE")),
           displayOrder: typeof m.displayOrder === "number" ? m.displayOrder : idx + 1,
@@ -1235,6 +1402,7 @@ export function mergeWithDefaults(doc: any): SiteContent {
       journeyEyebrow: doc.about?.journeyEyebrow || DEFAULT_SITE_CONTENT.about.journeyEyebrow,
       journeyHeading: doc.about?.journeyHeading || DEFAULT_SITE_CONTENT.about.journeyHeading,
       journeyDescription: doc.about?.journeyDescription || DEFAULT_SITE_CONTENT.about.journeyDescription,
+      journey: normalizeJourney(doc.about?.journey),
       focusEyebrow: doc.about?.focusEyebrow || DEFAULT_SITE_CONTENT.about.focusEyebrow,
       focusHeading: doc.about?.focusHeading || DEFAULT_SITE_CONTENT.about.focusHeading,
       focusDescription: doc.about?.focusDescription || DEFAULT_SITE_CONTENT.about.focusDescription,
@@ -1265,6 +1433,7 @@ export function mergeWithDefaults(doc: any): SiteContent {
       form: canonicalForm,
       successTitle: doc.contact?.successTitle || DEFAULT_SITE_CONTENT.contact.successTitle,
       successMessage: doc.contact?.successMessage || DEFAULT_SITE_CONTENT.contact.successMessage,
+      responseTime: doc.contact?.responseTime || DEFAULT_SITE_CONTENT.contact.responseTime,
     },
     resume: {
       eyebrow: doc.resume?.eyebrow || DEFAULT_SITE_CONTENT.resume.eyebrow,
@@ -1272,6 +1441,17 @@ export function mergeWithDefaults(doc: any): SiteContent {
       subtitle: doc.resume?.subtitle || DEFAULT_SITE_CONTENT.resume.subtitle,
       summary: doc.resume?.summary || DEFAULT_SITE_CONTENT.resume.summary,
       ctaText: doc.resume?.ctaText || DEFAULT_SITE_CONTENT.resume.ctaText,
+      pdfLabel: doc.resume?.pdfLabel || DEFAULT_SITE_CONTENT.resume.pdfLabel,
+      profileLabel: doc.resume?.profileLabel || DEFAULT_SITE_CONTENT.resume.profileLabel,
+      skillsLabel: doc.resume?.skillsLabel || DEFAULT_SITE_CONTENT.resume.skillsLabel,
+      experienceLabel: doc.resume?.experienceLabel || DEFAULT_SITE_CONTENT.resume.experienceLabel,
+      educationLabel: doc.resume?.educationLabel || DEFAULT_SITE_CONTENT.resume.educationLabel,
+      ctaEyebrow: doc.resume?.ctaEyebrow || DEFAULT_SITE_CONTENT.resume.ctaEyebrow,
+      indexLabel: doc.resume?.indexLabel || DEFAULT_SITE_CONTENT.resume.indexLabel,
+      statusLabel: doc.resume?.statusLabel || DEFAULT_SITE_CONTENT.resume.statusLabel,
+      roleLabel: doc.resume?.roleLabel || DEFAULT_SITE_CONTENT.resume.roleLabel,
+      locationLabel: doc.resume?.locationLabel || DEFAULT_SITE_CONTENT.resume.locationLabel,
+      sinceLabel: doc.resume?.sinceLabel || DEFAULT_SITE_CONTENT.resume.sinceLabel,
       contact: {
         location: canonicalLocation,
         email: canonicalEmail,
@@ -1319,8 +1499,16 @@ export function mergeWithDefaults(doc: any): SiteContent {
       eyebrow: doc.uses?.eyebrow || DEFAULT_SITE_CONTENT.uses.eyebrow,
       title: doc.uses?.title || DEFAULT_SITE_CONTENT.uses.title,
       description: doc.uses?.description || DEFAULT_SITE_CONTENT.uses.description,
-      updatedYear: doc.uses?.updatedYear || DEFAULT_SITE_CONTENT.uses.updatedYear,
-      updateLabel: doc.uses?.updateLabel || DEFAULT_SITE_CONTENT.uses.updateLabel || `UPDATED REGULARLY · ${doc.uses?.updatedYear || DEFAULT_SITE_CONTENT.uses.updatedYear}`,
+      ...(() => {
+        // Older documents store the year inside the description ("UPDATED REGULARLY · 2026");
+        // the dedicated year field wins, the embedded year is only a fallback.
+        const legacy = splitLedgerDescription(doc.uses?.updateLabel);
+        return {
+          ledgerLabel: doc.uses?.ledgerLabel || DEFAULT_SITE_CONTENT.uses.ledgerLabel,
+          updatedYear: doc.uses?.updatedYear || legacy.year || DEFAULT_SITE_CONTENT.uses.updatedYear,
+          updateLabel: legacy.description || DEFAULT_SITE_CONTENT.uses.updateLabel,
+        };
+      })(),
       dailyStack:
         Array.isArray(doc.uses?.dailyStack) && doc.uses.dailyStack.length > 0
           ? doc.uses.dailyStack
@@ -1378,27 +1566,33 @@ export function mergeWithDefaults(doc: any): SiteContent {
       desktopComposerPlaceholder:
         doc.ai?.desktopComposerPlaceholder ||
         DEFAULT_SITE_CONTENT.ai.desktopComposerPlaceholder,
-      suggestedPromptsLabel: doc.ai?.suggestedPromptsLabel || DEFAULT_SITE_CONTENT.ai.suggestedPromptsLabel,
-      suggestedPrompts: Array.isArray(doc.ai?.suggestedPrompts) && doc.ai.suggestedPrompts.length > 0
-        ? doc.ai.suggestedPrompts.map((p: any) => String(p).trim()).filter(Boolean)
-        : DEFAULT_SITE_CONTENT.ai.suggestedPrompts,
+      // (legacy suggestedPrompts / suggestedPromptsLabel values in stored documents are no
+      // longer read: the welcome greets by local time instead)
+      greetingMorning: doc.ai?.greetingMorning || DEFAULT_SITE_CONTENT.ai.greetingMorning,
+      greetingAfternoon: doc.ai?.greetingAfternoon || DEFAULT_SITE_CONTENT.ai.greetingAfternoon,
+      greetingEvening: doc.ai?.greetingEvening || DEFAULT_SITE_CONTENT.ai.greetingEvening,
+      greetingLateNight: doc.ai?.greetingLateNight || DEFAULT_SITE_CONTENT.ai.greetingLateNight,
+      // never saved → the default library; saved but unusable → a small fallback set
+      welcomeMessages: welcomeMessagesFrom(doc.ai?.welcomeMessages),
+      disclaimer: doc.ai?.disclaimer || DEFAULT_SITE_CONTENT.ai.disclaimer,
+      // Browser-native voice features default on; file attachments send content to the
+      // model, so they stay off until an administrator enables them.
+      voiceInput: readFlag(doc.ai?.voiceInput, true),
+      voicePlayback: readFlag(doc.ai?.voicePlayback, true),
+      fileAttachments: readFlag(doc.ai?.fileAttachments, false),
+      // Sends short voice recordings to Workers AI; off until an administrator enables it.
+      serverTranscription: readFlag(doc.ai?.serverTranscription, false),
     },
+    // Stored URLs pass through resolveAssetUrl: retired paths (/images/*, /favicon.svg,
+    // /brand/rawin-logo*.svg) map to the bundled files, and empty slots use them directly.
     assets: {
-      profilePhoto: {
-        url: doc.assets?.profilePhoto?.url || DEFAULT_SITE_CONTENT.assets.profilePhoto.url,
-        alt: doc.assets?.profilePhoto?.alt || DEFAULT_SITE_CONTENT.assets.profilePhoto.alt,
-        updatedAt: doc.assets?.profilePhoto?.updatedAt || DEFAULT_SITE_CONTENT.assets.profilePhoto.updatedAt,
-      },
-      logo: {
-        url: doc.assets?.logo?.url || DEFAULT_SITE_CONTENT.assets.logo.url,
-        alt: doc.assets?.logo?.alt || DEFAULT_SITE_CONTENT.assets.logo.alt,
-        updatedAt: doc.assets?.logo?.updatedAt || DEFAULT_SITE_CONTENT.assets.logo.updatedAt,
-      },
-      favicon: {
-        url: doc.assets?.favicon?.url || DEFAULT_SITE_CONTENT.assets.favicon.url,
-        alt: doc.assets?.favicon?.alt || DEFAULT_SITE_CONTENT.assets.favicon.alt,
-        updatedAt: doc.assets?.favicon?.updatedAt || DEFAULT_SITE_CONTENT.assets.favicon.updatedAt,
-      },
+      profilePhoto: assetMeta(doc.assets?.profilePhoto, BUNDLED.profilePhoto, DEFAULT_SITE_CONTENT.assets.profilePhoto.alt),
+      logo: assetMeta(doc.assets?.logo, BUNDLED.logoDark, "RAWIN Logo"),
+      favicon: assetMeta(doc.assets?.favicon, BUNDLED.faviconDark, "RAWIN Favicon"),
+      logoLight: assetMeta(doc.assets?.logoLight, BUNDLED.logoLight, "RAWIN"),
+      logoDark: assetMeta(doc.assets?.logoDark, BUNDLED.logoDark, "RAWIN"),
+      faviconLight: assetMeta(doc.assets?.faviconLight, BUNDLED.faviconLight, "RAWIN"),
+      faviconDark: assetMeta(doc.assets?.faviconDark, BUNDLED.faviconDark, "RAWIN"),
     },
     maintenance: {
       enabled: (() => {
@@ -1465,9 +1659,44 @@ export function mergeWithDefaults(doc: any): SiteContent {
           ? doc.launchExperience.launchVersion.trim()
           : DEFAULT_SITE_CONTENT.launchExperience.launchVersion,
     },
+    availability: normalizeAvailability(doc),
+    seo: normalizeSeo(doc.seo),
+    taxonomy: {
+      projectCategories: readStringList(doc.taxonomy?.projectCategories, DEFAULT_PROJECT_CATEGORIES),
+      blogCategories: readStringList(doc.taxonomy?.blogCategories, DEFAULT_BLOG_CATEGORIES),
+    },
     createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt,
     updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt,
   };
+}
+
+function assetMeta(stored: any, fallbackUrl: string, fallbackAlt?: string): AssetMeta {
+  return {
+    url: resolveAssetUrl(stored?.url, fallbackUrl),
+    alt: (typeof stored?.alt === "string" && stored.alt.trim()) || fallbackAlt || "",
+    updatedAt: typeof stored?.updatedAt === "string" ? stored.updatedAt : undefined,
+  };
+}
+
+function readFlag(value: unknown, fallback: boolean): boolean {
+  if (typeof value === "boolean") return value;
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return fallback;
+}
+
+function readStringList(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return fallback;
+  const seen = new Set<string>();
+  const list: string[] = [];
+  for (const item of value) {
+    const v = String(item ?? "").trim().slice(0, 60);
+    if (v && !seen.has(v.toLowerCase())) {
+      seen.add(v.toLowerCase());
+      list.push(v);
+    }
+  }
+  return list.length ? list : fallback;
 }
 
 /**
@@ -1499,9 +1728,16 @@ async function fetchSiteContentFromDb(): Promise<SiteContent> {
   return mergeWithDefaults(doc);
 }
 
+/**
+ * Version of the normalised content shape. The data cache persists across builds, so an entry
+ * written before a field was added would otherwise be served without it until it expires:
+ * bump this whenever mergeWithDefaults gains or changes fields.
+ */
+const SITE_CONTENT_SHAPE = "2026-10-20";
+
 const getCachedSiteContent = unstable_cache(
   async () => fetchSiteContentFromDb(),
-  ["site-content-cache"],
+  ["site-content-cache", SITE_CONTENT_SHAPE],
   {
     tags: ["site-content"],
     revalidate: 3600,
@@ -1511,6 +1747,12 @@ const getCachedSiteContent = unstable_cache(
 export const getSiteContent = cache(async (): Promise<SiteContent> => {
   return await getCachedSiteContent();
 });
+
+/**
+ * Uncached read for the admin: editors start from what is stored right now, not from the
+ * public cache. Read-only; throws when the database is unreachable.
+ */
+export const getSiteContentFresh = cache(async (): Promise<SiteContent> => fetchSiteContentFromDb());
 
 /**
  * Updates a specific section of the site content in MongoDB.
@@ -1755,38 +1997,35 @@ export async function updateSiteAssetMeta(
  */
 export async function resetAssetToDefault(assetType: AssetKey): Promise<boolean> {
   const db = await getDatabase();
-  if (db) {
-    try {
-      const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
-      const existingFiles = await bucket
-        .find({ "metadata.assetType": assetType })
-        .toArray();
-      for (const file of existingFiles) {
-        await bucket.delete(file._id).catch(() => { });
-      }
-    } catch (cleanErr) {
-      console.warn("[SiteContent] Reset asset notice:", cleanErr);
-    }
-  }
-
-  const defaultAsset = DEFAULT_SITE_CONTENT.assets[assetType];
+  if (!db) return false;
   const now = new Date();
 
-  if (!db) return false;
-  const col = db.collection(COLLECTION_NAME);
-  await col.updateOne(
+  // 1. Point the slot at the built-in default first (an empty URL means "built-in";
+  //    mergeWithDefaults supplies the bundled file). If this fails, nothing else changes.
+  await db.collection(COLLECTION_NAME).updateOne(
     { key: "main" },
     {
       $set: {
         [`assets.${assetType}`]: {
-          url: defaultAsset.url,
-          alt: defaultAsset.alt || "",
+          url: "",
+          alt: "",
           updatedAt: now.toISOString(),
         },
         updatedAt: now,
       },
     }
   );
+
+  // 2. Only then remove the uploaded files for this slot (never another slot's)
+  try {
+    const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
+    const existingFiles = await bucket.find({ "metadata.assetType": assetType }).toArray();
+    for (const file of existingFiles) {
+      await bucket.delete(file._id).catch(() => {});
+    }
+  } catch (cleanErr) {
+    console.warn("[SiteContent] Reset asset cleanup notice:", cleanErr);
+  }
 
   try {
     invalidateCacheTag("site-content");
@@ -1798,6 +2037,33 @@ export async function resetAssetToDefault(assetType: AssetKey): Promise<boolean>
 }
 
 /**
+ * Returns a saved milestone to its bundled screenshot (an empty preview resolves to the built-in
+ * file for that year). The reference changes first; the uploaded file is deleted only afterwards.
+ * Returns false when the milestone is not saved yet.
+ */
+export async function resetMilestoneImage(milestoneId: string): Promise<boolean> {
+  const db = await getDatabase();
+  if (!db) throw new Error("Database connection unavailable.");
+  const res = await db.collection(COLLECTION_NAME).updateOne(
+    { key: "main", "about.evolution.id": milestoneId },
+    { $set: { "about.evolution.$.preview": "", updatedAt: new Date() } }
+  );
+  if (res.matchedCount === 0) return false;
+
+  try {
+    const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
+    const files = await bucket.find({ "metadata.assetType": `evolution-${milestoneId}` }).toArray();
+    for (const file of files) await bucket.delete(file._id).catch(() => {});
+  } catch (cleanErr) {
+    console.warn("[SiteContent] Reset milestone cleanup notice:", cleanErr);
+  }
+  try {
+    invalidateCacheTag("site-content");
+  } catch {}
+  return true;
+}
+
+/**
  * Stores an uploaded milestone image file buffer into MongoDB GridFS using atomic replacement.
  */
 export async function storeMilestoneImage(
@@ -1805,7 +2071,7 @@ export async function storeMilestoneImage(
   fileBuffer: Buffer,
   mimeType: string,
   filename: string
-): Promise<string> {
+): Promise<{ url: string; linked: boolean }> {
   const db = await getDatabase();
   if (!db) {
     throw new Error("Database connection unavailable.");
@@ -1814,7 +2080,7 @@ export async function storeMilestoneImage(
   const assetType = `evolution-${milestoneId}`;
   const bucket = new GridFSBucket(db, { bucketName: ASSET_BUCKET_NAME });
 
-  // 1. Upload new file stream into GridFS FIRST
+  // 1. Upload the new file first
   const sanitizedName = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
   const uploadStream = bucket.openUploadStream(sanitizedName, {
     metadata: {
@@ -1834,22 +2100,38 @@ export async function storeMilestoneImage(
   const fileId = uploadStream.id.toString();
   const url = `/api/assets/${assetType}/${fileId}`;
 
-  // 2. Delete prior GridFS file for this milestone (excluding the newly uploaded one)
+  // 2. Point the saved milestone at it (if the milestone is saved already)
+  let linked = false;
   try {
-    const existingFiles = await bucket
-      .find({
-        "metadata.assetType": assetType,
-        _id: { $ne: uploadStream.id },
-      })
-      .toArray();
-    for (const file of existingFiles) {
-      await bucket.delete(file._id).catch(() => { });
-    }
-  } catch (cleanErr) {
-    console.warn("[SiteContent] Clean prior milestone image notice:", cleanErr);
+    const res = await db.collection(COLLECTION_NAME).updateOne(
+      { key: "main", "about.evolution.id": milestoneId },
+      { $set: { "about.evolution.$.preview": url, updatedAt: new Date() } }
+    );
+    linked = res.modifiedCount > 0;
+  } catch (dbErr) {
+    await bucket.delete(uploadStream.id).catch(() => {});
+    throw dbErr;
   }
 
-  return url;
+  // 3. Only a linked upload replaces the previous file; an unsaved milestone keeps both until
+  //    the About section is saved (the editor holds the new URL)
+  if (linked) {
+    try {
+      const existingFiles = await bucket
+        .find({ "metadata.assetType": assetType, _id: { $ne: uploadStream.id } })
+        .toArray();
+      for (const file of existingFiles) {
+        await bucket.delete(file._id).catch(() => {});
+      }
+    } catch (cleanErr) {
+      console.warn("[SiteContent] Clean prior milestone image notice:", cleanErr);
+    }
+    try {
+      invalidateCacheTag("site-content");
+    } catch {}
+  }
+
+  return { url, linked };
 }
 
 const RESUME_PDF_ASSET_TYPE = "resumePdf";
@@ -2075,9 +2357,8 @@ export interface PublicAvailability {
 async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
   try {
     const db = await getDatabase();
-    if (!db) {
-      return { status: "live" };
-    }
+    // Unknown is not "live": throw so nothing is cached and the caller keeps its current state
+    if (!db) throw new Error("Database connection unavailable.");
 
     const col = db.collection(COLLECTION_NAME);
     const doc = await col.findOne({ key: "main" }, { projection: { maintenance: 1 } });
@@ -2113,7 +2394,7 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
     };
   } catch (err) {
     console.error("[getPublicAvailability] error:", err);
-    return { status: "live" };
+    throw err;
   }
 }
 

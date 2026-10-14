@@ -1,204 +1,3373 @@
 @import "tailwindcss";
 
-@theme {
-  --color-ink-black: #101019;
-  --color-pacific-cyan: #189BAD;
-  --color-apricot-cream: #FCD49E;
-  --color-foreground: #F5F7FA;
-  --color-muted: #A1A1AA;
-  --color-surface: #161622;
-  --color-surface-card: #191928;
-  --color-surface-border: rgba(255, 255, 255, 0.08);
-  --color-success: #22C55E;
+/* ==========================================================================
+   RAWIN — Atelier / Observatory design system
+   --------------------------------------------------------------------------
+   Two art-directed themes share one set of semantic tokens:
+     • Atelier      (light, default) — warm paper, graphite ink, muted indigo
+     • Observatory  (dark)           — deep ink night, lavender light, mineral haze
+   The secondary hues are deliberately quiet: "mint" is a cool mineral slate and
+   "ember" a fired clay. Token names are kept for compatibility.
+   Theme resolution: [data-theme] on <html>, set before paint by the inline
+   theme script. A fresh visitor (and no-JS) always gets Atelier.
+   ========================================================================== */
 
-  --font-space: var(--font-space-grotesk), sans-serif;
-  --font-sans: var(--font-geist-sans), sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
-}
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --background: #101019;
-  --foreground: #F5F7FA;
+  /* Surfaces */
+  --bg: #f3f1ec;
+  --bg-raised: #f8f7f3;
+  --surface: #fcfbf8;
+  --surface-2: #ebe8e1;
+  --sunken: #e4e0d8;
+
+  /* Ink */
+  --fg: #141318;
+  --fg-muted: #55525c;
+  --fg-subtle: #87838e;
+
+  /* Lines */
+  --line: #dcd8cf;
+  --line-strong: #c4beb3;
+
+  /* Signal */
+  --accent: #4a3cc0;
+  --accent-strong: #392d9f;
+  --accent-fg: #ffffff;
+  --mint: #566a8a;
+  --ember: #a5593a;
+
+  /* Inverse */
+  --inverse: #141318;
+  --inverse-fg: #f6f4ef;
+
+  /* Status */
+  --success: #2c7656;
+  --warning: #93600b;
+  --danger: #b3323e;
+
+  /* Spectral light — indigo through lavender to pale clay */
+  --spectrum: linear-gradient(105deg, #4a3cc0 0%, #8077d4 38%, #c8c2e6 68%, #e3cdbb 100%);
+  --spectrum-soft: linear-gradient(105deg, rgb(74 60 192 / 0.12), rgb(200 194 230 / 0.12) 55%, rgb(227 205 187 / 0.12));
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgb(28 22 36 / 0.06), 0 1px 1px rgb(28 22 36 / 0.04);
+  --shadow-2: 0 16px 36px -18px rgb(30 24 48 / 0.24), 0 3px 8px -2px rgb(28 22 36 / 0.06);
+  --shadow-3: 0 50px 90px -42px rgb(34 26 70 / 0.34), 0 18px 36px -18px rgb(28 22 36 / 0.14);
+  --edge-light: inset 0 1px 0 rgb(255 255 255 / 0.9);
+
+  /* Glass */
+  --glass-fallback: rgb(252 251 248 / 0.58);
+  --glass-edge: rgb(255 255 255 / 0.9);
+  --glass-tint: rgba(255, 253, 248, 0.12);
+  --glass-veil: rgb(250 248 243 / 0.62);
+  /* Plain rgb() so LiquidGL's rasteriser reproduces it exactly */
+  --halo-a: rgb(60 58 80 / 0.11);
+  --halo-b: rgb(60 58 80 / 0.035);
+
+  /* Atmosphere */
+  --atmo-a: rgb(110 96 220 / 0.11);
+  --atmo-b: rgb(86 106 138 / 0.08);
+  --atmo-c: rgb(200 150 118 / 0.08);
+  --grain-opacity: 0.045;
+
+  --selection: rgb(74 60 192 / 0.16);
+  --focus: #4a3cc0;
+  color-scheme: light;
 }
+
+/* -------------------------------------------------------------------------- */
+
+:root[data-theme="dark"] {
+  --bg: #0a0a0e;
+  --bg-raised: #0f0f15;
+  --surface: #14141b;
+  --surface-2: #1b1b24;
+  --sunken: #060609;
+
+  --fg: #ecebef;
+  --fg-muted: #a5a2af;
+  --fg-subtle: #6e6b79;
+
+  --line: #24232d;
+  --line-strong: #373544;
+
+  --accent: #a99ff2;
+  --accent-strong: #c2baff;
+  --accent-fg: #0d0b18;
+  --mint: #8fa2c2;
+  --ember: #d8957a;
+
+  --inverse: #ecebef;
+  --inverse-fg: #0a0a0e;
+
+  --success: #6cc49d;
+  --warning: #e2ad57;
+  --danger: #ef7480;
+
+  --spectrum: linear-gradient(105deg, #7d70e6 0%, #a99ff2 38%, #d6d1f2 68%, #e6c8b4 100%);
+  --spectrum-soft: linear-gradient(105deg, rgb(125 112 230 / 0.2), rgb(214 209 242 / 0.08) 55%, rgb(230 200 180 / 0.08));
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-2: 0 18px 40px -18px rgb(0 0 0 / 0.8), 0 2px 8px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 60px 100px -40px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(169 159 242 / 0.04);
+  --edge-light: inset 0 1px 0 rgb(255 255 255 / 0.06);
+
+  --glass-fallback: rgb(22 21 30 / 0.56);
+  --glass-edge: rgb(255 255 255 / 0.14);
+  --glass-tint: rgba(24, 22, 40, 0.2);
+  --glass-veil: rgb(14 14 16 / 0.46);
+  --halo-a: rgb(214 214 226 / 0.075);
+  --halo-b: rgb(214 214 226 / 0.025);
+
+  --atmo-a: rgb(125 112 230 / 0.16);
+  --atmo-b: rgb(120 140 180 / 0.07);
+  --atmo-c: rgb(216 149 122 / 0.05);
+  --grain-opacity: 0.07;
+
+  --selection: rgb(169 159 242 / 0.28);
+  --focus: #c2baff;
+  color-scheme: dark;
+}
+
+@theme inline {
+  /* Semantic palette */
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-sunken: var(--sunken);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-fg: var(--accent-fg);
+  --color-mint: var(--mint);
+  --color-ember: var(--ember);
+  --color-inverse: var(--inverse);
+  --color-inverse-fg: var(--inverse-fg);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  /* Legacy aliases — resolve older class names onto the new system */
+  --color-ink-black: var(--bg);
+  --color-pacific-cyan: var(--accent);
+  --color-apricot-cream: var(--ember);
+  --color-foreground: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-surface-card: var(--surface-2);
+  --color-surface-border: var(--line);
+
+  /* Type */
+  --font-display: var(--font-instrument-serif), "Times New Roman", serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-space: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Depth */
+  --shadow-soft: var(--shadow-1);
+  --shadow-lift: var(--shadow-2);
+  --shadow-float: var(--shadow-3);
+
+  /* Motion */
+  --ease-editorial: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
 
 html {
-  background-color: #101019;
-  color: #F5F7FA;
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  overflow-x: clip;
+  min-height: 100dvh;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* <html> paints the page colour (the root canvas). <body> deliberately paints none: it is
+   positioned, so a background here would sit above every z-index:-1 page ground
+   (.field-ground) and bury it, along with the particle field's place between them. */
+body {
+  background-color: transparent;
+  color: var(--fg);
   overflow-x: clip;
   min-height: 100dvh;
 }
 
-body {
-  background-color: #101019;
-  color: #F5F7FA;
-  overflow-x: clip;
-  min-height: 100dvh;
+/* Page grounds. Everything inside <main> paints above the fixed particle layer (main is
+   positioned), so an opaque page-wide tint set as a normal background hides the field
+   entirely. A ground is painted on ::before at z-index:-1 instead: above the root canvas,
+   beneath the particle layer and all content. Set --field-ground on the scope. */
+.field-ground {
+  position: relative;
+}
+.field-ground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--field-ground, none);
 }
 
 ::selection {
-  background: rgba(24, 155, 173, 0.35);
-  color: #F5F7FA;
+  background: var(--selection);
+  color: var(--fg);
 }
 
-/* Glassmorphism utility classes */
-.glass-panel {
-  background: rgba(22, 22, 34, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+/* Default focus ring. Lives in the base layer so component utilities (also layered)
+   can replace it with their own indicator — unlayered CSS beats every Tailwind utility,
+   which previously forced a rectangular outline onto fields like the Orbit composer. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
 }
 
-.glass-pill {
-  background: rgba(22, 22, 34, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+/* Theme-switch colour interpolation (applied briefly by the theme provider) */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: background-color 420ms var(--ease-editorial), border-color 420ms var(--ease-editorial),
+    color 420ms var(--ease-editorial), fill 420ms var(--ease-editorial), stroke 420ms var(--ease-editorial),
+    box-shadow 420ms var(--ease-editorial) !important;
 }
 
-.glass-card {
-  background: rgba(22, 22, 34, 0.5);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+/* View-transition theme reveal (circular wipe from the toggle) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
-.glass-card:hover {
-  background: rgba(25, 25, 40, 0.75);
-  border-color: rgba(24, 155, 173, 0.3);
-  transform: translateY(-2px);
-}
-
-/* Custom subtle scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #101019;
+  background: var(--bg);
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #252538;
-  border-radius: 4px;
+  background: var(--line-strong);
+  border-radius: 8px;
+  border: 2px solid var(--bg);
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #189BAD;
+  background: var(--fg-subtle);
 }
 
-/* Reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+/* ==========================================================================
+   Typography primitives
+   ========================================================================== */
 
-  [data-mobile-projects-stack],
-  [data-mobile-tech-stack] {
-    min-height: auto !important;
-  }
-
-  [data-mobile-projects-stack] > div,
-  [data-mobile-tech-stack] > div {
-    position: static !important;
-    min-height: auto !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-
-  [data-mobile-projects-stack] [data-card-item],
-  [data-mobile-tech-stack] [data-card-item] {
-    position: relative !important;
-    transform: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-    margin-bottom: 1.5rem;
-  }
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  font-kerning: normal;
 }
 
-/* Universal dvh-first viewport height classes with standard vh fallback */
-.h-story-mobile {
-  height: 220vh;
-  height: 220dvh;
+.display-xl {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(3.6rem, 13.5vw, 13.5rem);
+  line-height: 0.86;
+  letter-spacing: -0.035em;
 }
-.h-story-desktop {
-  height: 220vh;
-  height: 220dvh;
-}
-.h-stage-full {
-  height: 100vh;
-  height: 100dvh;
-}
-.h-laptop-showcase {
-  height: 140vh;
-  height: 140dvh;
+
+/* Hero name — tuned per breakpoint rather than one fluid clamp */
+.hero-name {
+  font-family: var(--font-display);
+  font-weight: 400;
+  /* Phones: proportionate to the portrait (54px at 320, ~64px at 390, ~73px at 440) */
+  font-size: clamp(3.3rem, 16.6vw, 5.6rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
 }
 @media (min-width: 640px) {
-  .h-laptop-showcase {
-    height: 160vh;
-    height: 160dvh;
+  .hero-name {
+    font-size: clamp(6.5rem, 17vw, 9.5rem);
+    line-height: 0.86;
+    letter-spacing: -0.035em;
+  }
+}
+@media (min-width: 1024px) {
+  .hero-name {
+    /* width-led as before, but never taller than the viewport allows: on short laptop
+       screens (e.g. 1366×768) the name yields a little so the actions stay on screen */
+    font-size: min(clamp(6rem, 10.6vw, 11.75rem), 18vh);
+    line-height: 0.84;
+  }
+}
+
+.display-lg {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.9rem, 8.6vw, 8.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+.display-md {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.3rem, 5.4vw, 5.2rem);
+  line-height: 0.96;
+  letter-spacing: -0.025em;
+}
+
+.display-sm {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 3.2vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+
+.label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Outline display type (closing scene, footer wordmark) */
+.outline-type {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--fg);
+  paint-order: stroke fill;
+}
+
+/* Closing scene entrance ("Time to / Level up"). The stage carries data-closing:
+   armed (still off screen) → on (playing once) → done (resting: no animation, no mask).
+   "Time to" rises out of its line; a light then travels across "Level up", writing the
+   outline as it passes (the particle field sheds grains from the same contours in step).
+   Without the attribute (reduced motion, already in view, no JS) the words are simply there. */
+.closing-rise {
+  display: inline-block;
+}
+.closing-outline {
+  position: relative;
+  display: inline-block;
+}
+.closing-outline-sweep {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  -webkit-text-stroke: 2px color-mix(in oklab, var(--accent) 72%, var(--fg));
+  filter: drop-shadow(0 0 10px color-mix(in oklab, var(--accent) 60%, transparent));
+}
+[data-closing="armed"] .closing-rise,
+[data-closing="armed"] .closing-outline-base {
+  opacity: 0;
+}
+[data-closing="on"] .closing-rise {
+  animation: closing-rise 0.95s var(--ease-editorial) both;
+}
+[data-closing="on"] .closing-outline-base,
+[data-closing="on"] .closing-outline-sweep {
+  -webkit-mask-size: 250% 100%;
+  mask-size: 250% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+[data-closing="on"] .closing-outline-base {
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+  mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+  animation: closing-write 1.15s cubic-bezier(0.6, 0, 0.3, 1) 0.42s both;
+}
+[data-closing="on"] .closing-outline-sweep {
+  -webkit-mask-image: linear-gradient(90deg, transparent 43%, #000 50%, transparent 57%);
+  mask-image: linear-gradient(90deg, transparent 43%, #000 50%, transparent 57%);
+  animation: closing-write 1.15s cubic-bezier(0.6, 0, 0.3, 1) 0.42s both, closing-sweep-fade 1.15s linear 0.42s both;
+}
+@keyframes closing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.34em);
+    clip-path: inset(100% -0.2em -0.2em -0.2em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(-0.2em);
+  }
+}
+/* mask band (250% wide) travels from beyond the right edge to beyond the left: the opaque part
+   uncovers the outline left to right; the sweep's narrow band rides exactly on that edge */
+@keyframes closing-write {
+  from {
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+  }
+  to {
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+  }
+}
+@keyframes closing-sweep-fade {
+  0% {
+    opacity: 0;
+  }
+  12%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The closing action ("Start a project"): a light runs once around its rim when it first
+   settles into view (data-signal), and hover / keyboard focus lift it with a lavender halo
+   (layout never moves: shadows and transforms only). */
+@property --closing-ring {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.btn.closing-cta {
+  isolation: isolate;
+}
+.btn.closing-cta::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  opacity: 0;
+  background: conic-gradient(
+    from var(--closing-ring),
+    transparent 0deg,
+    transparent 230deg,
+    color-mix(in oklab, var(--accent) 85%, var(--fg)) 320deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.btn.closing-cta[data-signal="on"]::after {
+  animation: closing-ring 1.35s var(--ease-editorial) both;
+}
+@keyframes closing-ring {
+  0% {
+    opacity: 0;
+    --closing-ring: -60deg;
+  }
+  14%,
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    --closing-ring: 300deg;
+  }
+}
+.btn.closing-cta:hover,
+.btn.closing-cta:focus-visible {
+  box-shadow: var(--shadow-3), 0 0 0 1px color-mix(in oklab, var(--accent) 45%, transparent),
+    0 16px 46px -14px color-mix(in oklab, var(--accent) 75%, transparent);
+}
+
+/* Footer social links: a quiet lavender lift on hover / focus; the particle field forms a
+   halo around the same circle (data-field-surface="control"). */
+.footer-social {
+  transition: color 0.25s ease, border-color 0.25s ease, box-shadow 0.5s var(--ease-editorial);
+}
+.footer-social:hover,
+.footer-social:focus-visible {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent), 0 0 22px -6px color-mix(in oklab, var(--accent) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .closing-outline-sweep {
+    display: none;
+  }
+  [data-closing] .closing-rise,
+  [data-closing] .closing-outline-base,
+  .btn.closing-cta::after {
+    animation: none !important;
+    opacity: 1;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .btn.closing-cta::after {
+    opacity: 0;
+  }
+}
+
+.text-spectrum {
+  background: var(--spectrum);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.prose-measure {
+  max-width: 68ch;
+}
+
+/* Balanced headings where supported */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* ==========================================================================
+   Surfaces
+   ========================================================================== */
+
+/* Atmosphere: fixed, static, GPU-cheap spectral field + grain behind every page */
+.rawin-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60vw 50vh at 85% -10%, var(--atmo-a), transparent 70%),
+    radial-gradient(50vw 50vh at -10% 30%, var(--atmo-b), transparent 70%),
+    radial-gradient(40vw 40vh at 60% 110%, var(--atmo-c), transparent 70%);
+}
+.rawin-atmosphere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode: overlay;
+}
+
+/* Hairline grid used behind compositions */
+.rawin-grid-lines {
+  background-image: linear-gradient(to right, color-mix(in oklab, var(--line) 70%, transparent) 1px, transparent 1px);
+  background-size: calc(100% / 12) 100%;
+}
+
+/* Paper — the default raised surface */
+.surface-paper {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-1), var(--edge-light);
+}
+
+/* Glass fallback — deliberate, lit, not just blur */
+.glass-fallback {
+  position: relative;
+  background:
+    linear-gradient(160deg, color-mix(in oklab, var(--glass-edge) 40%, transparent), transparent 38%),
+    var(--glass-fallback);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid color-mix(in oklab, var(--glass-edge) 60%, transparent);
+  box-shadow: var(--shadow-2), inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 rgb(0 0 0 / 0.04);
+}
+
+/* Live LiquidGL lens — the WebGL/WebGPU canvas provides refraction, bevel and
+   specular; only a whisper of edge remains in CSS so text stays anchored. */
+.glass-live {
+  position: relative;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--glass-edge) 60%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--glass-edge) 22%, transparent);
+}
+/* LiquidGL clears the target's own background inline, so the legibility veil lives on a
+   pseudo-layer: denser behind the copy, thinner at the rim where the bevel refracts most. */
+.glass-live::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 140% at 50% 50%, var(--glass-veil) 50%, rgb(0 0 0 / 0) 100%);
+}
+.glass-live > * {
+  position: relative;
+}
+
+/* Floating navigation capsule — a lit, frosted bar that tightens once the page scrolls. The caps
+   leave ~135px (resting) / ~95px (scrolled) of air between brand, index and actions at 8 entries;
+   below them the bar simply follows the page gutters. */
+.rawin-navbar {
+  max-width: 1120px;
+  height: 3.5rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--glass-edge) 34%, transparent), transparent 60%),
+    color-mix(in oklab, var(--glass-fallback) 82%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid color-mix(in oklab, var(--glass-edge) 55%, transparent);
+  box-shadow: 0 10px 30px -18px rgb(20 16 40 / 0.28), inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 rgb(0 0 0 / 0.03);
+  transition: max-width 0.6s var(--ease-editorial), height 0.5s var(--ease-editorial), box-shadow 0.5s var(--ease-editorial),
+    background-color 0.5s ease;
+}
+.rawin-navbar[data-scrolled] {
+  max-width: 1040px;
+  height: 3.25rem;
+  box-shadow: var(--shadow-3), inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 rgb(0 0 0 / 0.04);
+}
+@media (max-width: 1023px) {
+  /* Phones/tablets: the 44px menu circle sits concentric inside the 52px pill
+     (1px border + 3px inset on every side), so it follows the pill curve exactly */
+  .rawin-navbar,
+  .rawin-navbar[data-scrolled] {
+    max-width: none;
+    height: 3.25rem;
+    padding: 0 3px 0 0.25rem;
+  }
+}
+
+/* Orbit glyph — a small luminous body, theme-native, no rainbow */
+.orbit-glyph {
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+}
+.orbit-glyph-core {
+  background: radial-gradient(circle at 36% 30%, #ffffff 0%, color-mix(in srgb, var(--accent) 35%, #ffffff) 26%, var(--accent) 62%, color-mix(in srgb, var(--accent) 40%, #0b0a12) 100%);
+  box-shadow: 0 0 10px -2px color-mix(in srgb, var(--accent) 70%, transparent), inset -1px -2px 3px rgb(0 0 0 / 0.25);
+  transition: transform 0.6s var(--ease-out-quint);
+}
+.group:hover .orbit-glyph-core {
+  transform: scale(1.12);
+}
+
+/* Mobile menu toggle — three lines that fold into an X */
+.menu-toggle-lines {
+  position: relative;
+  width: 18px;
+  height: 12px;
+}
+.menu-toggle-lines > span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.45s var(--ease-out-quint), opacity 0.25s ease, top 0.45s var(--ease-out-quint);
+}
+.menu-toggle-lines > span:nth-child(1) { top: 0; }
+.menu-toggle-lines > span:nth-child(2) { top: 5.25px; }
+.menu-toggle-lines > span:nth-child(3) { top: 10.5px; }
+.menu-toggle[data-open] .menu-toggle-lines > span:nth-child(1) { top: 5.25px; transform: rotate(45deg); }
+.menu-toggle[data-open] .menu-toggle-lines > span:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
+.menu-toggle[data-open] .menu-toggle-lines > span:nth-child(3) { top: 5.25px; transform: rotate(-45deg); }
+
+/* Orbit signal — a still core with one slow satellite */
+.orbit-signal-mark {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.orbit-signal-core {
+  position: absolute;
+  inset: 5px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, #fff 0 8%, color-mix(in srgb, var(--accent) 45%, #fff) 30%, var(--accent) 75%);
+  animation: orbit-signal-breathe 4.8s ease-in-out infinite;
+}
+.orbit-signal-path {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--fg) 14%, transparent);
+  animation: orbit-signal-spin 7s linear infinite;
+}
+.orbit-signal-moon {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 999px;
+  background: var(--fg);
+}
+@keyframes orbit-signal-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes orbit-signal-breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.86); opacity: 0.8; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbit-signal-core, .orbit-signal-path { animation: none !important; }
+}
+
+/* Custom cursor: hide the native arrow, but keep the I-beam in text fields and the
+   not-allowed cursor on disabled controls */
+html.custom-cursor-active,
+html.custom-cursor-active * {
+  cursor: none !important;
+}
+html.custom-cursor-active :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="file"]), textarea, [contenteditable="true"]) {
+  cursor: text !important;
+}
+html.custom-cursor-active :is(:disabled, [aria-disabled="true"]) {
+  cursor: not-allowed !important;
+}
+
+/* Entrance intro — shown only when the pre-paint script sets html[data-intro]. A CSS
+   fail-safe hides it after 3.4s even if JavaScript never runs. */
+.rawin-intro {
+  display: none;
+}
+html[data-intro="play"] .rawin-intro,
+html[data-intro="reveal"] .rawin-intro,
+html[data-intro="done"] .rawin-intro {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #0a0a0c;
+  transition: opacity 0.6s var(--ease-editorial);
+  animation: rawin-intro-failsafe 0.4s ease 3.4s forwards;
+}
+html[data-intro="reveal"] .rawin-intro,
+html[data-intro="done"] .rawin-intro {
+  opacity: 0;
+  pointer-events: none;
+}
+html[data-intro="play"] {
+  overflow: hidden;
+}
+.rawin-intro-mark {
+  position: absolute;
+  left: 50%;
+  bottom: max(2rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  color: rgb(222 224 230 / 0.5);
+  letter-spacing: 0.4em;
+  animation: rawin-intro-mark 1.6s var(--ease-editorial) 0.2s both;
+}
+@keyframes rawin-intro-mark {
+  from { opacity: 0; letter-spacing: 0.9em; }
+  to { opacity: 1; letter-spacing: 0.4em; }
+}
+@keyframes rawin-intro-failsafe {
+  to { opacity: 0; visibility: hidden; }
+}
+
+/* Orbit invitation title: single line on phones, sized to the available width */
+@media (max-width: 767px) {
+  .orbit-invite-title {
+    font-size: clamp(2.1rem, 12.5vw, 3.6rem);
+    line-height: 1;
+  }
+}
+
+/* Closing invitation (phones): controlled typographic overlap */
+.closing-invite {
+  display: flex;
+  flex-direction: column;
+  font-size: clamp(2.5rem, 11.5vw, 3.75rem);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+}
+.closing-invite-top {
+  position: relative;
+  z-index: 1;
+  /* Background-coloured stroke painted under the fill: where the lines meet it cuts the
+     tail's ascenders cleanly instead of letting glyphs collide */
+  -webkit-text-stroke: 0.14em var(--bg);
+  paint-order: stroke fill;
+}
+.closing-invite-tail {
+  position: relative;
+  z-index: 0;
+  margin-top: -0.2em;
+}
+
+/* Contact email (static scene): one line on phones, scaled to the width */
+.closing-email {
+  font-size: clamp(1.25rem, 6.1vw, 3.4rem);
+  white-space: nowrap;
+}
+@media (min-width: 768px) {
+  .closing-email {
+    font-size: clamp(1.9rem, 5.2vw, 3.4rem);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Type roles — one hierarchy, tuned per breakpoint
+   eyebrow (.label-mono) → section title (.display-md) → lede (.type-lede)
+   → content heading (.type-content) → body → metadata
+   On phones the content heading is ~60% of the section title so a section's
+   title, its explanation and its first item never read as equals.
+   Layered so a component can still set its own desktop size with a utility.
+   -------------------------------------------------------------------------- */
+@layer components {
+.type-lede {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  max-width: 44ch;
+  padding-left: 0.875rem;
+  border-left: 1px solid var(--line-strong);
+}
+@media (min-width: 1024px) {
+  .type-lede {
+    font-size: 0.96875rem;
+  }
+}
+.type-content {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.55rem;
+  line-height: 1.04;
+  letter-spacing: -0.018em;
+}
+@media (min-width: 640px) {
+  .type-content {
+    font-size: 1.95rem;
+  }
+}
+@media (min-width: 1024px) {
+  .type-content {
+    font-size: clamp(2.1rem, 2.7vw, 3rem);
+    line-height: 1;
+  }
+}
+}
+
+/* Frosted glass (hero cards): translucent surface + backdrop blur, fine edge, restrained
+   highlight. Stable on every engine; opaque fallback where backdrop-filter is missing. */
+.glass-frost {
+  position: relative;
+  background:
+    linear-gradient(165deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0) 42%),
+    rgb(250 248 243 / 0.6);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow: 0 18px 40px -22px rgb(20 16 36 / 0.35), 0 2px 6px -2px rgb(20 16 36 / 0.08), inset 0 1px 0 rgb(255 255 255 / 0.9);
+}
+:root[data-theme="dark"] .glass-frost {
+  background:
+    linear-gradient(165deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0) 45%),
+    rgb(18 18 24 / 0.58);
+  border-color: rgb(255 255 255 / 0.12);
+  box-shadow: 0 22px 44px -22px rgb(0 0 0 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-frost {
+    background: rgb(250 248 243 / 0.94);
+  }
+  :root[data-theme="dark"] .glass-frost {
+    background: rgb(20 20 27 / 0.94);
+  }
+}
+
+/* Hero introduction on phones. The paragraph spans the content column (the earlier ~330px
+   cap left an empty strip beside it): 17px / 1.6 with pretty wrapping keeps ~42–48
+   characters per line and no orphaned last word. The actions are one group on the same
+   left edge: a compact primary pill (its arrow disc inset evenly) and the quieter link on
+   the pill's centre line — side by side where both fit, otherwise the link wraps beneath
+   with a tight gap. (.btn is unlayered, so its sizing lives here rather than in utilities.) */
+@media (max-width: 639px) {
+  .hero-intro {
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    letter-spacing: -0.003em;
+    max-width: none;
+    color: color-mix(in oklab, var(--fg) 74%, var(--bg));
+    text-wrap: pretty;
+  }
+  .hero-actions {
+    margin-top: 1.75rem;
+    column-gap: 1.25rem;
+    row-gap: 0.25rem;
+  }
+  .btn.hero-cta {
+    --btn-h: 2.75rem;
+    padding-left: 1.125rem;
+    padding-right: 0.3125rem;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+  }
+  .hero-cta .hero-cta-icon {
+    width: 2.125rem;
+    height: 2.125rem;
+  }
+  .hero-cta-secondary {
+    min-height: 2.75rem;
+    gap: 0.375rem;
+  }
+}
+
+/* "Why work with me" numerals: outlined at rest, lit in the accent for the row being read
+   (data-active set by useActiveItem), accent outline on hover. */
+.principle-index {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--line-strong);
+  text-shadow: none;
+  transition: color 0.6s var(--ease-editorial), -webkit-text-stroke-color 0.6s var(--ease-editorial), text-shadow 0.6s var(--ease-editorial);
+}
+.group:hover > .principle-index {
+  -webkit-text-stroke-color: var(--accent);
+}
+[data-active] > .principle-index {
+  color: color-mix(in oklab, var(--accent) 88%, transparent);
+  -webkit-text-stroke-color: var(--accent);
+  text-shadow: 0 0 28px color-mix(in oklab, var(--accent) 28%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .principle-index {
+    transition: none;
+  }
+}
+
+/* Chronology rail nodes (phones/tablets): a quiet ring at rest; the entry being read fills
+   with the accent and carries a soft halo (box-shadow, so the node's size never changes). */
+.timeline-node {
+  background: var(--bg);
+  border: 1px solid var(--fg-subtle);
+  transition: background-color 0.5s var(--ease-editorial), border-color 0.5s var(--ease-editorial), box-shadow 0.5s var(--ease-editorial);
+}
+.timeline-node[data-active] {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent), 0 0 14px color-mix(in oklab, var(--accent) 45%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .timeline-node {
+    transition: none;
+  }
+}
+
+/* About — "How I build" numerals: outlined at rest; the principle being read lights in the
+   accent (phones: the active item; md+: the active row of the two-column grid). Colour and
+   stroke only, so nothing moves. */
+.about-principle-num {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--line-strong);
+  transition: color 0.6s var(--ease-editorial), -webkit-text-stroke-color 0.6s var(--ease-editorial), text-shadow 0.6s var(--ease-editorial);
+}
+.about-principle:hover .about-principle-num {
+  -webkit-text-stroke-color: var(--accent);
+}
+@media (max-width: 767px) {
+  [data-active] > .about-principle-num {
+    color: color-mix(in oklab, var(--accent) 88%, transparent);
+    -webkit-text-stroke-color: var(--accent);
+    text-shadow: 0 0 28px color-mix(in oklab, var(--accent) 28%, transparent);
   }
 }
 @media (min-width: 768px) {
-  .h-laptop-showcase {
-    height: 185vh;
-    height: 185dvh;
+  [data-row-active] > .about-principle-num {
+    color: color-mix(in oklab, var(--accent) 88%, transparent);
+    -webkit-text-stroke-color: var(--accent);
+    text-shadow: 0 0 28px color-mix(in oklab, var(--accent) 28%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .about-principle-num {
+    transition: none;
   }
 }
 
-/* Subtle film grain animation */
-@keyframes grain-shift {
+/* About — "How I think" lead on desktop: balanced across its wider measure, so it breaks as
+   two even lines rather than leaving a short tail (phones keep the global pretty wrapping). */
+@media (min-width: 1024px) {
+  .about-lead {
+    text-wrap: balance;
+  }
+}
 
-  0%,
+/* About — the Interface → Performance → Systems chain and the discipline chips stay on one
+   line on phones: sizes scale with the viewport so the full row fits 320px and up. */
+@media (max-width: 639px) {
+  .about-progression .about-progression-word {
+    font-size: clamp(1.02rem, 5.6vw, 1.4rem);
+  }
+  .about-chips > li {
+    font-size: clamp(0.5625rem, 2.95vw, 0.6875rem);
+    letter-spacing: 0.08em;
+    padding: 0.35rem 0.6rem;
+  }
+}
+
+/* Case-study title: one fluid line that wraps only when the name needs it. Smaller than the
+   site's display-xl so short names ("Rawin Orbit", "RAWIN v3.0") sit on one line at every
+   width while long names wrap in balance. */
+.case-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 12.4vw, 4.4rem);
+  line-height: 0.94;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+@media (min-width: 640px) {
+  .case-title {
+    font-size: clamp(4.4rem, 10.5vw, 7rem);
+  }
+}
+@media (min-width: 1024px) {
+  .case-title {
+    font-size: clamp(5.6rem, 9vw, 9.25rem);
+    line-height: 0.9;
+  }
+}
+/* Case-study overview: a reading-size serif on phones, an editorial introduction on desktop */
+.case-overview {
+  font-size: clamp(1.3rem, 5.4vw, 1.55rem);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  max-width: 34ch;
+}
+@media (min-width: 640px) {
+  .case-overview {
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    line-height: 1.18;
+    max-width: 40ch;
+  }
+}
+@media (min-width: 1024px) {
+  .case-overview {
+    font-size: clamp(2rem, 2.5vw, 2.6rem);
+    line-height: 1.14;
+    max-width: 46ch;
+  }
+}
+/* Next-project title: prominent, but proportioned to its preview */
+.case-next-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 6.4vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+/* Projects wheel (phones). The section is one stage tall plus one scroll step per further
+   project; its stage is sticky. Panels and spine nodes are positioned by Web Animations
+   (ProjectArchive) that sample an elliptical wheel and are linked to the scroll, so these
+   rules only lay out the stage and style the surfaces; nothing here changes per frame. */
+/* full-bleed: the wheel uses the whole screen width (out of the page gutters), so its spine can
+   enter and leave through the screen's left edge and nothing reads as an inset panel */
+.project-dial {
+  --step: max(260px, 55vh);
+  height: calc(100svh + (var(--n) - 1) * var(--step));
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+.project-dial-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  perspective: 1100px;
+  perspective-origin: 60% 52%;
+}
+.project-dial-spine {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  color: var(--line-strong);
+  pointer-events: none;
+}
+.project-dial-nodes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.project-dial-node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--fg-subtle);
+  opacity: 0; /* until the wheel is built */
+  transition: background-color 0.4s var(--ease-editorial), border-color 0.4s var(--ease-editorial);
+}
+.project-dial-node[data-active] {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent);
+}
+.project-dial-track {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transform-style: preserve-3d;
+  /* the track is a plane at depth 0 in the 3D scene: it must not intercept taps meant for
+     panels level with or behind it; only the panels themselves are interactive */
+  pointer-events: none;
+}
+.project-dial-item {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* compact panels (preview + name + arrow): clear gaps between neighbours along the arc */
+  width: clamp(168px, calc(100% - 150px), 236px);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  opacity: 0; /* until the wheel is built */
+}
+.project-dial-card {
+  pointer-events: auto;
+  padding: 6px 6px 7px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--bg) 94%, var(--fg) 6%);
+  box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.6);
+}
+/* distant panels are fully faded by the wheel and take no taps, but stay focusable, so
+   keyboard users can reach every project (focusing one turns the wheel to it) */
+.project-dial-item[data-far] .project-dial-card {
+  pointer-events: none;
+}
+.project-dial-visual {
+  transition: border-color 0.5s var(--ease-editorial), box-shadow 0.5s var(--ease-editorial);
+}
+.project-dial-item[data-active] .project-dial-visual {
+  border-color: color-mix(in oklab, var(--accent) 50%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 24%, transparent);
+}
+.project-dial-item[data-active] .project-dial-card {
+  border-color: color-mix(in oklab, var(--accent) 28%, var(--line));
+}
+.project-dial-open {
+  color: var(--fg-subtle);
+  transition: color 0.4s var(--ease-editorial), transform 0.4s var(--ease-editorial);
+}
+.project-dial-item[data-active] .project-dial-open {
+  color: var(--accent);
+  transform: rotate(45deg);
+}
+.project-dial-hud {
+  position: absolute;
+  z-index: 2;
+  left: 36px;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom) + 1rem);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+@media (max-width: 359px) {
+  .project-dial-hud {
+    font-size: 0.5625rem;
+    letter-spacing: 0.1em;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-dial-visual,
+  .project-dial-open,
+  .project-dial-node {
+    transition: none;
+  }
+}
+
+/* Phone/tablet menu: the seven index rows share the height left after the fixed parts (header
+   zone, index label, write/elsewhere block, safe areas ≈ 15.5rem), so the whole menu fits one
+   screen. The label takes ~60% of a row's share (capped at the editorial scale by width) and the
+   padding takes whatever the label leaves, less a few pixels of safety, so on tall phones the
+   rows breathe instead of leaving an empty band above the contact block. dvh tracks the visible
+   viewport as mobile toolbars come and go (vh fallback first). */
+.mobile-menu {
+  /* --menu-items is set from the real entry count (SiteHeader), so every row still fits one screen */
+  --menu-row: calc((100vh - 15.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / var(--menu-items, 8));
+  --menu-row: calc((100dvh - 15.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / var(--menu-items, 8));
+  --menu-label: clamp(1.5rem, min(11vw, calc(var(--menu-row) * 0.6)), 3.25rem);
+}
+.mobile-menu-label {
+  font-size: var(--menu-label);
+}
+.mobile-menu-row {
+  /* row share − label line box (leading 0.95) − the 1px separator, split top/bottom, less 2px */
+  padding-block: clamp(0.15rem, calc((var(--menu-row) - var(--menu-label) * 0.95 - 1px) / 2 - 2px), 1.25rem);
+}
+@media (min-width: 640px) {
+  .mobile-menu-label {
+    font-size: clamp(2.4rem, min(11vw, calc(var(--menu-row) * 1.2)), 4.5rem);
+  }
+  .mobile-menu-row {
+    padding-block: clamp(0.4rem, calc(var(--menu-row) * 0.2), 1.25rem);
+  }
+}
+
+/* ==========================================================================
+   Blog (landing + articles). Scoped classes only: nothing here reaches other pages.
+   ========================================================================== */
+.blog-shell {
+  width: 100%;
+  margin-inline: auto;
+}
+.blog-hero-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  white-space: nowrap;
+  font-size: clamp(5.5rem, 9.4vw, 9.25rem);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+}
+/* Blog palette: semantic roles over the site tokens, scoped to the Blog (.blog-scope).
+   Warm ivory reads, cool silver supports, lavender (the site accent) leads, a blue-violet marks
+   sections, an icy blue labels technical detail, champagne is kept for rare highlights. The
+   Tailwind colour aliases are re-pointed too, so utilities inside the Blog follow the roles. */
+.blog-scope {
+  --blog-max: 1180px;
+  --blog-gutter: 1rem;
+  --blog-ink: #19161f;
+  --blog-mute: #575c69;
+  --blog-violet: #4b52b5;
+  --blog-ice: #2a6a88;
+  --blog-warm: #94642f;
+  --fg: var(--blog-ink);
+  --fg-muted: var(--blog-mute);
+  --color-fg: var(--blog-ink);
+  --color-fg-muted: var(--blog-mute);
+}
+:root[data-theme="dark"] .blog-scope {
+  --blog-ink: #efe9df;
+  --blog-mute: #a7adbb;
+  --blog-violet: #9ba5f2;
+  --blog-ice: #8cc8de;
+  --blog-warm: #d8b58c;
+}
+@media (min-width: 640px) {
+  .blog-scope {
+    --blog-gutter: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .blog-scope {
+    --blog-gutter: 2.5rem;
+  }
+}
+.blog-ice {
+  color: var(--blog-ice);
+}
+.blog-shell {
+  max-width: calc(var(--blog-max) + 2 * 2.5rem);
+  padding-inline: var(--blog-gutter);
+}
+.blog-hero {
+  /* phones: room below the Orbit pill, then the label, title and context */
+  padding-top: calc(env(safe-area-inset-top) + 11rem);
+}
+@media (min-width: 640px) {
+  .blog-hero {
+    padding-top: 11.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .blog-hero {
+    padding-top: 11rem;
+  }
+}
+.blog-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+@media (min-width: 1024px) {
+  .blog-hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    column-gap: clamp(2.5rem, 5vw, 5rem);
+    align-items: end;
+  }
+}
+.blog-topics {
+  margin-top: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 0.75rem;
+  border-block: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(90deg, #000 85%, transparent);
+}
+.blog-topics::-webkit-scrollbar {
+  display: none;
+}
+.blog-topics ul {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+  padding-right: 1.5rem;
+}
+.blog-topics li {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.02rem;
+  white-space: nowrap;
+  color: var(--blog-ink);
+}
+@media (min-width: 1024px) {
+  /* desktop: the topics become a small wrapped index in the context column */
+  .blog-topics {
+    margin-top: 1.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding-block: 0;
+    border: 0;
+    overflow: visible;
+    mask-image: none;
+  }
+  .blog-topics ul {
+    flex-wrap: wrap;
+    gap: 0.25rem 0.85rem;
+    padding-right: 0;
+  }
+  .blog-topics li {
+    font-size: 1.05rem;
+    color: var(--blog-mute);
+  }
+}
+/* landing: featured, card and archive titles step down in that order */
+.blog-lead-title {
+  font-size: clamp(1.7rem, 7vw, 2.15rem);
+  line-height: 1.03;
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+}
+.blog-card-title {
+  font-size: clamp(1.35rem, 5.4vw, 1.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+}
+.blog-row-title {
+  font-size: clamp(1.18rem, 4.7vw, 1.35rem);
+  line-height: 1.1;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+@media (min-width: 640px) {
+  .blog-lead-title {
+    font-size: clamp(2.1rem, 4.6vw, 2.75rem);
+  }
+  .blog-card-title {
+    font-size: clamp(1.5rem, 3.2vw, 1.85rem);
+  }
+  .blog-row-title {
+    font-size: clamp(1.3rem, 2.6vw, 1.6rem);
+  }
+}
+@media (min-width: 1024px) {
+  .blog-lead-title {
+    font-size: clamp(2.3rem, 3vw, 3.25rem);
+    line-height: 0.99;
+  }
+  .blog-card-title {
+    font-size: clamp(1.6rem, 1.9vw, 2rem);
+  }
+  .blog-row-title {
+    font-size: clamp(1.45rem, 1.7vw, 1.8rem);
+  }
+}
+
+/* ---- article: one reading grid -------------------------------------------------- */
+.article-shell {
+  width: 100%;
+  max-width: calc(var(--blog-max) + 2 * 2.5rem);
+  margin-inline: auto;
+  /* no Orbit pill on reading pages: the article starts just below the navbar */
+  padding: calc(env(safe-area-inset-top) + 6.75rem) var(--blog-gutter) 0;
+}
+.article-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "crumb" "head" "meta" "cover" "body";
+}
+.article-grid > .article-crumb {
+  grid-area: crumb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.article-grid > .article-head {
+  grid-area: head;
+  min-width: 0;
+}
+.article-grid > .article-meta {
+  grid-area: meta;
+}
+.article-grid > .article-cover {
+  grid-area: cover;
+  aspect-ratio: 16 / 10;
+  margin-block: 1.5rem 2rem;
+}
+.article-grid > .article-rail {
+  grid-area: rail;
+}
+.article-grid > .article-body {
+  grid-area: body;
+}
+.article-meta {
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 1rem;
+}
+.article-meta dd {
+  margin-top: 0.2rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+@media (min-width: 640px) {
+  .article-shell {
+    padding-top: 8.5rem;
+  }
+  .article-grid > .article-crumb {
+    margin-bottom: 2rem;
+  }
+  .article-meta {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 1.75rem;
+  }
+  .article-grid > .article-cover {
+    aspect-ratio: 16 / 9;
+    margin-block: 2.25rem 2.75rem;
+  }
+}
+@media (min-width: 1024px) {
+  .article-shell {
+    padding-top: 10rem;
+  }
+  .article-grid {
+    grid-template-columns: minmax(170px, 230px) minmax(0, 780px);
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas:
+      "crumb head"
+      "meta  head"
+      "cover cover"
+      "rail  body";
+    column-gap: clamp(2.5rem, 5vw, 4.5rem);
+    justify-content: center;
+  }
+  /* the context column: back link and category at the top, metadata settled at the foot of
+     the title block, so the column reads as part of the header rather than empty space */
+  .article-grid > .article-crumb {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    margin: 0.55rem 0 0;
+  }
+  .article-grid > .article-meta {
+    align-self: end;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.9rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+  }
+  .article-grid > .article-cover {
+    aspect-ratio: 21 / 9;
+    margin-block: 3rem 3.5rem;
+  }
+}
+.article-title {
+  font-size: clamp(1.95rem, 8.2vw, 2.55rem);
+  line-height: 1.03;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.article-standfirst {
+  color: var(--blog-mute);
+  margin-top: 0.9rem;
+  font-size: 1.12rem;
+  line-height: 1.38;
+  max-width: 44ch;
+  text-wrap: pretty;
+}
+@media (min-width: 640px) {
+  .article-title {
+    font-size: clamp(2.6rem, 6vw, 3.5rem);
+  }
+  .article-standfirst {
+    margin-top: 1.25rem;
+    font-size: 1.32rem;
+  }
+}
+@media (min-width: 1024px) {
+  .article-title {
+    font-size: clamp(3rem, 4vw, 4.1rem);
+    line-height: 0.99;
+  }
+  .article-standfirst {
+    margin-top: 1.5rem;
+    max-width: 52ch;
+    font-size: clamp(1.35rem, 1.55vw, 1.6rem);
+  }
+}
+/* tags: light, compact capsules (wrap freely, never wider than the column) */
+.article-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.article-tags > li {
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--blog-ice);
+  padding: 0.25rem 0.55rem;
+  border: 1px solid color-mix(in oklab, var(--blog-ice) 22%, var(--line));
+  border-radius: 999px;
+  overflow-wrap: anywhere;
+}
+.article-end {
+  margin-top: 2.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line-strong);
+}
+.article-next {
+  margin-top: 2rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+
+/* ---- article typography (MarkdownRenderer, article mode) ----------------------- */
+.article-prose > :first-child {
+  margin-top: 0;
+}
+.article-text {
+  font-size: 1.03125rem;
+  line-height: 1.78;
+  color: color-mix(in oklab, var(--blog-ink) 84%, var(--bg));
+}
+.article-p {
+  margin-bottom: 1.3rem;
+}
+.article-list {
+  margin-bottom: 1.35rem;
+  padding-left: 1.4rem;
+}
+.article-list > li + li {
+  margin-top: 0.55rem;
+}
+/* Heading hierarchy: H2 ivory with a short accent rule, H3 a soft lilac, H4 understated */
+.article-h1 {
+  margin: 2.75rem 0 1rem;
+  font-size: 1.9rem;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+.article-h2 {
+  margin: 2.75rem 0 1rem;
+  font-size: clamp(1.55rem, 6.2vw, 1.85rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  text-wrap: balance;
+}
+.article-h2::before {
+  content: "";
+  display: block;
+  width: 2rem;
+  height: 1px;
+  margin-bottom: 0.9rem;
+  background: linear-gradient(90deg, var(--accent), var(--blog-violet));
+}
+.article-h3 {
+  margin: 2.1rem 0 0.7rem;
+  font-size: 1.24rem;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: var(--blog-violet);
+}
+.article-h4 {
+  margin: 1.75rem 0 0.55rem;
+  font-size: 1.03rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--blog-ink);
+}
+.article-quote {
+  position: relative;
+  margin: 2.25rem 0;
+  padding-left: 1.1rem;
+  border-left: 1px solid var(--blog-warm);
+  font-size: clamp(1.3rem, 5vw, 1.55rem);
+  line-height: 1.25;
+  color: var(--fg);
+}
+.article-rule {
+  margin: 2.75rem 0;
+}
+.article-prose :not(pre) > code {
+  color: var(--blog-ice);
+}
+.article-prose a {
+  text-decoration-color: color-mix(in oklab, var(--accent) 70%, transparent);
+  transition: color 0.25s ease, text-decoration-color 0.25s ease;
+}
+.article-prose a:hover,
+.article-prose a:focus-visible {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+.article-prose strong {
+  color: var(--blog-ink);
+}
+.article-code {
+  margin: 1.75rem 0;
+}
+@media (min-width: 1024px) {
+  .article-text {
+    font-size: 1.125rem;
+    line-height: 1.8;
+  }
+  .article-p {
+    margin-bottom: 1.5rem;
+  }
+  .article-list {
+    margin-bottom: 1.6rem;
+  }
+  .article-h1 {
+    font-size: 2.5rem;
+  }
+  .article-h2 {
+    margin: 3.5rem 0 1.25rem;
+    font-size: clamp(1.95rem, 2.3vw, 2.35rem);
+  }
+  .article-h3 {
+    margin: 2.5rem 0 0.8rem;
+    font-size: 1.42rem;
+  }
+  .article-h4 {
+    font-size: 1.1rem;
+  }
+  .article-quote {
+    margin: 3rem 0;
+    padding-left: 2rem;
+    font-size: clamp(1.6rem, 2vw, 1.95rem);
+  }
+  .article-rule {
+    margin: 3.5rem 0;
+  }
+  .article-code {
+    margin: 2rem 0;
+  }
+}
+
+/* ---- Editorial Lab: article components ----------------------------------------- */
+/* Section numbers come from the article's own structure (a CSS counter over its H2s). */
+.article-prose {
+  counter-reset: article-section;
+}
+.article-h2 {
+  counter-increment: article-section;
+  scroll-margin-top: 6rem;
+}
+.article-h3 {
+  scroll-margin-top: 6rem;
+}
+.article-h2::after {
+  content: counter(article-section, decimal-leading-zero);
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  color: var(--blog-ice);
+}
+.article-h2 {
+  position: relative;
+  padding-right: 2.5rem;
+}
+/* the accent rule grows in as a section arrives (scroll-driven, no JS; static elsewhere) */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .article-h2::before {
+      transform-origin: left center;
+      animation: article-rule-in linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 30%;
+    }
+  }
+}
+@keyframes article-rule-in {
+  from {
+    transform: scaleX(0.15);
+    opacity: 0.4;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* pull quote: a large typographic mark over the champagne rule */
+.article-quote::before {
+  content: "\201C";
+  position: absolute;
+  left: 0.55rem;
+  top: -0.55em;
+  font-size: 3.2em;
+  line-height: 1;
+  color: color-mix(in oklab, var(--blog-warm) 55%, transparent);
+  pointer-events: none;
+}
+.article-quote {
+  padding-top: 0.6em;
+}
+
+/* callouts: "> [!NOTE]"-style blocks in the CMS text */
+.article-callout {
+  position: relative;
+  margin: 2rem 0;
+  padding: 1.1rem 1.15rem 0.35rem;
+  border: 1px solid color-mix(in oklab, var(--accent) 22%, var(--line));
+  border-left: 2px solid var(--accent);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+}
+.article-callout[data-kind="tip"],
+.article-callout[data-kind="fieldnote"] {
+  border-color: color-mix(in oklab, var(--blog-ice) 24%, var(--line));
+  border-left-color: var(--blog-ice);
+  background: color-mix(in oklab, var(--blog-ice) 6%, transparent);
+}
+.article-callout[data-kind="warning"],
+.article-callout[data-kind="important"] {
+  border-color: color-mix(in oklab, var(--blog-warm) 26%, var(--line));
+  border-left-color: var(--blog-warm);
+  background: color-mix(in oklab, var(--blog-warm) 7%, transparent);
+}
+.article-callout-label {
+  display: block;
+  margin-bottom: 0.55rem;
+  color: var(--accent);
+}
+.article-callout[data-kind="tip"] .article-callout-label,
+.article-callout[data-kind="fieldnote"] .article-callout-label {
+  color: var(--blog-ice);
+}
+.article-callout[data-kind="warning"] .article-callout-label,
+.article-callout[data-kind="important"] .article-callout-label {
+  color: var(--blog-warm);
+}
+.article-callout .article-p {
+  margin-bottom: 0.8rem;
+}
+
+/* code: a quiet, high-contrast surface; long lines scroll inside the block */
+.article-code {
+  background: color-mix(in oklab, var(--bg) 70%, #000 30%);
+  border-color: color-mix(in oklab, var(--blog-ice) 14%, var(--line));
+}
+:root:not([data-theme="dark"]) .article-code {
+  background: color-mix(in oklab, var(--bg) 88%, var(--blog-ink) 6%);
+}
+.article-code pre {
+  max-width: 100%;
+  tab-size: 2;
+}
+.article-code figcaption span:first-child > span:first-child {
+  background: var(--blog-ice);
+}
+
+/* editorial figure */
+.editorial-figure {
+  margin: 2.5rem 0 2.75rem;
+}
+.editorial-figure-plate {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 85% 0%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 60%),
+    radial-gradient(90% 80% at 0% 100%, color-mix(in oklab, var(--blog-ice) 7%, transparent), transparent 60%),
+    color-mix(in oklab, var(--bg) 85%, var(--blog-ink) 4%);
+}
+.editorial-figure-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 800 / 360;
+  fill: none;
+}
+.editorial-figure-caption {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--blog-mute);
+}
+.editorial-figure .fg-grid line {
+  stroke: color-mix(in oklab, var(--line) 55%, transparent);
+  stroke-width: 1;
+}
+.editorial-figure .fl {
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  fill: none;
+  stroke: var(--line-strong);
+}
+.editorial-figure .fl-axis {
+  stroke: var(--blog-mute);
+}
+.editorial-figure .fl-accent {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.editorial-figure .fl-ice {
+  stroke: var(--blog-ice);
+  stroke-width: 2;
+}
+.editorial-figure .fl-warm {
+  stroke: var(--blog-warm);
+}
+.editorial-figure .fl-faint {
+  stroke: color-mix(in oklab, var(--blog-mute) 40%, transparent);
+  stroke-width: 1;
+}
+.editorial-figure .fg-tick {
+  stroke: var(--blog-mute);
+  stroke-width: 1;
+}
+.editorial-figure .fg-arrow {
+  fill: none;
+  stroke: var(--blog-mute);
+  stroke-width: 1.4;
+}
+.editorial-figure .fg-node-ice {
+  fill: var(--blog-ice);
+}
+.editorial-figure .fg-node-accent {
+  fill: var(--accent);
+}
+.editorial-figure .fg-node-warm {
+  fill: var(--blog-warm);
+}
+.editorial-figure .fg-halo {
+  fill: color-mix(in oklab, var(--accent) 12%, transparent);
+  stroke: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+.editorial-figure .fg-ripple {
+  fill: none;
+  stroke: color-mix(in oklab, var(--accent) 35%, transparent);
+  stroke-dasharray: 2 5;
+}
+.editorial-figure .fg-box {
+  fill: color-mix(in oklab, var(--bg) 70%, var(--blog-ink) 6%);
+  stroke: var(--line-strong);
+}
+.editorial-figure .fg-box-dashed {
+  fill: none;
+  stroke: var(--blog-warm);
+  stroke-dasharray: 4 5;
+}
+.editorial-figure .fg-core {
+  fill: color-mix(in oklab, var(--accent) 22%, var(--bg));
+  stroke: var(--accent);
+}
+.editorial-figure .ft {
+  fill: var(--blog-mute);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+.editorial-figure .ft-label {
+  fill: var(--blog-ink);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+}
+.editorial-figure .ft-warm {
+  fill: var(--blog-warm);
+}
+/* draw-in: lines trace, nodes fade, staggered by --i (only when motion is welcome) */
+@media (prefers-reduced-motion: no-preference) {
+  .editorial-figure .fl {
+    stroke-dasharray: 1200;
+    stroke-dashoffset: 1200;
+  }
+  .editorial-figure .fl[stroke-dasharray] {
+    stroke-dasharray: 3 6;
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  .editorial-figure .fn {
+    opacity: 0;
+    transform: translateY(6px);
+    transform-box: fill-box;
+  }
+  .editorial-figure[data-seen] .fl {
+    transition: stroke-dashoffset 1.6s var(--ease-editorial), opacity 0.8s ease;
+    transition-delay: calc(var(--i, 0) * 0.14s);
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  .editorial-figure[data-seen] .fn {
+    transition: opacity 0.7s ease, transform 0.7s var(--ease-editorial);
+    transition-delay: calc(0.3s + var(--i, 0) * 0.12s);
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 639px) {
+  .editorial-figure .ft {
+    font-size: 17px;
+  }
+  .editorial-figure .ft-label {
+    font-size: 15px;
+  }
+}
+
+/* contents: desktop rail list and the collapsible phone/tablet list */
+.article-toc-list {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+}
+.article-toc-list a {
+  display: block;
+  margin-left: -1px;
+  padding: 0.38rem 0 0.38rem 0.85rem;
+  border-left: 1px solid transparent;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--blog-mute);
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.article-toc-list li[data-level="3"] a {
+  padding-left: 1.6rem;
+  font-size: 0.75rem;
+}
+.article-toc-list a:hover,
+.article-toc-list a:focus-visible {
+  color: var(--blog-ink);
+}
+.article-toc-list a[aria-current] {
+  color: var(--blog-ink);
+  border-left-color: var(--accent);
+}
+.article-toc-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: calc(100vh - 16rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.article-toc-inline {
+  margin-bottom: 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--bg) 85%, var(--blog-ink) 4%);
+}
+.article-toc-inline summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  color: var(--blog-ink);
+}
+.article-toc-inline summary::-webkit-details-marker {
+  display: none;
+}
+.article-toc-inline summary::after {
+  content: "+";
+  font-family: var(--font-mono);
+  color: var(--accent);
+  margin-left: 0.25rem;
+}
+.article-toc-inline[open] summary::after {
+  content: "-";
+}
+.article-toc-inline nav {
+  padding: 0 1rem 0.9rem;
+}
+
+/* landing cards: a quiet lift on hover/focus (transform only) */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .blog-scope section[aria-label="Recent entries"] a > :first-child,
+  .blog-scope section[aria-label$="article"] a > :first-child {
+    transition: transform 0.7s var(--ease-editorial);
+  }
+  .blog-scope section[aria-label="Recent entries"] a:hover > :first-child,
+  .blog-scope section[aria-label$="article"] a:hover > :first-child {
+    transform: translateY(-4px);
+  }
+}
+.blog-scope a:focus-visible {
+  outline-offset: 4px;
+}
+
+/* ---- Uses: minimalist instrumentation ---------------------------------------------
+   One scoped palette (ink, graphite, ivory, lavender, periwinkle, champagne, gray), one
+   grid (the site's 1600px shell and gutters), one motion vocabulary: entries rise in once,
+   nodes brighten once as they reach the reading line, connectors draw toward the next
+   stage. The only continuous motion is the dial sweep, the console scan and the status
+   breath, all removed under reduced motion. */
+.uses-scope {
+  --u-deep: #f3f1ec;
+  --u-surface: #ebe7df;
+  --u-ivory: #16151d;
+  --u-mute: #575761;
+  --u-subtle: #6d6b77;
+  --u-lav: #5b44c4;
+  --u-peri: #5652a3;
+  --u-champ: #85622d;
+  --u-line: #dcd7cd;
+  --u-line-strong: #c4beb2;
+  --fg: var(--u-ivory);
+  --fg-muted: var(--u-mute);
+  --fg-subtle: var(--u-subtle);
+  --accent: var(--u-lav);
+  --line: var(--u-line);
+  --line-strong: var(--u-line-strong);
+  --color-fg: var(--u-ivory);
+  --color-fg-muted: var(--u-mute);
+  --color-fg-subtle: var(--u-subtle);
+  --color-accent: var(--u-lav);
+  --color-line: var(--u-line);
+  --color-line-strong: var(--u-line-strong);
+  /* the deep ink fades in below the navigation and out above the footer: no seams. It is a
+     .field-ground, so the particle field still draws above it (see .field-ground). */
+  --field-ground: linear-gradient(to bottom, transparent, var(--u-deep) 22rem, var(--u-deep) calc(100% - 14rem), transparent);
+}
+:root[data-theme="dark"] .uses-scope {
+  --u-deep: #101019;
+  --u-surface: #171720;
+  --u-ivory: #f5f1ea;
+  --u-mute: #a1a1aa;
+  --u-subtle: #82818d;
+  --u-lav: #b7a0ff;
+  --u-peri: #9692d8;
+  --u-champ: #d6be96;
+  --u-line: #24232e;
+  --u-line-strong: #34333f;
+}
+.uses-lav {
+  color: var(--u-lav);
+}
+.uses-shell {
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .uses-shell {
+    padding-inline: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .uses-shell {
+    padding-inline: 2.5rem;
+  }
+}
+
+/* shared rule: index, hairline, eyebrow, count */
+.uses-head-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.uses-head-line {
+  width: 2rem;
+  height: 1px;
+  background: var(--u-line-strong);
+}
+.uses-head-count {
+  margin-left: auto;
+}
+@media (min-width: 1024px) {
+  .uses-head-rule {
+    margin-bottom: 2rem;
+  }
+}
+
+/* hero */
+.uses-hero {
+  padding-top: calc(env(safe-area-inset-top) + 10.5rem);
+}
+.uses-hero .uses-head-rule {
+  margin-bottom: 1.5rem;
+}
+@media (min-width: 640px) {
+  .uses-hero {
+    padding-top: 11.25rem;
+  }
+  .uses-hero .uses-head-rule {
+    margin-bottom: 2.25rem;
+  }
+}
+@media (min-width: 1024px) {
+  .uses-hero {
+    padding-top: clamp(8.5rem, 17vh, 11.5rem);
+  }
+}
+.uses-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem;
+}
+@media (min-width: 768px) {
+  .uses-hero-grid {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 3rem;
+  }
+}
+@media (min-width: 1024px) {
+  .uses-hero-grid {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 4rem;
+  }
+}
+.uses-hero-title {
+  --fit-max: 4.75rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(3.6rem, 9vw, 9.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+.uses-hero-lede {
+  margin-top: 1.25rem;
+  max-width: 46ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--u-mute);
+}
+@media (min-width: 640px) {
+  .uses-hero-lede {
+    margin-top: 2rem;
+    font-size: 1.125rem;
+  }
+}
+.uses-metrics {
+  margin-top: 1.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--u-line);
+}
+.uses-metrics > div {
+  padding: 0.85rem 0 0.95rem;
+  border-bottom: 1px solid var(--u-line);
+}
+.uses-metrics > div + div {
+  padding-left: 1rem;
+  border-left: 1px solid var(--u-line);
+}
+.uses-metrics > .is-wide {
+  grid-column: 1 / -1;
+  padding-left: 0;
+  border-left: 0;
+}
+.uses-metrics dt {
+  color: var(--u-subtle);
+}
+.uses-metric-num {
+  margin-top: 0.45rem;
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  line-height: 1;
+  color: var(--u-ivory);
+  font-variant-numeric: tabular-nums;
+}
+.uses-metric-text {
+  margin-top: 0.55rem;
+  font-size: 0.9375rem;
+  letter-spacing: 0.02em;
+  color: var(--u-ivory);
+}
+@media (min-width: 640px) {
+  .uses-metrics {
+    margin-top: 2.5rem;
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+  .uses-metrics > div {
+    padding-right: 2rem;
+  }
+  .uses-metrics > .is-wide {
+    grid-column: auto;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--u-line);
+  }
+  .uses-metrics > div + div {
+    padding-left: 1.25rem;
+  }
+}
+
+/* the instrument plate */
+.uses-dial {
+  display: none;
+  position: relative;
+}
+@media (min-width: 768px) {
+  .uses-dial {
+    display: block;
+    justify-self: end;
+    width: 100%;
+    max-width: 24rem;
+  }
+}
+@media (min-width: 1024px) {
+  .uses-dial {
+    max-width: 29rem;
+  }
+}
+.uses-dial::before {
+  content: "";
+  position: absolute;
+  inset: 8% 8% 22%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--u-lav) 10%, transparent), transparent);
+  pointer-events: none;
+}
+.uses-dial-svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.uses-dial-halo {
+  fill: color-mix(in oklab, var(--u-surface) 55%, transparent);
+  stroke: var(--u-line);
+}
+.uses-dial-ticks line {
+  stroke: var(--u-line-strong);
+  stroke-width: 1;
+}
+.uses-dial-ticks line.is-major {
+  stroke: var(--u-mute);
+}
+.uses-dial-guide {
+  fill: none;
+  stroke: var(--u-line);
+  stroke-width: 1;
+}
+.uses-dial-guide.is-faint {
+  stroke-dasharray: 2 5;
+}
+.uses-dial-seg {
+  fill: none;
+  stroke-width: 3;
+}
+.uses-dial-seg.is-lav {
+  stroke: var(--u-lav);
+}
+.uses-dial-seg.is-peri {
+  stroke: var(--u-peri);
+  stroke-width: 2;
+}
+.uses-dial-sweep line {
+  stroke: color-mix(in oklab, var(--u-lav) 45%, transparent);
+  stroke-width: 1;
+}
+.uses-dial-sweep circle {
+  fill: var(--u-lav);
+}
+.uses-dial-mark {
+  stroke: var(--u-champ);
+  stroke-width: 1.5;
+}
+.uses-dial-num {
+  font-family: var(--font-display);
+  font-size: 64px;
+  fill: var(--u-ivory);
+}
+.uses-dial-cap {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  fill: var(--u-subtle);
+}
+.uses-dial-legend {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.55rem;
+  color: var(--u-subtle);
+}
+.uses-dial-key {
+  display: inline-block;
+  width: 1rem;
+  height: 2px;
+  margin-right: 0.65rem;
+  vertical-align: middle;
+}
+.uses-dial-key.is-lav {
+  background: var(--u-lav);
+}
+.uses-dial-key.is-peri {
+  background: var(--u-peri);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .uses-dial-seg {
+    opacity: 0;
+    animation: uses-fade 0.7s var(--ease-editorial) forwards;
+    animation-delay: calc(0.45s + var(--i, 0) * 0.06s);
+  }
+  .uses-dial-ticks,
+  .uses-dial-sweep {
+    transform-box: view-box;
+    transform-origin: center;
+  }
+  .uses-dial-ticks {
+    animation: uses-spin 240s linear infinite;
+  }
+  .uses-dial-sweep {
+    animation: uses-spin 22s linear infinite;
+  }
+}
+@keyframes uses-fade {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes uses-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* sections */
+.uses-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 6.5rem;
+  margin-top: 5.5rem;
+}
+@media (min-width: 640px) {
+  .uses-sections {
+    gap: 8rem;
+    margin-top: 7rem;
+  }
+}
+@media (min-width: 1024px) {
+  .uses-sections {
+    gap: 10rem;
+    margin-top: 9rem;
+  }
+}
+.uses-head {
+  margin-bottom: 2rem;
+}
+.uses-head-body {
+  display: grid;
+  gap: 0.9rem;
+}
+.uses-title {
+  --fit-max: 2.75rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 5.2vw, 5.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+}
+/* titles read as one phrase wherever they fit; they wrap as whole words otherwise */
+@media (min-width: 640px) {
+  .uses-title > span,
+  .uses-hero-title > span {
+    display: inline-block;
+    vertical-align: bottom;
+  }
+  .uses-head {
+    margin-bottom: 2.75rem;
+  }
+}
+.uses-head-note {
+  max-width: 34ch;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--u-mute);
+}
+@media (min-width: 1024px) {
+  .uses-head {
+    margin-bottom: 3.5rem;
+  }
+  .uses-head-body {
+    grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+    align-items: end;
+    gap: 2.5rem;
+  }
+  .uses-head-note {
+    padding-bottom: 0.6rem;
+    font-size: 1rem;
+  }
+}
+
+/* 01 instruments: an index on phones, a ruled grid from tablets up */
+.uses-instruments {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: 1px solid var(--u-line);
+}
+.uses-instrument {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  grid-template-areas: "glyph top" "glyph name" "glyph desc";
+  column-gap: 1rem;
+  padding: 1.15rem 0 1.25rem;
+  border-bottom: 1px solid var(--u-line);
+}
+.uses-instrument::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 1px;
+  background: var(--u-lav);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.8s var(--ease-editorial);
+}
+.uses-instrument-top {
+  grid-area: top;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.uses-instrument-glyph {
+  grid-area: glyph;
+  align-self: start;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--u-line-strong);
+  border-radius: 12px;
+  color: var(--u-peri);
+  transition: color 0.5s ease, border-color 0.5s ease;
+}
+.uses-instrument-name {
+  grid-area: name;
+  margin-top: 0.55rem;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  color: var(--u-ivory);
+}
+.uses-instrument-desc {
+  grid-area: desc;
+  margin-top: 0.45rem;
+  max-width: 40ch;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--u-mute);
+}
+@media (hover: hover) {
+  .uses-instrument:hover::before {
+    transform: scaleX(1);
+  }
+  .uses-instrument:hover .uses-instrument-glyph {
+    color: var(--u-lav);
+    border-color: color-mix(in oklab, var(--u-lav) 55%, var(--u-line-strong));
+  }
+}
+@media (min-width: 640px) {
+  .uses-instruments {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-left: 1px solid var(--u-line);
+  }
+  .uses-instrument {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas: "top" "glyph" "name" "desc";
+    min-height: 15rem;
+    padding: 1.4rem 1.5rem 1.6rem;
+    border-right: 1px solid var(--u-line);
+  }
+  .uses-instrument-glyph {
+    margin-top: 1.75rem;
+    width: 3rem;
+    height: 3rem;
+  }
+  .uses-instrument-name {
+    margin-top: 1.5rem;
+    font-size: clamp(1.85rem, 2.5vw, 2.5rem);
+  }
+}
+@media (min-width: 1024px) {
+  .uses-instruments {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .uses-instrument {
+    min-height: 17rem;
+    padding: 1.75rem 2rem 2rem;
+  }
+}
+
+/* 02 stack: a typeset reference, grouped by layer */
+.uses-stack {
+  border-top: 1px solid var(--u-line-strong);
+}
+.uses-group {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.75rem 0 1.5rem;
+  border-bottom: 1px solid var(--u-line);
+}
+.uses-group-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.uses-group-letter {
+  min-width: 2rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 2.75rem;
+  line-height: 0.85;
+  color: var(--u-lav);
+}
+.uses-group-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 1.05;
+  color: var(--u-ivory);
+}
+.uses-group-count {
+  margin-top: 0.5rem;
+}
+.uses-tech {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr) auto;
+  grid-template-areas: "code name cat" ". desc desc";
+  column-gap: 0.75rem;
+  row-gap: 0.3rem;
+  align-items: baseline;
+  padding: 0.95rem 0;
+  border-top: 1px solid var(--u-line);
+}
+.uses-tech-code {
+  grid-area: code;
+  color: var(--u-subtle);
+  white-space: nowrap;
+}
+.uses-tech-code::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 0.5rem;
+  border: 1px solid var(--u-line-strong);
+  border-radius: 50%;
+  vertical-align: 0.1em;
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+.uses-tech-name {
+  grid-area: name;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--u-ivory);
+  transition: color 0.4s ease;
+}
+.uses-tech-desc {
+  grid-area: desc;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--u-mute);
+}
+.uses-tech-cat {
+  grid-area: cat;
+  color: var(--u-peri);
+  text-align: right;
+}
+@media (hover: hover) {
+  .uses-tech:hover .uses-tech-name {
+    color: var(--u-lav);
+  }
+  .uses-tech:hover .uses-tech-code::before {
+    background: var(--u-lav);
+    border-color: var(--u-lav);
+  }
+}
+@media (min-width: 1024px) {
+  .uses-group {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+    gap: 2.5rem;
+    padding: 2.5rem 0;
+  }
+  .uses-group-head {
+    position: sticky;
+    top: 7rem;
+    align-self: start;
+    gap: 1.25rem;
+  }
+  .uses-group-letter {
+    font-size: 4rem;
+  }
+  .uses-group-title {
+    font-size: clamp(2rem, 2.6vw, 2.6rem);
+  }
+  .uses-tech {
+    grid-template-columns: 4.25rem minmax(0, 0.85fr) minmax(0, 1.35fr) 9.5rem;
+    grid-template-areas: "code name desc cat";
+    column-gap: 1.5rem;
+    padding: 1.1rem 0;
+  }
+  .uses-tech:first-child {
+    border-top: 0;
+    padding-top: 0.55rem;
+  }
+  .uses-tech-name {
+    font-size: 1.1875rem;
+  }
+}
+
+/* 03 workbench: one console, three readouts */
+.uses-console {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--u-line-strong);
+  border-radius: 20px;
+  background:
+    radial-gradient(70% 90% at 0% 0%, color-mix(in oklab, var(--u-lav) 9%, transparent), transparent 60%),
+    radial-gradient(60% 80% at 100% 100%, color-mix(in oklab, var(--u-champ) 6%, transparent), transparent 60%),
+    var(--u-surface);
+}
+.uses-console::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(var(--u-line) 1px, transparent 1px), linear-gradient(90deg, var(--u-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.45;
+  -webkit-mask-image: radial-gradient(90% 80% at 20% 30%, #000, transparent 75%);
+  mask-image: radial-gradient(90% 80% at 20% 30%, #000, transparent 75%);
+  pointer-events: none;
+}
+.uses-console-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--u-line);
+  color: var(--u-subtle);
+}
+.uses-console-ruler {
+  flex: 1;
+  height: 6px;
+  background-image: repeating-linear-gradient(90deg, var(--u-line-strong) 0 1px, transparent 1px 8px);
+}
+.uses-console-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.uses-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.4rem 1.25rem 1.5rem;
+}
+.uses-cell + .uses-cell {
+  border-top: 1px solid var(--u-line);
+}
+.uses-cell dt {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.uses-machine-value {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 4.4vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--u-ivory);
+}
+.uses-fuel-value {
+  position: relative;
+  padding-top: 0.15em;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.65rem, 2.3vw, 2.2rem);
+  line-height: 1.12;
+  color: var(--u-ivory);
+}
+.uses-fuel-value::before {
+  content: "\201C";
+  display: block;
+  height: 0.5em;
+  font-size: 2em;
+  line-height: 1;
+  color: var(--u-champ);
+}
+.uses-status-value {
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 2.5vw, 2.5rem);
+  line-height: 1.05;
+  color: var(--u-ivory);
+}
+.uses-cell-desc {
+  margin-top: 0.7rem;
+  max-width: 38ch;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--u-mute);
+}
+.uses-pulse {
+  position: relative;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--u-lav);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--u-lav) 16%, transparent);
+}
+.uses-trace {
+  display: block;
+  width: 100%;
+  height: 3.25rem;
+  margin-top: 1.5rem;
+  overflow: visible;
+}
+.uses-trace path,
+.uses-trace line {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+.uses-trace-base,
+.uses-trace-tick {
+  stroke: var(--u-line-strong);
+  stroke-width: 1;
+}
+.uses-trace-line {
+  stroke: var(--u-lav);
+  stroke-width: 1.5;
+}
+.uses-trace-scan {
+  fill: var(--u-lav);
+  opacity: 0;
+}
+@media (min-width: 768px) {
+  .uses-console-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .uses-cell.is-machine {
+    grid-column: 1 / -1;
+  }
+  .uses-cell.is-status {
+    border-left: 1px solid var(--u-line);
+  }
+  .uses-cell {
+    padding: 1.75rem 1.75rem 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .uses-console-bar {
+    padding: 1rem 2.25rem;
+  }
+  .uses-console-grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 0.85fr);
+  }
+  .uses-cell.is-machine {
+    grid-column: auto;
+  }
+  .uses-cell {
+    justify-content: space-between;
+    min-height: 21rem;
+    padding: 2.25rem 2.25rem 2.5rem;
+  }
+  .uses-cell + .uses-cell {
+    border-top: 0;
+    border-left: 1px solid var(--u-line);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .uses-trace {
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 1.8s var(--ease-editorial) 0.2s;
+  }
+  .uses-console[data-on] .uses-trace {
+    clip-path: inset(0 -1% 0 0);
+  }
+  .uses-console[data-on] .uses-trace-scan {
+    animation: uses-scan 8s linear 2s infinite;
+  }
+  .uses-pulse::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid var(--u-lav);
+    animation: uses-breathe 3.6s ease-out infinite;
+  }
+}
+@keyframes uses-scan {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  8%,
+  88% {
+    opacity: 0.55;
+  }
   100% {
-    transform: translate(0, 0);
+    transform: translateX(598px);
+    opacity: 0;
   }
-
-  10% {
-    transform: translate(-2%, -3%);
+}
+@keyframes uses-breathe {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
   }
-
-  20% {
-    transform: translate(3%, 1%);
-  }
-
-  30% {
-    transform: translate(-1%, 4%);
-  }
-
-  40% {
-    transform: translate(4%, -2%);
-  }
-
-  50% {
-    transform: translate(-3%, 3%);
-  }
-
-  60% {
-    transform: translate(2%, -4%);
-  }
-
-  70% {
-    transform: translate(-4%, 1%);
-  }
-
-  80% {
-    transform: translate(3%, 3%);
-  }
-
-  90% {
-    transform: translate(-2%, -1%);
+  70%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
   }
 }
 
-.animate-grain {
-  animation: grain-shift 7s steps(10) infinite;
-  will-change: transform;
+/* nodes: dim until their entry reaches the reading line, then brighten once */
+.uses-node {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--u-line-strong);
+  border-radius: 50%;
+  background: var(--u-deep);
+}
+.uses-node > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--u-peri);
+  opacity: 0.4;
+  transform: scale(0.7);
+}
+.uses-node.is-small {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+.uses-node.is-small > span {
+  width: 4px;
+  height: 4px;
+}
+[data-on] > .uses-node {
+  border-color: var(--u-lav);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--u-lav) 10%, transparent);
+}
+[data-on] > .uses-node > span {
+  background: var(--u-lav);
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .uses-node,
+  .uses-node > span {
+    transition: border-color 0.6s ease, box-shadow 0.8s ease, opacity 0.6s ease, transform 0.6s var(--ease-editorial), background-color 0.6s ease;
+  }
+  [data-on] > .uses-node::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    border: 1px solid var(--u-lav);
+    animation: uses-node-pulse 1.4s var(--ease-editorial) both;
+    animation-delay: inherit;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uses-node {
+    border-color: var(--u-lav);
+  }
+  .uses-node > span {
+    background: var(--u-lav);
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes uses-node-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+/* 04 process: a vertical path on phones and tablets, one horizontal axis on desktop */
+.uses-process {
+  position: relative;
+  display: grid;
+  gap: 2rem;
+  padding-left: 2.25rem;
+}
+.uses-step {
+  position: relative;
+}
+.uses-step > .uses-node {
+  left: -2.25rem;
+  top: 0.1rem;
+}
+.uses-step::before,
+.uses-step::after {
+  content: "";
+  position: absolute;
+  left: calc(-2.25rem + 0.5rem - 0.5px);
+  top: 1.25rem;
+  bottom: calc(-2rem + 0.1rem);
+  width: 1px;
+  background: var(--u-line-strong);
+}
+.uses-step::after {
+  background: linear-gradient(to bottom, var(--u-lav), var(--u-peri));
+  transform: scaleY(0);
+  transform-origin: top center;
+}
+.uses-step[data-on]::after {
+  transform: none;
+}
+.uses-step:last-child::before,
+.uses-step:last-child::after {
+  display: none;
+}
+.uses-step-num {
+  color: var(--u-lav);
+}
+.uses-step-title {
+  margin-top: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  line-height: 1;
+  color: var(--u-ivory);
+}
+.uses-step-desc {
+  margin-top: 0.55rem;
+  max-width: 40ch;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--u-mute);
+}
+@media (min-width: 768px) {
+  .uses-process:not(.is-row) .uses-step-body,
+  .uses-process.is-row .uses-step-body {
+    display: grid;
+    grid-template-columns: 3.5rem 12rem minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: 1.5rem;
+  }
+  .uses-process .uses-step-title,
+  .uses-process .uses-step-desc {
+    margin-top: 0;
+  }
+  .uses-process {
+    gap: 2.5rem;
+  }
+  .uses-step::before,
+  .uses-step::after {
+    bottom: calc(-2.5rem + 0.1rem);
+  }
+}
+@media (min-width: 1024px) {
+  .uses-process.is-row {
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    gap: 2rem;
+    padding-left: 0;
+  }
+  .uses-process.is-row .uses-step {
+    padding-top: 2.75rem;
+  }
+  .uses-process.is-row .uses-step > .uses-node {
+    left: 0;
+    top: 0;
+  }
+  .uses-process.is-row .uses-step::before,
+  .uses-process.is-row .uses-step::after {
+    left: 1.25rem;
+    right: calc(-2rem + 0.25rem);
+    top: calc(0.5rem - 0.5px);
+    bottom: auto;
+    width: auto;
+    height: 1px;
+  }
+  .uses-process.is-row .uses-step::after {
+    background: linear-gradient(to right, var(--u-lav), var(--u-peri));
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  .uses-process.is-row .uses-step[data-on]::after {
+    transform: none;
+  }
+  .uses-process.is-row .uses-step-body {
+    display: block;
+  }
+  .uses-process.is-row .uses-step-title {
+    margin-top: 0.5rem;
+    font-size: clamp(1.75rem, 2.2vw, 2.3rem);
+  }
+  .uses-process.is-row .uses-step-desc {
+    margin-top: 0.7rem;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .uses-step::after {
+    transition: transform 1.2s var(--ease-editorial) 0.35s;
+  }
+  /* on one axis every stage arrives together: light them in sequence along the line */
+  @media (min-width: 1024px) {
+    .uses-process.is-row .uses-step > .uses-node,
+    .uses-process.is-row .uses-step > .uses-node > span {
+      transition-delay: calc(var(--i, 0) * 0.32s);
+    }
+    .uses-process.is-row .uses-step > .uses-node {
+      animation-delay: calc(var(--i, 0) * 0.32s);
+    }
+    .uses-process.is-row .uses-step::after {
+      transition: transform 0.7s var(--ease-in-out, ease-in-out) calc(var(--i, 0) * 0.32s + 0.12s);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uses-step::after {
+    transform: none !important;
+  }
+}
+
+/* 05 horizon: a roadmap path that fades on past its last entry */
+.uses-horizon {
+  position: relative;
+}
+.uses-horizon::before {
+  content: "";
+  position: absolute;
+  left: calc(0.4375rem - 0.5px);
+  top: 0;
+  bottom: -3rem;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--u-line-strong), var(--u-line-strong) calc(100% - 7rem), transparent);
+}
+.uses-topic {
+  position: relative;
+  padding-left: 2.25rem;
+}
+.uses-topic > .uses-node {
+  left: 0;
+  top: 1.6rem;
+}
+.uses-topic-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "num cat" "name name" "desc desc";
+  row-gap: 0.45rem;
+  column-gap: 1rem;
+  padding: 1.4rem 0 1.5rem;
+  border-bottom: 1px solid var(--u-line);
+}
+.uses-topic:first-child .uses-topic-body {
+  border-top: 1px solid var(--u-line);
+}
+.uses-topic-num {
+  grid-area: num;
+  color: var(--u-lav);
+}
+.uses-topic-cat {
+  grid-area: cat;
+  color: var(--u-subtle);
+  text-align: right;
+}
+.uses-topic-name {
+  grid-area: name;
+  margin-top: 0.2rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.875rem;
+  line-height: 1.02;
+  color: var(--u-ivory);
+  transition: transform 0.6s var(--ease-editorial);
+}
+.uses-topic-desc {
+  grid-area: desc;
+  max-width: 46ch;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--u-mute);
+}
+@media (min-width: 768px) {
+  .uses-topic-body {
+    grid-template-columns: 3rem minmax(0, 1fr) auto;
+    grid-template-areas: "num name cat" ". desc desc";
+    align-items: baseline;
+  }
+  .uses-topic-name {
+    margin-top: 0;
+  }
+}
+@media (min-width: 1024px) {
+  .uses-topic {
+    padding-left: 3rem;
+  }
+  .uses-topic > .uses-node {
+    top: 2.15rem;
+  }
+  .uses-topic-body {
+    grid-template-columns: 3.5rem minmax(0, 5fr) minmax(0, 5fr) 10rem;
+    grid-template-areas: "num name desc cat";
+    column-gap: 2rem;
+    padding: 1.75rem 0;
+  }
+  .uses-topic-name {
+    font-size: clamp(2rem, 2.8vw, 2.75rem);
+  }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .uses-topic:hover .uses-topic-name {
+    transform: translateX(0.35rem);
+  }
+}
+
+/* One-line section titles on phones (SectionHead oneLineOnPhone): the largest size at which
+   the whole phrase fits the content width (--fit-em = the phrase's width in em, estimated
+   from its length; MaskText refines it after fonts load), capped so it never outgrows the
+   desktop rhythm. Tablets and desktop keep the two-line editorial title. */
+@media (max-width: 639px) {
+  .heading-phone-line {
+    white-space: nowrap;
+    font-size: min(var(--fit-max, 2.85rem), calc((100vw - 2rem) / var(--fit-em, 6.6)));
+    line-height: 1.02;
+  }
+}
+
+/* Skip link: out of the document flow at all times (as a .btn it would otherwise be
+   position:relative and reserve a band above <main>), revealed at the top-left on focus. */
+.skip-link.btn {
+  position: fixed;
+  top: max(0.75rem, env(safe-area-inset-top));
+  left: 0.75rem;
+  z-index: 100;
+  transform: translateY(calc(-100% - 1.5rem));
+}
+.skip-link.btn:focus,
+.skip-link.btn:focus-visible {
+  transform: none;
+}
+
+/* Hero first screen (phones/tablets): prefix, name and portrait compose the first screen.
+   Phones: the block fills the small viewport (100svh = toolbars showing; 100vh fallback)
+   below the 11.5rem header zone (hero padding + grid gap), so the introduction always
+   starts below the fold rather than half-hidden behind the browser toolbar. Instead of
+   leaving a hole on taller screens, the portrait grows with the available height (between
+   52% and 76% of the stage; ~27.5rem is the header zone + prefix + name + stage padding).
+   Tablets keep their capped, natural-height composition. */
+@media (max-width: 639px) {
+  .hero-first-screen {
+    min-height: calc(100vh - 11.5rem - env(safe-area-inset-top));
+    min-height: calc(100svh - 11.5rem - env(safe-area-inset-top));
+  }
+  .hero-portrait {
+    --stage-w: min(100vw - 2rem, 420px);
+    width: clamp(calc(var(--stage-w) * 0.52), calc((100vh - 27.5rem - env(safe-area-inset-top)) * 0.8), calc(var(--stage-w) * 0.76));
+    width: clamp(calc(var(--stage-w) * 0.52), calc((100svh - 27.5rem - env(safe-area-inset-top)) * 0.8), calc(var(--stage-w) * 0.76));
+  }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .hero-first-screen {
+    --hero-natural: calc(6rem + 1.75 * clamp(6.5rem, 17vw, 9.5rem) + 0.92 * min(100vw - 3rem, 520px) + 5rem);
+    min-height: min(calc(100svh - 9rem), var(--hero-natural));
+  }
+}
+
+/* Action groups — one rule set for paired calls to action:
+   phones: two equal-width buttons on the content gutter (stacked full-width below 360px);
+   a lone action keeps its content width; from 640px buttons size to their content. */
+.action-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+@media (max-width: 639px) {
+  .action-pair > .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 1rem;
+  }
+  .action-pair > .btn:only-child {
+    flex: 0 0 auto;
+    padding-inline: 1.4rem;
+  }
+}
+@media (max-width: 359px) {
+  .action-pair {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Legacy glass utilities — re-expressed in the new material language so
+   untouched admin markup inherits the redesigned surfaces. */
+.glass-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-1), var(--edge-light);
+}
+.glass-pill {
+  background: color-mix(in oklab, var(--surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+}
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition: border-color 0.3s var(--ease-editorial), box-shadow 0.3s var(--ease-editorial),
+    transform 0.3s var(--ease-editorial);
+}
+.glass-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-2);
+}
+
+/* ==========================================================================
+   Controls
+   ========================================================================== */
+
+.btn {
+  --btn-h: 3rem;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: var(--btn-h);
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition: transform 0.35s var(--ease-out-quint), background-color 0.25s ease, color 0.25s ease,
+    box-shadow 0.35s var(--ease-out-quint), border-color 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.btn-primary {
+  background: var(--inverse);
+  color: var(--inverse-fg);
+  box-shadow: var(--shadow-2);
+}
+.btn-primary:hover {
+  box-shadow: var(--shadow-3);
+  transform: translateY(-1px);
+}
+.btn-accent {
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: 0 10px 30px -12px color-mix(in oklab, var(--accent) 70%, transparent);
+}
+.btn-accent:hover {
+  background: var(--accent-strong);
+  transform: translateY(-1px);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--line-strong);
+}
+.btn-ghost:hover {
+  border-color: var(--fg);
+}
+.btn-sm {
+  --btn-h: 2.4rem;
+  padding: 0 1rem;
+  font-size: 0.8125rem;
+}
+
+/* Underline link with drawn hairline */
+.link-draw {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size 0.5s var(--ease-editorial);
+}
+.link-draw:hover,
+.link-draw:focus-visible {
+  background-size: 100% 1px;
+}
+
+/* Fields */
+.field-input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-strong);
+  padding: 0.85rem 0;
+  font-size: 1.0625rem;
+  color: var(--fg);
+  border-radius: 0;
+  transition: border-color 0.3s ease;
+  outline: none;
+}
+.field-input::placeholder {
+  color: var(--fg-subtle);
+}
+.field-input:focus {
+  border-bottom-color: var(--accent);
+}
+.field-input[aria-invalid="true"] {
+  border-bottom-color: var(--danger);
 }
 
 /* Number input spinners reset */
@@ -207,16 +3376,14 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-
 input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* Date / DateTime controls dark scheme and cross-platform containment */
+/* Date / DateTime controls follow the active theme */
 input[type="date"],
 input[type="datetime-local"],
 input[type="time"] {
-  color-scheme: dark;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -227,8 +3394,6 @@ input[type="time"] {
   display: block;
   margin: 0;
 }
-
-/* iOS Safari WebKit value alignment and height preservation */
 input[type="date"]::-webkit-date-and-time-value,
 input[type="datetime-local"]::-webkit-date-and-time-value,
 input[type="time"]::-webkit-date-and-time-value {
@@ -237,7 +3402,6 @@ input[type="time"]::-webkit-date-and-time-value {
   margin: 0;
   padding: 0;
 }
-
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
@@ -245,150 +3409,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   opacity: 0.65;
   transition: opacity 0.2s ease;
 }
-
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
 input[type="time"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
 
-/* Custom cursor visibility for desktop pointers only */
-@media (hover: hover) and (pointer: fine) {
-
-  html.custom-cursor-active,
-  html.custom-cursor-active * {
-    cursor: none !important;
-  }
-}
-
-/* Editorial footer outlined typography stroke */
-.footer-outline-text {
-  color: transparent;
-  -webkit-text-stroke: 1.5px rgba(24, 155, 173, 0.4);
-}
-
-@media (min-width: 640px) {
-  .footer-outline-text {
-    -webkit-text-stroke: 2px rgba(24, 155, 173, 0.45);
-  }
-}
-
-@media (min-width: 1024px) {
-  .footer-outline-text {
-    -webkit-text-stroke: 2.5px rgba(24, 155, 173, 0.5);
-  }
-}
-
-/* Continuous technical ticker marquee */
-@keyframes ticker-scroll {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-.animate-ticker {
-  display: flex;
-  width: max-content;
-  animation: ticker-scroll 24s linear infinite;
-  will-change: transform;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-ticker {
-    animation: none !important;
-    transform: none !important;
-  }
-}
-
-/* Smartphone Outlined RAWIN Footer Wordmark */
-.rawin-outline-raw {
-  color: transparent;
-  -webkit-text-stroke: 1.5px #189BAD;
-  user-select: none;
-}
-
-.rawin-outline-in {
-  color: transparent;
-  -webkit-text-stroke: 1.5px #F5F7FA;
-  user-select: none;
-}
-
-@media (min-width: 640px) {
-  .rawin-outline-raw {
-    -webkit-text-stroke: 2px #189BAD;
-  }
-  .rawin-outline-in {
-    -webkit-text-stroke: 2px #F5F7FA;
-  }
-}
-
-/* Backward compatibility */
-.raw-footer-signature {
-  color: transparent;
-  -webkit-text-stroke: 1.5px #189BAD;
-  user-select: none;
-}
-
-@media (min-width: 640px) {
-  .raw-footer-signature {
-    -webkit-text-stroke: 2px #189BAD;
-  }
-}
-
-/* Engineering Signal Timeline traveling pulse */
-@keyframes circuit-pulse {
-  0% {
-    stroke-dashoffset: 280;
-    opacity: 0;
-  }
-
-  25% {
-    opacity: 1;
-  }
-
-  85% {
-    opacity: 1;
-  }
-
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 0.15;
-  }
-}
-
-/* Continuous horizontal card-flow animation */
-@keyframes horizontal-card-flow {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  100% {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-.animate-horizontal-card-flow {
-  display: flex;
-  width: max-content;
-  animation: horizontal-card-flow var(--flow-duration, 38s) linear infinite;
-  will-change: transform;
-}
-
-.animate-horizontal-card-flow:hover {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-horizontal-card-flow {
-    animation: none !important;
-    transform: none !important;
-  }
-}
-
-/* Prevent iOS Safari automatic viewport zoom on mobile form controls across public website and admin portal */
+/* Prevent iOS Safari automatic zoom on form focus (public + admin) */
 @media (max-width: 639px) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
   textarea,
@@ -397,50 +3424,614 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
-/* Elevate custom cursor above error, offline, and maintenance screens */
-body:has([data-error-view]) [data-custom-cursor],
-body:has([data-error-overlay]) [data-custom-cursor],
-html[data-error-active] [data-custom-cursor] {
-  z-index: 10000 !important;
-}
+/* ==========================================================================
+   Motion
+   ========================================================================== */
 
-/* Fallback: Ensure browser pointer remains visible on error screens when custom cursor is inactive */
-html:not(.custom-cursor-active) [data-error-view],
-html:not(.custom-cursor-active) [data-error-overlay],
-html:not(.custom-cursor-active) [data-error-view] *,
-html:not(.custom-cursor-active) [data-error-overlay] * {
-  cursor: auto !important;
-}
-
-html:not(.custom-cursor-active) [data-error-view] button,
-html:not(.custom-cursor-active) [data-error-overlay] button,
-html:not(.custom-cursor-active) [data-error-view] a,
-html:not(.custom-cursor-active) [data-error-overlay] a {
-  cursor: pointer !important;
-}
-
-/* Technical Trace Field animations */
-@keyframes technicalBeaconDrift {
-  0%, 100% {
-    transform: translateX(0);
-    opacity: 0.6;
+@keyframes rawin-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
   }
-  50% {
-    transform: translateX(24px);
-    opacity: 0.95;
+  to {
+    transform: translate3d(-50%, 0, 0);
   }
 }
-
-.technical-trace-beacon {
-  animation: technicalBeaconDrift 10s ease-in-out infinite;
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: rawin-marquee var(--marquee-duration, 48s) linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
 
+/* Retained for components still using the older ticker class */
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: rawin-marquee 24s linear infinite;
+}
+
+/* Status dot: the pulse is a compositor-only ring (transform + opacity), not an animated box-shadow */
+@keyframes rawin-dot-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  70%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.status-dot {
+  position: relative;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+.status-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  animation: rawin-dot-ring 2.4s ease-out infinite;
+}
+
+@keyframes rawin-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--fg) 8%, transparent), transparent);
+  background-size: 200% 100%;
+  animation: rawin-shimmer 1.6s linear infinite;
+}
+
+/* Universal dvh-first viewport helpers */
+.h-stage-full {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .technical-trace-beacon {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-marquee,
+  .animate-ticker {
     animation: none !important;
     transform: none !important;
   }
 }
 
+/* Error / overlay views keep the native pointer */
+[data-error-view] button,
+[data-error-overlay] button,
+[data-error-view] a,
+[data-error-overlay] a {
+  cursor: pointer;
+}
 
-
+/* ==========================================================================
+   System states
+   ========================================================================== */
+
+.rawin-loading {
+  opacity: 0;
+  animation: rawin-fade-in 0.25s ease-in 160ms forwards;
+}
+@keyframes rawin-fade-in {
+  to {
+    opacity: 1;
+  }
+}
+.rawin-loading-scan {
+  animation: rawin-scan 1.3s var(--ease-editorial) infinite;
+}
+@keyframes rawin-scan {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+.rawin-error-code {
+  background: var(--spectrum);
+  -webkit-background-clip: text;
+  background-clip: text;
+  background-size: 220% 100%;
+  color: transparent;
+  opacity: 0.9;
+  animation: rawin-error-drift 14s ease-in-out infinite alternate;
+}
+@keyframes rawin-error-drift {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+.rawin-error-halo {
+  animation: rawin-breathe 9s ease-in-out infinite;
+}
+@keyframes rawin-breathe {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+/* ==========================================================================
+   Admin studio
+   ========================================================================== */
+
+.admin-input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--fg);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.admin-input::placeholder {
+  color: var(--fg-subtle);
+}
+.admin-input:hover {
+  border-color: color-mix(in oklab, var(--fg) 35%, var(--line-strong));
+}
+.admin-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 16%, transparent);
+}
+
+/* Studio range slider: native input, token colours, 44px touch height */
+.studio-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2.75rem;
+  background: transparent;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+.studio-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+.studio-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+.studio-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  border-radius: 999px;
+  background: var(--fg);
+  border: 3px solid var(--bg-raised);
+  box-shadow: var(--shadow-1);
+}
+.studio-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--fg);
+  border: 3px solid var(--bg-raised);
+}
+.studio-range:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Legacy admin fields (migrated markup) share the same focus language */
+[data-admin-portal] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus-visible,
+[data-admin-portal] textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
+/* ---- Resume: an editorial dossier ---------------------------------------------------
+   Sections are ruled rows (numbered heading in the left quarter, record in the rest on
+   desktop; stacked on phones). Experience, education and the closing call share one
+   timeline rail: a hairline that runs across the rules (.cv-line, a real element so the
+   particle field can feel it), with a marker per entry and an open marker at the end. On
+   phones the rail is a spine on the left edge. Desktop adds a contents column in the hero
+   and a contact axis beside the profile; phones and tablets keep their stacked layout. */
+.cv {
+  --cv-pad: 2.6rem;
+  --cv-gutter: 1.5rem;
+  --cv-gap: 2.5rem;
+}
+@media (min-width: 640px) {
+  .cv {
+    --cv-pad: 3.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .cv {
+    --cv-pad: 4.75rem;
+    --cv-gutter: 2.25rem;
+  }
+}
+.cv-name {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(3.15rem, 15.2vw, 4.75rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+@media (min-width: 640px) {
+  .cv-name {
+    font-size: clamp(5rem, 11.5vw, 8.25rem);
+    line-height: 0.86;
+    letter-spacing: -0.035em;
+  }
+}
+@media (min-width: 1024px) {
+  .cv-name {
+    /* width-led, but never taller than a short laptop screen allows */
+    font-size: min(clamp(5.75rem, 9.4vw, 10.5rem), 20vh);
+  }
+  .cv-actions > .btn {
+    flex: 1 1 auto;
+  }
+}
+.cv-index:not(:first-child) {
+  padding-left: 1rem;
+  border-left: 1px solid var(--line);
+}
+
+.cv-sec {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 1.4rem;
+  padding-block: var(--cv-pad);
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 768px) {
+  /* the section index above already draws the rule */
+  #cv-profile.cv-sec {
+    border-top: 0;
+  }
+}
+@media (min-width: 1280px) {
+  /* wide desktops carry the index inside the hero: the profile opens with its own rule */
+  #cv-profile.cv-sec {
+    margin-top: 3.25rem;
+    border-top: 1px solid var(--line);
+  }
+  .cv-contents {
+    justify-self: center;
+    min-width: 12rem;
+  }
+}
+@media (min-width: 1024px) {
+  .cv-sec {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--cv-gap);
+  }
+  .cv-head {
+    grid-column: span 3;
+    position: sticky;
+    top: 7rem;
+    align-self: start;
+  }
+  .cv-body {
+    grid-column: span 9;
+  }
+}
+
+/* the rail */
+.cv-railed .cv-body {
+  padding-left: var(--cv-gutter);
+}
+.cv-line {
+  position: absolute;
+  left: 5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line-strong);
+  transform-origin: top;
+}
+.cv-railed--start > .cv-line {
+  top: calc(var(--cv-pad) + 0.4rem);
+}
+@media (max-width: 1023px) {
+  /* phones and tablets: the headings are stations on the spine */
+  .cv-railed .cv-head {
+    padding-left: var(--cv-gutter);
+  }
+}
+@media (min-width: 1024px) {
+  .cv-railed > .cv-line {
+    left: calc((100% - 11 * var(--cv-gap)) / 4 + 3 * var(--cv-gap) + 5px);
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cv-line {
+      animation: cv-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 45%;
+    }
+  }
+}
+@keyframes cv-draw {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.cv-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 0.55rem;
+}
+@media (min-width: 768px) {
+  .cv-entry {
+    grid-template-columns: 11rem minmax(0, 1fr);
+    column-gap: 2rem;
+  }
+  .cv-entry--wide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .cv-entry {
+    grid-template-columns: 13rem minmax(0, 1fr);
+    column-gap: 2.5rem;
+  }
+  .cv-entry--wide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cv-mark {
+  position: absolute;
+  left: calc(-1 * var(--cv-gutter) + 1px);
+  top: 0.3rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+}
+.cv-mark[data-current] {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 16%, transparent);
+}
+/* the open end: the next entry is yet to be written */
+.cv-mark--open {
+  top: 0.95rem;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px color-mix(in oklab, var(--accent) 35%, transparent);
+}
+.cv-mark--open::before {
+  /* the rail arriving from the education above */
+  content: "";
+  position: absolute;
+  left: 3px;
+  bottom: calc(100% + 5px);
+  width: 1px;
+  height: calc(var(--cv-pad) + 0.95rem - 5px);
+  background: var(--line-strong);
+}
+@media (max-width: 1023px) {
+  .cv-mark--open::before {
+    /* on the spine it also runs past this section's heading */
+    height: calc(var(--cv-pad) + 5.4rem);
+  }
+}
+
+.cv-chip {
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+  transition: border-color 0.25s ease, color 0.25s ease;
+}
+@media (min-width: 640px) {
+  .cv-chip {
+    padding: 0.24rem 0.68rem;
+    font-size: 12.5px;
+  }
+}
+@media (hover: hover) {
+  .cv-chip:hover {
+    border-color: var(--line-strong);
+    color: var(--fg);
+  }
+}
+
+.cv-contact {
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.75rem;
+  padding-block: 0.72rem;
+  border-bottom: 1px solid var(--line);
+}
+/* hero contents column (wide desktops): the section index on a fine axis, one node per entry */
+.cv-contents-list {
+  position: relative;
+  margin-top: 0.9rem;
+  padding-left: 1.4rem;
+}
+.cv-contents-axis {
+  position: absolute;
+  left: 4px;
+  top: 0.55rem;
+  bottom: 0.55rem;
+  width: 1px;
+  background: var(--line-strong);
+}
+.cv-contents-link {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding-block: 0.42rem;
+}
+.cv-contents-node {
+  position: absolute;
+  left: calc(-1.4rem + 1px);
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s var(--ease-out-quint);
+}
+.cv-contents-link:hover .cv-contents-node,
+.cv-contents-link:focus-visible .cv-contents-node {
+  border-color: var(--accent);
+  background: var(--accent);
+  transform: scale(1.25);
+}
+
+/* profile (desktop): the statement takes the wide column, the contact details stand beside it
+   on their own axis; below 1024px the details stay a list under the statement */
+.cv-contacts-axis,
+.cv-contact-node {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .cv-profile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
+    column-gap: clamp(2.5rem, 5vw, 5.5rem);
+    align-items: start;
+  }
+  .cv-contacts {
+    position: relative;
+    margin-top: 0.45rem;
+    padding-left: 1.6rem;
+  }
+  .cv-contacts > dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cv-contacts .cv-contact {
+    position: relative;
+    padding: 0 0 1.5rem;
+    border-top: 0;
+  }
+  .cv-contacts .cv-contact:last-child {
+    padding-bottom: 0;
+  }
+  .cv-contacts-axis {
+    display: block;
+    position: absolute;
+    left: 4px;
+    top: 0.3rem;
+    bottom: 1.1rem;
+    width: 1px;
+    background: var(--line-strong);
+  }
+  .cv-contact-node {
+    display: block;
+    position: absolute;
+    left: calc(-1.6rem + 0.5px);
+    top: 0.1rem;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg);
+  }
+  .cv-contacts .cv-contact:first-child .cv-contact-node {
+    border-color: var(--accent);
+  }
+}
+.cv-contact:last-child {
+  /* the next section's rule closes the list */
+  border-bottom: 0;
+}
+@media (min-width: 768px) {
+  .cv-contact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.45rem;
+    padding: 0.95rem 1.25rem 0 0;
+    border-bottom: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* ---- Contact ---------------------------------------------------------------------------
+   Phones: a compact statement (title, intro, address, details) that hands over to the form
+   quickly. Desktop: statement (5 columns) beside the inquiry card (7). The card's header
+   carries a five-tick gauge that fills as the fields are completed. */
+.contact-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.15rem, 9.4vw, 2.75rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+}
+@media (min-width: 640px) {
+  .contact-title {
+    font-size: clamp(3.4rem, 8vw, 4.6rem);
+    line-height: 0.94;
+    letter-spacing: -0.03em;
+  }
+}
+@media (min-width: 1024px) {
+  .contact-title {
+    font-size: clamp(4.1rem, 6.9vw, 7.4rem);
+    line-height: 0.9;
+  }
+  .contact-grid {
+    --contact-gap: clamp(3rem, 5vw, 5rem);
+    column-gap: var(--contact-gap);
+  }
+}
+.contact-gauge {
+  display: inline-flex;
+  gap: 3px;
+}
+.contact-gauge > span {
+  width: 9px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transition: background-color 0.4s ease;
+}
+.contact-gauge > span.is-on {
+  background: var(--accent);
+}

@@ -1,33 +1,15 @@
-import type { Metadata } from "next";
-import {
-  Code2,
-  Bot,
-  Terminal,
-  Globe,
-  Palette,
-  GitBranch,
-  Layers,
-  Cpu,
-  Database,
-  Zap,
-  Compass,
-  Laptop,
-  Flame,
-  Activity,
-  Sparkles,
-  Radio,
-  Workflow,
-  Wrench,
-  Boxes,
-} from "lucide-react";
-import { getSiteContent, type DailyStackItem, type DevStackItem, type BuildStepItem, type ExploringItem } from "@/lib/site-content";
-import MobileUsesView from "@/components/MobileUsesView";
+import { getSiteContent, splitLedgerDescription, type DailyStackItem, type DevStackItem, type BuildStepItem, type ExploringItem } from "@/lib/site-content";
+import MaskText from "@/components/system/MaskText";
+import Reveal from "@/components/system/Reveal";
+import ActivateOnView from "@/components/uses/ActivateOnView";
+import InstrumentDial from "@/components/uses/InstrumentDial";
+import UsesHead from "@/components/uses/UsesHead";
+import UsesIcon from "@/components/uses/UsesIcon";
+import { pageMetadata } from "@/lib/page-metadata";
 
-export const metadata: Metadata = {
-  title: "What I Use | Rushan Siddiqui",
-  description:
-    "The tools, software, engineering stack, and personal workflow used daily by Rushan Siddiqui.",
-};
+export function generateMetadata() {
+  return pageMetadata("uses", "/uses");
+}
 
 export const revalidate = 3600;
 
@@ -277,33 +259,6 @@ const DEFAULT_EXPLORING: ExploringItem[] = [
   },
 ];
 
-const ICON_MAP: Record<string, typeof Layers> = {
-  layers: Layers,
-  code: Code2,
-  cpu: Cpu,
-  palette: Palette,
-  database: Database,
-  zap: Zap,
-  activity: Activity,
-  compass: Compass,
-  git: GitBranch,
-  terminal: Terminal,
-  bot: Bot,
-  globe: Globe,
-  sparkles: Sparkles,
-  radio: Radio,
-  flame: Flame,
-  laptop: Laptop,
-  workflow: Workflow,
-  wrench: Wrench,
-  boxes: Boxes,
-};
-
-function resolveIcon(identifier?: string, fallback: typeof Layers = Layers) {
-  if (!identifier) return fallback;
-  const key = identifier.toLowerCase().trim();
-  return ICON_MAP[key] || fallback;
-}
 
 // Group development stack into coherent architectural domains
 function groupDevStack(items: DevStackItem[]) {
@@ -358,11 +313,16 @@ function groupDevStack(items: DevStackItem[]) {
   return ordered;
 }
 
+
 export default async function UsesPage() {
   const content = await getSiteContent();
   const uses = content.uses;
 
-  const updateLabel = uses?.updateLabel || "UPDATED REGULARLY · 2026";
+  // Ledger: label, description and year are separate CMS fields, composed only here
+  const ledgerLabel = uses?.ledgerLabel?.trim() || "Ledger";
+  const ledgerParts = splitLedgerDescription(uses?.updateLabel);
+  const ledgerDescription = ledgerParts.description || "UPDATED REGULARLY";
+  const ledgerYear = uses?.updatedYear?.trim() || ledgerParts.year;
   const eyebrow = uses?.eyebrow || "TOOLS & HARDWARE";
   const pageTitle = uses?.title || "What I Use";
   const pageDescription =
@@ -433,352 +393,258 @@ export default async function UsesPage() {
     },
   };
 
+
+  const [titleHead, ...titleRest] = pageTitle.trim().split(/\s+/);
+  const titleTail = titleRest.join(" ");
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const plural = (n: number, one: string, many: string) => `${pad(n)} ${n === 1 ? one : many}`;
+  // a horizontal sequence while the stages still fit one row; longer processes run vertically
+  const rowProcess = buildSteps.length > 0 && buildSteps.length <= 6;
+
   return (
-    <div className="relative w-full min-h-screen min-h-dvh">
-      {/* Top ambient backdrop for smooth navbar pass-through */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed top-0 inset-x-0 h-28 bg-gradient-to-b from-ink-black via-ink-black/85 to-transparent z-40"
-      />
-
-      {/* ─── DESKTOP PRESENTATION (>= 1024px) ─── */}
-      <div className="hidden lg:block w-full">
-        <div className="w-full max-w-6xl mx-auto pt-32 sm:pt-36 md:pt-40 pb-28 px-6 lg:px-8 flex flex-col gap-24">
-          
-          {/* Section 0: Page Header */}
-          <header className="flex flex-col gap-5 max-w-3xl">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-xs font-mono font-medium text-pacific-cyan bg-pacific-cyan/[0.08] border border-pacific-cyan/20 w-fit">
-                <Wrench className="w-3.5 h-3.5" />
-                <span>{eyebrow}</span>
-              </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-mono text-muted/70 bg-white/[0.03] border border-white/[0.08]">
-                {updateLabel}
-              </span>
-            </div>
-
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-foreground font-space leading-tight">
-              {pageTitle}
-            </h1>
-
-            <p className="text-base lg:text-lg text-muted/90 leading-relaxed font-sans max-w-2xl">
-              {pageDescription}
-            </p>
-          </header>
-
-          {/* Section 1: Daily Stack (Engineering Workbench / Tool Inventory) */}
-          <section className="flex flex-col gap-6" aria-label="Daily Stack">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono font-bold text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/20 px-2 py-0.5 rounded">
-                  01
-                </span>
-                <h2 className="text-xl font-bold font-space text-foreground uppercase tracking-wide">
-                  Daily Stack
-                </h2>
-              </div>
-              <span className="text-[11px] font-mono text-muted/60 uppercase tracking-widest">
-                TOOL INVENTORY · {dailyStack.length} ITEMS
-              </span>
-            </div>
-
-            {/* Workbench Inventory Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {dailyStack.map((tool, idx) => {
-                const Icon = resolveIcon(tool.icon, Terminal);
-                const numStr = idx < 9 ? `0${idx + 1}` : `${idx + 1}`;
-                return (
-                  <div
-                    key={tool.id || tool.name}
-                    className="group rounded-xl p-5 bg-ink-black/60 border border-white/[0.07] hover:border-pacific-cyan/35 transition-all duration-200 flex flex-col justify-between gap-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xs font-mono font-bold text-pacific-cyan">
-                          {numStr}
-                        </span>
-                        <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-pacific-cyan/90 group-hover:border-pacific-cyan/40 transition-colors">
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted/70 px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06]">
-                        {tool.category}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <h3 className="text-base font-bold font-space text-foreground group-hover:text-pacific-cyan transition-colors">
-                        {tool.name}
-                      </h3>
-                      <p className="text-xs text-muted/80 leading-relaxed font-sans">
-                        {tool.description}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Section 2: Development Stack (Architecture Map) */}
-          <section className="flex flex-col gap-8" aria-label="Development Stack">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono font-bold text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/20 px-2 py-0.5 rounded">
-                  02
-                </span>
-                <h2 className="text-xl font-bold font-space text-foreground uppercase tracking-wide">
-                  Development Stack
-                </h2>
-              </div>
-              <span className="text-[11px] font-mono text-muted/60 uppercase tracking-widest">
-                ARCHITECTURE MAP
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-8">
-              {devGroups.map((group) => (
-                <div key={group.label} className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-white/[0.05]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-pacific-cyan" />
-                    <h3 className="text-xs font-mono font-semibold uppercase tracking-widest text-pacific-cyan/90">
-                      {group.label}
-                    </h3>
-                    <span className="text-[10px] font-mono text-muted/50 ml-auto">
-                      {group.items.length} {group.items.length === 1 ? "component" : "components"}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {group.items.map((tech) => {
-                      const Icon = resolveIcon(tech.icon, Layers);
-                      return (
-                        <div
-                          key={tech.name}
-                          className="rounded-xl p-4 bg-ink-black/50 border border-white/[0.06] hover:border-pacific-cyan/30 transition-all duration-200 flex flex-col justify-between gap-2.5"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Icon className="w-3.5 h-3.5 text-pacific-cyan/80 shrink-0" />
-                              <span className="text-sm font-bold font-space text-foreground truncate">
-                                {tech.name}
-                              </span>
-                            </div>
-                            {tech.category && (
-                              <span className="text-[9.5px] font-mono text-muted/60 shrink-0 px-1.5 py-0.5 rounded bg-white/[0.02] border border-white/[0.05]">
-                                {tech.category}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted/75 leading-relaxed font-sans">
-                            {tech.description}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Section 3: How I Build (Process Timeline) */}
-          <section className="flex flex-col gap-6" aria-label="How I Build">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono font-bold text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/20 px-2 py-0.5 rounded">
-                  03
-                </span>
-                <h2 className="text-xl font-bold font-space text-foreground uppercase tracking-wide">
-                  How I Build
-                </h2>
-              </div>
-            </div>
-
-            {/* Connected Horizontal Timeline Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 relative">
-              {buildSteps.map((step, idx) => (
-                <div
-                  key={step.id || step.number || step.step || idx}
-                  className="rounded-xl p-5 bg-ink-black/60 border border-white/[0.07] hover:border-pacific-cyan/30 transition-all duration-200 flex flex-col gap-3 relative group"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono font-bold text-pacific-cyan px-2 py-0.5 rounded bg-pacific-cyan/10 border border-pacific-cyan/20">
-                      {step.number || step.step || `0${idx + 1}`}
-                    </span>
-                    <span className="text-[10px] font-mono text-muted/40 uppercase">
-                      PHASE 0{idx + 1}
-                    </span>
-                  </div>
-
-                  <h3 className="text-base font-bold font-space text-foreground group-hover:text-pacific-cyan transition-colors">
-                    {step.title}
-                  </h3>
-
-                  <p className="text-xs text-muted/80 leading-relaxed font-sans">
-                    {step.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Section 4: My Setup (Workbench Status Modules) */}
-          <section className="flex flex-col gap-6" aria-label="My Setup">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono font-bold text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/20 px-2 py-0.5 rounded">
-                  04
-                </span>
-                <h2 className="text-xl font-bold font-space text-foreground uppercase tracking-wide">
-                  My Setup
-                </h2>
-              </div>
-              <span className="text-[11px] font-mono text-muted/60 uppercase tracking-widest">
-                WORKBENCH STATUS
-              </span>
-            </div>
-
-            {/* Three distinct module presentations */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Module 1: Main Machine (Technical Workstation Module) */}
-              <div className="rounded-xl p-6 bg-ink-black/60 border border-white/[0.08] flex flex-col justify-between gap-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-white/[0.06] text-pacific-cyan text-xs font-mono uppercase tracking-wider">
-                  <Laptop className="w-4 h-4" />
-                  <span>{mySetup.mainMachine.label}</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-2xl font-bold font-space text-foreground">
-                    {mySetup.mainMachine.value}
-                  </span>
-                  {mySetup.mainMachine.description && (
-                    <p className="text-xs text-muted/75 leading-relaxed font-sans">
-                      {mySetup.mainMachine.description}
-                    </p>
-                  )}
-                </div>
-                <div className="pt-2 border-t border-white/[0.04] text-[10px] font-mono text-muted/50 uppercase">
-                  ACTIVE ENVIRONMENT · WORKSTATION
-                </div>
-              </div>
-
-              {/* Module 2: Fuel (Editorial / Craftsman Quote Module) */}
-              <div className="rounded-xl p-6 bg-ink-black/60 border border-white/[0.08] border-l-2 border-l-apricot-cream flex flex-col justify-between gap-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-white/[0.06] text-apricot-cream text-xs font-mono uppercase tracking-wider">
-                  <Flame className="w-4 h-4" />
-                  <span>{mySetup.fuel.label}</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-lg font-bold font-space text-foreground leading-snug">
-                    {mySetup.fuel.value}
-                  </span>
-                  {mySetup.fuel.description && (
-                    <p className="text-xs text-muted/75 leading-relaxed font-sans">
-                      {mySetup.fuel.description}
-                    </p>
-                  )}
-                </div>
-                <div className="pt-2 border-t border-white/[0.04] text-[10px] font-mono text-muted/50 uppercase">
-                  DISCIPLINE · PURPOSE
-                </div>
-              </div>
-
-              {/* Module 3: Current Status (Live Status Telemetry Module) */}
-              <div className="rounded-xl p-6 bg-ink-black/60 border border-white/[0.08] flex flex-col justify-between gap-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-white/[0.06] text-emerald-400 text-xs font-mono uppercase tracking-wider">
-                  <Radio className="w-4 h-4" />
-                  <span>{mySetup.currentStatus.label}</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-xl font-bold font-space text-emerald-300">
-                      {mySetup.currentStatus.value}
-                    </span>
-                  </div>
-                  {mySetup.currentStatus.description && (
-                    <p className="text-xs text-muted/75 leading-relaxed font-sans">
-                      {mySetup.currentStatus.description}
-                    </p>
-                  )}
-                </div>
-                <div className="pt-2 border-t border-white/[0.04] text-[10px] font-mono text-emerald-400/60 uppercase">
-                  STATUS · ACTIVE RUNTIME
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 5: Currently Exploring (Research Board) */}
-          <section className="flex flex-col gap-6" aria-label="Currently Exploring">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono font-bold text-pacific-cyan bg-pacific-cyan/10 border border-pacific-cyan/20 px-2 py-0.5 rounded">
-                  05
-                </span>
-                <h2 className="text-xl font-bold font-space text-foreground uppercase tracking-wide">
-                  Currently Exploring
-                </h2>
-              </div>
-              <span className="text-[11px] font-mono text-muted/60 uppercase tracking-widest">
-                RESEARCH BOARD · {exploringItems.length} TOPICS
-              </span>
-            </div>
-
-            {/* Research Entry List with Apricot Accents */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {exploringItems.map((topic, idx) => {
-                const Icon = resolveIcon(topic.icon, Compass);
-                const numStr = idx < 9 ? `0${idx + 1}` : `${idx + 1}`;
-                return (
-                  <div
-                    key={topic.name}
-                    className="rounded-xl p-5 bg-ink-black/50 border border-white/[0.07] hover:border-pacific-cyan/30 transition-all duration-200 flex flex-col justify-between gap-3 group"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-pacific-cyan">
-                          {numStr}
-                        </span>
-                        <Icon className="w-3.5 h-3.5 text-apricot-cream/80" />
-                      </div>
-                      {topic.category && (
-                        <span className="text-[10px] font-mono text-apricot-cream/80 bg-apricot-cream/[0.06] border border-apricot-cream/20 px-2 py-0.5 rounded uppercase">
-                          {topic.category}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <h3 className="text-base font-bold font-space text-foreground group-hover:text-pacific-cyan transition-colors">
-                        {topic.name}
-                      </h3>
-                      <p className="text-xs text-muted/75 leading-relaxed font-sans">
-                        {topic.description}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
+    <div className="uses-scope field-ground flex flex-col">
+      {/* Hero: title, lede and ledger on the left; the instrument plate beside them */}
+      <header className="uses-shell uses-hero">
+        <div className="uses-head-rule label-mono">
+          <span className="uses-lav">04</span>
+          <span aria-hidden="true" className="uses-head-line" />
+          <span className="text-fg-muted">{eyebrow}</span>
+          <span aria-hidden="true" className="uses-head-count text-fg-subtle">
+            RAWIN / v3
+          </span>
         </div>
-      </div>
+        <div className="uses-hero-grid">
+          <div className="uses-hero-main">
+            <MaskText
+              as="h1"
+              immediate
+              className="uses-hero-title text-fg"
+              lines={
+                titleTail
+                  ? [<span key="a">{titleHead}</span>, <em key="b" className="italic uses-lav">{titleTail}</em>]
+                  : [<span key="a">{pageTitle}</span>]
+              }
+              phoneInline={{ chars: pageTitle.length }}
+            />
+            <p className="uses-hero-lede">{pageDescription}</p>
+            <dl className="uses-metrics">
+              <div>
+                <dt className="label-mono">Instruments</dt>
+                <dd className="uses-metric-num">{pad(dailyStack.length)}</dd>
+              </div>
+              <div>
+                <dt className="label-mono">Stack</dt>
+                <dd className="uses-metric-num">{pad(devStackItems.length)}</dd>
+              </div>
+              <div className="is-wide">
+                <dt className="label-mono">{ledgerLabel}</dt>
+                <dd className="uses-metric-text">
+                  {ledgerDescription}
+                  {ledgerYear && (
+                    <>
+                      {" · "}
+                      <time dateTime={ledgerYear}>{ledgerYear}</time>
+                    </>
+                  )}
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <InstrumentDial instruments={dailyStack.length} stack={devStackItems.length} total={dailyStack.length + devStackItems.length} />
+        </div>
+      </header>
 
-      {/* ─── SMARTPHONE & TABLET PRESENTATION (< 1024px) ─── */}
-      <div className="block lg:hidden w-full">
-        <MobileUsesView
-          eyebrow={eyebrow}
-          updateLabel={updateLabel}
-          pageTitle={pageTitle}
-          pageDescription={pageDescription}
-          dailyStack={dailyStack}
-          devGroups={devGroups}
-          buildSteps={buildSteps}
-          mySetup={mySetup}
-          exploringItems={exploringItems}
-        />
+      <div className="uses-shell uses-sections">
+        {/* 01: Everyday instruments, an index of tools */}
+        <section aria-labelledby="uses-daily">
+          <UsesHead
+            id="uses-daily"
+            index="01"
+            eyebrow="Daily stack"
+            lead="Everyday"
+            em="instruments"
+            count={plural(dailyStack.length, "entry", "entries")}
+            note="Software in daily use, indexed by the role it plays."
+          />
+          <ol className="uses-instruments">
+            {dailyStack.map((tool, i) => (
+              <Reveal as="li" key={tool.id || tool.name} delay={(i % 3) * 0.06} y={18} className="uses-instrument">
+                <div className="uses-instrument-top label-mono">
+                  <span className="uses-lav">{pad(i + 1)}</span>
+                  <span className="text-fg-subtle">{tool.category}</span>
+                </div>
+                <span className="uses-instrument-glyph">
+                  <UsesIcon name={tool.icon} className="h-[18px] w-[18px]" />
+                </span>
+                <h3 className="uses-instrument-name">{tool.name}</h3>
+                <p className="uses-instrument-desc">{tool.description}</p>
+              </Reveal>
+            ))}
+          </ol>
+        </section>
+
+        {/* 02: Development stack, a typeset reference grouped by layer */}
+        <section aria-labelledby="uses-stack">
+          <UsesHead
+            id="uses-stack"
+            index="02"
+            eyebrow="Development stack"
+            lead="The"
+            em="architecture"
+            count={plural(devGroups.length, "layer", "layers")}
+            note="Grouped by the layer of the system each technology serves."
+          />
+          <div className="uses-stack">
+            {devGroups.map((group, gi) => {
+              const letter = String.fromCharCode(65 + (gi % 26));
+              return (
+                <Reveal key={group.label} y={18} className="uses-group">
+                  <div className="uses-group-head">
+                    <span aria-hidden="true" className="uses-group-letter">
+                      {letter}
+                    </span>
+                    <div>
+                      <h3 className="uses-group-title">{group.label}</h3>
+                      <p className="label-mono text-fg-subtle uses-group-count">{plural(group.items.length, "entry", "entries")}</p>
+                    </div>
+                  </div>
+                  <ul className="uses-group-list">
+                    {group.items.map((item, ii) => (
+                      <li key={item.id || item.name} className="uses-tech">
+                        <span aria-hidden="true" className="uses-tech-code label-mono">
+                          {letter}.{pad(ii + 1)}
+                        </span>
+                        <span className="uses-tech-name">{item.name}</span>
+                        <span className="uses-tech-desc">{item.description}</span>
+                        {item.category && <span className="uses-tech-cat label-mono">{item.category}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </Reveal>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 03: The workbench, one console with three readouts */}
+        <section aria-labelledby="uses-setup">
+          <UsesHead
+            id="uses-setup"
+            index="03"
+            eyebrow="My setup"
+            lead="On the"
+            em="workbench"
+            note="The machine, the motivation, and where things stand."
+          />
+          <ActivateOnView className="uses-console" data-activate="">
+            <div aria-hidden="true" className="uses-console-bar label-mono">
+              <span className="uses-lav">03</span>
+              <span>Workbench</span>
+              <span className="uses-console-ruler" />
+            </div>
+            <dl className="uses-console-grid">
+              <div className="uses-cell is-machine">
+                <dt className="label-mono text-fg-subtle">{mySetup.mainMachine.label}</dt>
+                <dd>
+                  <p className="uses-machine-value">{mySetup.mainMachine.value}</p>
+                  {mySetup.mainMachine.description && <p className="uses-cell-desc">{mySetup.mainMachine.description}</p>}
+                  <svg aria-hidden="true" viewBox="0 0 600 72" preserveAspectRatio="none" className="uses-trace">
+                    <path className="uses-trace-base" d="M0 52 H600" />
+                    <path
+                      className="uses-trace-line"
+                      d="M0 52 H96 C112 52 116 30 128 30 S144 52 160 52 H232 C244 52 250 14 262 14 S280 52 294 52 H372 C384 52 388 38 398 38 S412 52 424 52 H600"
+                    />
+                    {Array.from({ length: 25 }, (_, i) => (
+                      <line key={i} className="uses-trace-tick" x1={i * 25} y1={i % 4 === 0 ? 62 : 66} x2={i * 25} y2="72" />
+                    ))}
+                    <rect className="uses-trace-scan" x="0" y="0" width="2" height="72" />
+                  </svg>
+                </dd>
+              </div>
+              <div className="uses-cell is-fuel">
+                <dt className="label-mono text-fg-subtle">{mySetup.fuel.label}</dt>
+                <dd>
+                  <p className="uses-fuel-value">{mySetup.fuel.value}</p>
+                  {mySetup.fuel.description && <p className="uses-cell-desc">{mySetup.fuel.description}</p>}
+                </dd>
+              </div>
+              <div className="uses-cell is-status">
+                <dt className="label-mono text-fg-subtle">
+                  <span aria-hidden="true" className="uses-pulse" />
+                  {mySetup.currentStatus.label}
+                </dt>
+                <dd>
+                  <p className="uses-status-value">{mySetup.currentStatus.value}</p>
+                  {mySetup.currentStatus.description && <p className="uses-cell-desc">{mySetup.currentStatus.description}</p>}
+                </dd>
+              </div>
+            </dl>
+          </ActivateOnView>
+        </section>
+
+        {/* 04: From brief to shipped, a connected sequence */}
+        {buildSteps.length > 0 && (
+          <section aria-labelledby="uses-process">
+            <UsesHead
+              id="uses-process"
+              index="04"
+              eyebrow="How I build"
+              lead="From brief"
+              em="to shipped"
+              count={plural(buildSteps.length, "stage", "stages")}
+              note="Each stage hands its work to the next."
+            />
+            <ActivateOnView
+              as="ol"
+              data-activate=""
+              className={`uses-process${rowProcess ? " is-row" : ""}`}
+              style={{ "--n": buildSteps.length } as React.CSSProperties}
+            >
+              {buildSteps.map((step, i) => (
+                <li key={step.id || step.title} data-activate="" className="uses-step" style={{ "--i": i } as React.CSSProperties}>
+                  <span aria-hidden="true" className="uses-node">
+                    <span />
+                  </span>
+                  <Reveal y={14} delay={rowProcess ? i * 0.08 : 0} className="uses-step-body">
+                    <p className="uses-step-num label-mono">{step.number || step.step || pad(i + 1)}</p>
+                    <h3 className="uses-step-title">{step.title}</h3>
+                    <p className="uses-step-desc">{step.description}</p>
+                  </Reveal>
+                </li>
+              ))}
+            </ActivateOnView>
+          </section>
+        )}
+
+        {/* 05: On the horizon, a roadmap path that continues past its last entry */}
+        {exploringItems.length > 0 && (
+          <section aria-labelledby="uses-exploring">
+            <UsesHead
+              id="uses-exploring"
+              index="05"
+              eyebrow="Currently exploring"
+              lead="On the"
+              em="horizon"
+              count={plural(exploringItems.length, "subject", "subjects")}
+              note="Subjects under active study, not yet part of the everyday stack."
+            />
+            <ActivateOnView as="ol" className="uses-horizon">
+              {exploringItems.map((item, i) => (
+                <li key={item.id || item.name} data-activate="" className="uses-topic">
+                  <span aria-hidden="true" className="uses-node is-small">
+                    <span />
+                  </span>
+                  <Reveal y={14} className="uses-topic-body">
+                    <span className="uses-topic-num label-mono">{pad(i + 1)}</span>
+                    <h3 className="uses-topic-name">{item.name}</h3>
+                    <p className="uses-topic-desc">{item.description}</p>
+                    {item.category && <span className="uses-topic-cat label-mono">{item.category}</span>}
+                  </Reveal>
+                </li>
+              ))}
+            </ActivateOnView>
+          </section>
+        )}
       </div>
     </div>
   );

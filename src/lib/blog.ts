@@ -5,6 +5,14 @@ import { ObjectId } from "mongodb";
 import { GridFSBucket } from "mongodb";
 import type { Readable } from "stream";
 import { getDatabase } from "./mongodb";
+import { checkImageUpload } from "./brand-assets";
+
+/*
+ * Reads throw when the database is unreachable instead of answering [] / null: a thrown error
+ * is never stored by unstable_cache, so an outage shows the error page (and the last good
+ * static page keeps being served during revalidation) rather than an empty site cached for an
+ * hour. `null` from a by-slug/by-id read now always means "no such record".
+ */
 
 export type BlogPostStatus = "draft" | "published" | "archived";
 
@@ -16,6 +24,15 @@ export interface BlogPost {
   excerpt: string;
   content: string;
   coverImage?: string;
+  /** Optional editorial category (CMS taxonomy). Absent on older posts. */
+  category?: string;
+  /**
+   * Optional editorial diagram: "auto" (absent = auto, derived from category/tags), "none", or
+   * a motif id (see components/blog/motifs.ts). Absent on older posts.
+   */
+  illustration?: string;
+  /** Optional caption / accessible description for the diagram. */
+  illustrationCaption?: string;
   tags: string[];
   readTime: string;
   status: BlogPostStatus;
@@ -63,6 +80,11 @@ function mapBlogDoc(doc: any): BlogPost {
     excerpt: doc.excerpt || "",
     content: doc.content || "",
     coverImage: doc.coverImage && doc.coverImage.trim() ? doc.coverImage.trim() : undefined,
+    ...(typeof doc.category === "string" && doc.category.trim() ? { category: doc.category.trim() } : {}),
+    ...(typeof doc.illustration === "string" && doc.illustration.trim() ? { illustration: doc.illustration.trim() } : {}),
+    ...(typeof doc.illustrationCaption === "string" && doc.illustrationCaption.trim()
+      ? { illustrationCaption: doc.illustrationCaption.trim() }
+      : {}),
     tags: Array.isArray(doc.tags) ? doc.tags : [],
     readTime: doc.readTime || "5 min read",
     status: (doc.status as BlogPostStatus) || "draft",
@@ -85,7 +107,7 @@ function mapBlogDoc(doc: any): BlogPost {
 async function fetchPublishedPostsFromDb(): Promise<BlogPost[]> {
   try {
     const db = await getDatabase();
-    if (!db) return [];
+    if (!db) throw new Error("Database connection unavailable.");
 
     const docs = await db
       .collection(COLLECTION_NAME)
@@ -97,7 +119,7 @@ async function fetchPublishedPostsFromDb(): Promise<BlogPost[]> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Blog] Error fetching published posts:", msg);
-    return [];
+    throw err;
   }
 }
 
@@ -120,7 +142,7 @@ export const getPublishedPosts = cache(async (): Promise<BlogPost[]> => {
 async function fetchFeaturedPostsFromDb(): Promise<BlogPost[]> {
   try {
     const db = await getDatabase();
-    if (!db) return [];
+    if (!db) throw new Error("Database connection unavailable.");
 
     const docs = await db
       .collection(COLLECTION_NAME)
@@ -132,7 +154,7 @@ async function fetchFeaturedPostsFromDb(): Promise<BlogPost[]> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Blog] Error fetching featured posts:", msg);
-    return [];
+    throw err;
   }
 }
 
@@ -156,7 +178,7 @@ export const getFeaturedPosts = cache(async (): Promise<BlogPost[]> => {
 async function fetchPostBySlugFromDb(slug: string, includeUnpublished = false): Promise<BlogPost | null> {
   try {
     const db = await getDatabase();
-    if (!db) return null;
+    if (!db) throw new Error("Database connection unavailable.");
 
     const normalizedSlug = slug.trim().toLowerCase();
     const query: Record<string, any> = { slug: normalizedSlug };
@@ -170,7 +192,7 @@ async function fetchPostBySlugFromDb(slug: string, includeUnpublished = false): 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[Blog] Error fetching post by slug (${slug}):`, msg);
-    return null;
+    throw err;
   }
 }
 
@@ -195,7 +217,7 @@ export const getPostBySlug = cache(async (slug: string, includeUnpublished = fal
 export async function getPostById(id: string): Promise<BlogPost | null> {
   try {
     const db = await getDatabase();
-    if (!db) return null;
+    if (!db) throw new Error("Database connection unavailable.");
     if (!ObjectId.isValid(id)) return null;
 
     const doc = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(id) });
@@ -203,7 +225,7 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[Blog] Error fetching post by id (${id}):`, msg);
-    return null;
+    throw err;
   }
 }
 
@@ -213,7 +235,7 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
 async function fetchAllPostsAdminFromDb(): Promise<BlogPost[]> {
   try {
     const db = await getDatabase();
-    if (!db) return [];
+    if (!db) throw new Error("Database connection unavailable.");
 
     const docs = await db
       .collection(COLLECTION_NAME)
@@ -225,7 +247,7 @@ async function fetchAllPostsAdminFromDb(): Promise<BlogPost[]> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Blog] Error fetching admin posts:", msg);
-    return [];
+    throw err;
   }
 }
 
@@ -388,6 +410,10 @@ export async function storeBlogCoverFile(
   mimeType: string,
   filename: string
 ): Promise<string> {
+  // The stored type comes from the file's bytes, never from the browser's declared type
+  const check = checkImageUpload("blogCover", new Uint8Array(fileBuffer));
+  if (!check.ok) throw new Error(check.error);
+  mimeType = check.type;
   const db = await getDatabase();
   if (!db) throw new Error("Database connection unavailable.");
   if (!ObjectId.isValid(postId)) throw new Error("Invalid post ID.");

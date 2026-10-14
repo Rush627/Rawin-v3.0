@@ -1,17 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import emailjs from "@emailjs/browser";
+import { useRef, useState } from "react";
 import { getActiveSocialLinks } from "@/components/SocialIcons";
-import type { ContactContent, GlobalContent } from "@/lib/site-content";
-import DesktopContactView from "@/components/DesktopContactView";
-import MobileContactView from "@/components/MobileContactView";
+import type { ContactContent } from "@/lib/site-content";
+import type { AvailabilityContent } from "@/lib/cms/availability";
+import ContactStage from "@/components/contact/ContactStage";
 
 // Verified credentials preserved from production
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/mblkyvyw";
-const EMAILJS_PUBLIC_KEY = "7OVQm6WrduZGlvd6i";
-const EMAILJS_SERVICE_ID = "service_46acsfl";
-const EMAILJS_TEMPLATE_ID = "template_x0tcmrn";
 
 interface FormDataState {
   user_name: string;
@@ -24,10 +20,10 @@ interface FormDataState {
 
 interface ContactViewProps {
   content: ContactContent;
-  global?: GlobalContent;
+  availability?: AvailabilityContent;
 }
 
-export default function ContactView({ content, global }: ContactViewProps) {
+export default function ContactView({ content, availability }: ContactViewProps) {
   const [formData, setFormData] = useState<FormDataState>({
     user_name: "",
     user_email: "",
@@ -40,8 +36,9 @@ export default function ContactView({ content, global }: ContactViewProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const emailAddress = content.email || global?.contactEmail || "rushansiddiqui5262@gmail.com";
-  const locationString = content.location || global?.location || "Jaunpur, Uttar Pradesh, India";
+  // email and location are the canonical contact identity (resolved server-side)
+  const emailAddress = content.email;
+  const locationString = content.location;
 
   // Dynamic CMS form placeholders with fallback defaults
   const placeholders = {
@@ -88,8 +85,12 @@ export default function ContactView({ content, global }: ContactViewProps) {
     setErrorMessage("");
   };
 
+  // A second submit before React re-renders (double Enter, double tap) must not send twice
+  const sendingRef = useRef(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (sendingRef.current) return;
 
     // Honeypot spam trap
     if (formData._gotcha) {
@@ -105,9 +106,11 @@ export default function ContactView({ content, global }: ContactViewProps) {
 
     setStatus("loading");
     setErrorMessage("");
+    sendingRef.current = true;
 
     try {
-      // 1. Submit to Formspree endpoint
+      // Formspree is the single delivery path (one enquiry = one message). EmailJS used to
+      // send a second copy of every enquiry; it is no longer called.
       const formspreePayload = new FormData();
       formspreePayload.append("user_name", formData.user_name);
       formspreePayload.append("user_email", formData.user_email);
@@ -120,19 +123,6 @@ export default function ContactView({ content, global }: ContactViewProps) {
         body: formspreePayload,
         headers: { Accept: "application/json" },
       });
-
-      // 2. Dispatch EmailJS as redundancy backup
-      try {
-        emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-          user_name: formData.user_name,
-          user_email: formData.user_email,
-          subject: formData.subject || "RAWIN 3.0 Portfolio Inquiry",
-          message: formData.message,
-        });
-      } catch (emailjsError) {
-        console.warn("EmailJS secondary dispatch notice:", emailjsError);
-      }
 
       if (formspreeRes.ok) {
         setStatus("success");
@@ -151,6 +141,8 @@ export default function ContactView({ content, global }: ContactViewProps) {
     } catch {
       setStatus("error");
       setErrorMessage("Network error. Please check your connection or email directly.");
+    } finally {
+      sendingRef.current = false;
     }
   };
 
@@ -170,26 +162,8 @@ export default function ContactView({ content, global }: ContactViewProps) {
     handleEmailCardClick,
     handleResetStatus,
     content,
-    global,
+    availability,
   };
 
-  return (
-    <div className="relative w-full min-h-screen min-h-dvh">
-      {/* Top ambient backdrop for smooth floating navbar pass-through */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed top-0 inset-x-0 h-32 bg-gradient-to-b from-ink-black via-ink-black/90 to-transparent z-30"
-      />
-
-      {/* Desktop Presentation (>= 1024px) */}
-      <div className="hidden lg:block">
-        <DesktopContactView {...sharedProps} />
-      </div>
-
-      {/* Smartphone & Tablet Presentation (< 1024px) */}
-      <div className="block lg:hidden">
-        <MobileContactView {...sharedProps} />
-      </div>
-    </div>
-  );
+  return <ContactStage {...sharedProps} />;
 }

@@ -1,58 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAssetFile, type AssetKey } from "@/lib/site-content";
+import { getAssetFile } from "@/lib/site-content";
+import { assetRouteTarget } from "@/lib/brand-assets";
 import { Readable } from "stream";
 
-const FALLBACK_ASSETS: Record<AssetKey, string> = {
-  profilePhoto: "/images/profile.png",
-  logo: "/images/logo.png",
-  favicon: "/favicon.png",
-};
-
+/**
+ * Legacy unversioned asset URL: serves the newest file stored for the slot (short cache), or
+ * the bundled default when there is none.
+ */
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ type: string }> }
 ) {
   const { type: rawType } = await context.params;
-
-  let assetKey: string;
-  let fallbackUrl: string;
-
-  if (rawType === "profile" || rawType === "profilePhoto") {
-    assetKey = "profilePhoto";
-    fallbackUrl = FALLBACK_ASSETS.profilePhoto;
-  } else if (rawType === "logo") {
-    assetKey = "logo";
-    fallbackUrl = FALLBACK_ASSETS.logo;
-  } else if (rawType === "favicon" || rawType === "icon") {
-    assetKey = "favicon";
-    fallbackUrl = FALLBACK_ASSETS.favicon;
-  } else if (rawType.startsWith("evolution-")) {
-    assetKey = rawType;
-    fallbackUrl = `/images/${rawType}.png`;
-  } else {
+  const target = assetRouteTarget(rawType);
+  if (!target) {
     return NextResponse.json({ error: "Invalid asset type" }, { status: 400 });
   }
 
   try {
-    const asset = await getAssetFile(assetKey);
-
+    const asset = await getAssetFile(target.key);
     if (asset && asset.stream) {
       const webStream = Readable.toWeb(asset.stream) as ReadableStream;
-      const cacheControl = "public, max-age=60, stale-while-revalidate=300";
-
       return new Response(webStream, {
         status: 200,
         headers: {
           "Content-Type": asset.contentType,
-          "Cache-Control": cacheControl,
-          "Content-Disposition": `inline; filename="${asset.filename}"`,
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+          "Content-Disposition": `inline; filename="${asset.filename.replace(/[^A-Za-z0-9._-]/g, "_")}"`,
         },
       });
     }
   } catch (err) {
-    console.warn(`[AssetAPI] Notice while serving asset (${assetKey}):`, err);
+    console.warn(`[AssetAPI] Asset unavailable (${target.key}):`, err instanceof Error ? err.message : String(err));
   }
 
-  // Graceful fallback to static file if not in GridFS or database is unavailable
-  return NextResponse.redirect(new URL(fallbackUrl, req.url), 307);
+  if (!target.fallback) {
+    return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+  }
+  return NextResponse.redirect(new URL(target.fallback, req.url), 307);
 }

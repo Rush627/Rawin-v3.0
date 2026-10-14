@@ -55,3 +55,16 @@ scratch/*.log
 
 # Local development scratch files
 scratch/
+
+
+# Private environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Private agent instructions
+AGENTS.md
+CLAUDE.md
+
+# Local test files
+/tests/

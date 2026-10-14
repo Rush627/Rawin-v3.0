@@ -3,13 +3,18 @@ import { getPublicAvailability } from "@/lib/site-content";
 
 export const dynamic = "force-dynamic";
 
+const NO_STORE = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  Pragma: "no-cache",
+  Expires: "0",
+};
+
 export async function GET() {
-  const availability = await getPublicAvailability();
-  return NextResponse.json(availability, {
-    headers: {
-      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-      Pragma: "no-cache",
-      Expires: "0",
-    },
-  });
+  try {
+    const availability = await getPublicAvailability();
+    return NextResponse.json(availability, { headers: NO_STORE });
+  } catch {
+    // Status unknown (database unreachable): clients keep whatever state they already show
+    return NextResponse.json({ error: "Availability is temporarily unknown." }, { status: 503, headers: NO_STORE });
+  }
 }

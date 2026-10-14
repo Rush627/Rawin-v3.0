@@ -89,7 +89,7 @@ const INITIAL_PROJECTS = [
     engineeringFocus: ["Performance", "Scalable Architecture", "Product UX"],
     displayOrder: 1,
     previewImage: "/images/profile.png",
-    liveUrl: "https://rawin.world",
+    liveUrl: "https://rawin.space",
     githubUrl: "https://github.com/rush627",
     caseStudyAvailable: true,
     year: "2026",

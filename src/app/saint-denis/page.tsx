@@ -1,331 +1,149 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  FolderGit2,
-  FileText,
-  Sliders,
-  Settings,
-  Database,
-  ShieldCheck,
-  CheckCircle2,
-  Clock,
-} from "lucide-react";
+import { ArrowUpRight, FilePlus2, FolderPlus } from "lucide-react";
 import { getAdminSession } from "@/lib/auth";
-import { getDatabase } from "@/lib/mongodb";
 import { getProjects } from "@/lib/projects";
 import { getAllPostsAdmin } from "@/lib/blog";
+import { getSiteContentFresh, maintenanceActiveNow } from "@/lib/site-content";
+import { getSystemChecks } from "@/lib/studio/system-checks";
+import { AVAILABILITY_STATE_LABEL } from "@/lib/cms/availability";
+import StudioHeader from "@/components/studio/StudioHeader";
+import { StatusLine } from "@/components/studio/fields";
 
-export default async function AdminDashboardPage() {
+export const metadata = { title: "Overview | RAWIN Studio" };
+export const dynamic = "force-dynamic";
+
+const when = (iso?: string) =>
+  iso && !Number.isNaN(Date.parse(iso)) ? new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null;
+
+/**
+ * Only facts that were actually read: a database ping, counts from the collections, stored
+ * timestamps. When a read fails the tile says so instead of showing a number.
+ */
+export default async function OverviewPage() {
   const session = await getAdminSession();
+  if (!session) redirect("/saint-denis/login");
 
-  if (!session) {
-    redirect("/saint-denis/login");
-  }
-
-  // Live database connectivity check from active connection pool
-  let isDbConnected = false;
-  let dbName = "unknown";
-  try {
-    const db = await getDatabase();
-    if (db) {
-      isDbConnected = true;
-      dbName = db.databaseName;
-    }
-  } catch {
-    isDbConnected = false;
-  }
-
-  const [projects, blogPosts] = await Promise.all([
-    getProjects(),
-    getAllPostsAdmin(),
+  const [system, content, projects, posts] = await Promise.all([
+    getSystemChecks(),
+    getSiteContentFresh().catch(() => null),
+    getProjects().catch(() => null),
+    getAllPostsAdmin().catch(() => null),
   ]);
-  const projectCount = projects.length;
-  const blogCount = blogPosts.length;
 
-  const modules = [
+  const published = posts?.filter((p) => p.status === "published").length ?? null;
+  const drafts = posts?.filter((p) => p.status === "draft").length ?? null;
+  const modeActive = content ? maintenanceActiveNow(content.maintenance) : false;
+  const mode = !content ? null : !modeActive ? "Live" : content.maintenance.showMessage ? "Maintenance" : "Offline";
+  const aiConfigured = Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
+
+  const recent = [
+    ...(projects ?? []).map((p) => ({ kind: "Project", title: p.title, at: p.updatedAt, href: p._id ? `/saint-denis/projects/${p._id}` : "/saint-denis/projects" })),
+    ...(posts ?? []).map((p) => ({ kind: p.status === "published" ? "Article" : "Draft", title: p.title, at: p.updatedAt, href: p._id ? `/saint-denis/blog/${p._id}` : "/saint-denis/blog" })),
+  ]
+    .filter((r) => !Number.isNaN(Date.parse(r.at || "")))
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+    .slice(0, 6);
+
+  const tiles: { label: string; value: string; detail: string; href: string }[] = [
     {
-      title: "Projects",
-      icon: FolderGit2,
-      status: `Active · ${projectCount} projects`,
-      color: "text-pacific-cyan",
-      border: "border-pacific-cyan/30",
+      label: "Projects",
+      value: projects ? String(projects.length) : "—",
+      detail: projects ? `${projects.filter((p) => p.featured).length} featured · ${projects.filter((p) => p.status === "completed").length} completed` : "Could not be read",
       href: "/saint-denis/projects",
     },
     {
-      title: "Blog",
-      icon: FileText,
-      status: `Active · ${blogCount} articles`,
-      color: "text-apricot-cream",
-      border: "border-apricot-cream/30",
+      label: "Journal",
+      value: published !== null ? String(published) : "—",
+      detail: posts ? `published · ${drafts} draft${drafts === 1 ? "" : "s"}` : "Could not be read",
       href: "/saint-denis/blog",
     },
     {
-      title: "Site Content",
-      icon: Sliders,
-      status: "Active · 7 sections",
-      color: "text-emerald-400",
-      border: "border-emerald-400/30",
-      href: "/saint-denis/content",
-    },
-    {
-      title: "Settings",
-      icon: Settings,
-      status: "Active",
-      color: "text-pacific-cyan",
-      border: "border-pacific-cyan/30",
+      label: "Site",
+      value: mode ?? "—",
+      detail: content ? `${AVAILABILITY_STATE_LABEL[content.availability.state]} · “${content.availability.label}”` : "Could not be read",
       href: "/saint-denis/settings",
     },
   ];
 
   return (
-    <>
-      {/* ─── DESKTOP PRESENTATION (md: >= 768px) ─── */}
-      <div className="hidden md:flex flex-col gap-10">
-        {/* Top Welcome & Overview */}
-        <div className="flex flex-row items-center justify-between gap-4 pb-8 border-b border-white/[0.08]">
-          <div className="flex flex-col gap-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-emerald-400 w-fit border border-emerald-400/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>SYSTEM OPERATIONAL</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-space">
-              RAWIN ADMIN <span className="text-pacific-cyan">Dashboard</span>
-            </h1>
-          </div>
-        </div>
+    <div>
+      <StudioHeader
+        eyebrow="RAWIN Studio"
+        title="Overview"
+        actions={
+          <>
+            <Link href="/saint-denis/projects/new" className="inline-flex items-center gap-2 min-h-11 px-3.5 rounded-xl border border-line-strong text-[14px] text-fg hover:border-fg-subtle">
+              <FolderPlus aria-hidden="true" className="w-4 h-4" />
+              New project
+            </Link>
+            <Link href="/saint-denis/blog/new" className="inline-flex items-center gap-2 min-h-11 px-3.5 rounded-xl bg-fg text-bg text-[14px] font-medium hover:opacity-90">
+              <FilePlus2 aria-hidden="true" className="w-4 h-4" />
+              New article
+            </Link>
+          </>
+        }
+      />
 
-        {/* System Infrastructure Cards */}
-        <div className="grid grid-cols-3 gap-5">
-          {/* MongoDB Status */}
-          <div className="glass-card rounded-2xl p-6 border border-white/[0.08] flex flex-col justify-between gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-muted uppercase tracking-wider">
-                Database Connection
-              </span>
-              <Database className="w-4 h-4 text-pacific-cyan" />
-            </div>
+      <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {tiles.map((t) => (
+          <li key={t.label}>
+            <Link href={t.href} className="block h-full rounded-2xl border border-line bg-surface/70 p-4 sm:p-5 hover:border-line-strong transition-colors">
+              <p className="label-mono text-fg-subtle">{t.label}</p>
+              <p className="mt-2 font-display text-[2.4rem] leading-none text-fg">{t.value}</p>
+              <p className="mt-2 text-[13px] text-fg-muted">{t.detail}</p>
+            </Link>
+          </li>
+        ))}
+      </ul>
 
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                {isDbConnected ? (
-                  <>
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-lg font-bold font-space text-foreground">
-                      Connected
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                    <span className="text-lg font-bold font-space text-foreground">
-                      Standby / Fallback
-                    </span>
-                  </>
-                )}
-              </div>
-              <p className="text-xs font-mono text-muted">
-                {isDbConnected ? `Cluster database: ${dbName}` : "Awaiting database credentials verification"}
-              </p>
-            </div>
-          </div>
-
-          {/* Authentication Status */}
-          <div className="glass-card rounded-2xl p-6 border border-white/[0.08] flex flex-col justify-between gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-muted uppercase tracking-wider">
-                Active Session
-              </span>
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span className="text-lg font-bold font-space text-foreground truncate max-w-[220px]" title={session.email}>
-                  {session.email}
-                </span>
-              </div>
-              <p className="text-xs font-mono text-muted">
-                Single Administrator Role
-              </p>
-            </div>
-          </div>
-
-          {/* Session Expiry */}
-          <div className="glass-card rounded-2xl p-6 border border-white/[0.08] flex flex-col justify-between gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-muted uppercase tracking-wider">
-                Session
-              </span>
-              <Clock className="w-4 h-4 text-apricot-cream" />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <span className="text-lg font-bold font-space text-foreground">
-                7 Days
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Management Modules Grid */}
-        <div className="flex flex-col gap-5">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-xl font-bold font-space text-foreground">
-              Management
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-5">
-            {modules.map((mod) => {
-              const Icon = mod.icon;
-              return (
-                <div
-                  key={mod.title}
-                  className="glass-card rounded-2xl p-6 sm:p-7 border border-white/[0.06] flex flex-col justify-between gap-6 hover:border-white/[0.12] transition-colors"
-                >
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-foreground">
-                        <Icon className="w-5 h-5 text-pacific-cyan" />
-                      </div>
-                    </div>
-
-                    <h3 className="text-lg font-bold font-space text-foreground mt-1">
-                      {mod.title}
-                    </h3>
-                  </div>
-
-                  <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono">
-                    <span className="text-pacific-cyan font-medium">
-                      {mod.status}
-                    </span>
-                    <Link
-                      href={mod.href}
-                      className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-pacific-cyan text-ink-black font-semibold hover:bg-pacific-cyan/90 transition-all shadow-[0_0_12px_rgba(24,155,173,0.25)] cursor-pointer"
-                    >
-                      <span>Manage</span>
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── SMARTPHONE PRESENTATION (< 768px) ─── */}
-      <div className="flex md:hidden flex-col gap-5">
-        {/* Mobile Header */}
-        <div className="flex flex-col gap-2 pb-4 border-b border-white/[0.08]">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium glass-pill text-emerald-400 w-fit border border-emerald-400/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>SYSTEM OPERATIONAL</span>
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground font-space">
-            RAWIN ADMIN <span className="text-pacific-cyan">Dashboard</span>
-          </h1>
-        </div>
-
-        {/* Mobile System Status Panel */}
-        <div className="flex flex-col gap-2.5">
-          {/* Database Connection Card */}
-          <div className="rounded-xl p-3.5 bg-surface/70 border border-white/[0.08] backdrop-blur-xl flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-muted uppercase tracking-wider flex items-center gap-1.5">
-                <Database className="w-3 h-3 text-pacific-cyan" />
-                Database Connection
-              </span>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${isDbConnected ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-amber-400 bg-amber-500/10 border-amber-500/20"}`}>
-                {isDbConnected ? "ONLINE" : "STANDBY"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full shrink-0 ${isDbConnected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
-              <span className="text-sm font-bold font-space text-foreground">
-                {isDbConnected ? "Connected" : "Standby"}
-              </span>
-              <span className="text-[11px] font-mono text-muted/70 truncate">
-                · {dbName}
-              </span>
-            </div>
-          </div>
-
-          {/* Active Session & Session Expiry row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {/* Active Session */}
-            <div className="rounded-xl p-3.5 bg-surface/70 border border-white/[0.08] backdrop-blur-xl flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-muted uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                  Active Session
-                </span>
-                <span className="text-[10px] font-mono text-muted/70 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.5 rounded">
-                  Admin
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 min-w-0">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span className="text-sm font-bold font-space text-foreground truncate" title={session.email}>
-                  {session.email}
-                </span>
-              </div>
-            </div>
-
-            {/* Session Expiry */}
-            <div className="rounded-xl p-3.5 bg-surface/70 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between">
-              <span className="text-[10px] font-mono text-muted uppercase tracking-wider flex items-center gap-1.5">
-                <Clock className="w-3 h-3 text-apricot-cream" />
-                Session Expiry
-              </span>
-              <span className="text-sm font-bold font-space text-foreground">
-                7 Days
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Management Section */}
-        <div className="flex flex-col gap-3 pt-1">
-          <h2 className="text-xs font-mono text-muted uppercase tracking-wider font-semibold">
-            Management
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-5 gap-3">
+        <section aria-labelledby="recent-h" className="lg:col-span-3 rounded-2xl border border-line bg-surface/70 p-4 sm:p-5">
+          <h2 id="recent-h" className="text-[15px] font-semibold">
+            Recently edited
           </h2>
-
-          <div className="flex flex-col gap-2.5">
-            {modules.map((mod) => {
-              const Icon = mod.icon;
-              return (
-                <div
-                  key={mod.title}
-                  className="rounded-xl p-3.5 bg-surface/70 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between gap-3 hover:border-white/[0.14] transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-pacific-cyan" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <h3 className="text-sm font-bold font-space text-foreground leading-tight truncate">
-                        {mod.title}
-                      </h3>
-                      <span className="text-[11px] font-mono text-pacific-cyan truncate mt-0.5">
-                        {mod.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={mod.href}
-                    className="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-pacific-cyan text-ink-black font-semibold text-xs font-mono uppercase tracking-wider hover:bg-pacific-cyan/90 transition-all shadow-[0_0_10px_rgba(24,155,173,0.25)] min-h-[38px] cursor-pointer"
-                  >
-                    Manage
+          {recent.length === 0 ? (
+            <p className="mt-3 text-[14px] text-fg-muted">{projects && posts ? "Nothing yet." : "Could not be read."}</p>
+          ) : (
+            <ul className="mt-2 flex flex-col divide-y divide-line">
+              {recent.map((r) => (
+                <li key={r.href}>
+                  <Link href={r.href} className="flex items-center justify-between gap-3 min-h-12 py-2 text-[14px] hover:text-fg">
+                    <span className="min-w-0">
+                      <span className="label-mono text-fg-subtle mr-2">{r.kind}</span>
+                      <span className="text-fg">{r.title}</span>
+                    </span>
+                    <span className="shrink-0 text-[12.5px] text-fg-subtle">{when(r.at)}</span>
                   </Link>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {content?.updatedAt && <p className="mt-3 pt-3 border-t border-line text-[12.5px] text-fg-subtle">Site content last saved {when(content.updatedAt)}</p>}
+        </section>
+
+        <section aria-labelledby="health-h" className="lg:col-span-2 rounded-2xl border border-line bg-surface/70 p-4 sm:p-5">
+          <h2 id="health-h" className="text-[15px] font-semibold">
+            Health
+          </h2>
+          <ul className="mt-2 flex flex-col divide-y divide-line">
+            {system.checks.slice(0, 2).map((c) => (
+              <li key={c.label} className="flex flex-col gap-0.5 py-2.5">
+                <span className="text-[13.5px] text-fg">{c.label}</span>
+                <StatusLine tone={c.tone}>{c.detail}</StatusLine>
+              </li>
+            ))}
+            <li className="flex flex-col gap-0.5 py-2.5">
+              <span className="text-[13.5px] text-fg">Workers AI</span>
+              <StatusLine tone={aiConfigured ? "ok" : "warn"}>{aiConfigured ? "Configured (not called)" : "Credentials missing"}</StatusLine>
+            </li>
+          </ul>
+          <a href="/" target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 min-h-11 text-[13.5px] text-fg-muted hover:text-fg">
+            Open the live site
+            <ArrowUpRight aria-hidden="true" className="w-3.5 h-3.5" />
+          </a>
+        </section>
       </div>
-    </>
+    </div>
   );
 }

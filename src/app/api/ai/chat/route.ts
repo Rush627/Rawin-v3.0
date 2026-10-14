@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAuraRateLimit } from "@/lib/aura/rate-limit";
+import { limitOrbitRequest } from "@/lib/aura/durable-limit";
 import { queryAura } from "@/lib/aura/provider";
 import type { AuraMessage } from "@/lib/aura/types";
 import {
@@ -9,6 +9,9 @@ import {
   isClaimingRushanIdentity,
   extractCandidateCode,
 } from "@/lib/orbit-security";
+import { validateAttachments } from "@/lib/aura/attachments";
+import { loadReadyAttachments, UploadError, withExtractedAttachments, type ReadyAttachment } from "@/lib/aura/uploads";
+import { getSiteContent } from "@/lib/site-content";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,11 +61,8 @@ function createDirectResponse(
 export async function POST(req: NextRequest) {
   try {
     // 1. Rate Limiting by IP
-    const forwarded = req.headers.get("x-forwarded-for");
-    const realIp = req.headers.get("x-real-ip");
-    const ip = forwarded ? forwarded.split(",")[0].trim() : realIp || "127.0.0.1";
-
-    const rateLimit = checkAuraRateLimit(ip);
+    const rateLimit = await limitOrbitRequest(req.headers, "chat", 20, 60 * 1000, "degrade");
+    const clientKey = rateLimit.clientKey;
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Body Parsing & Validation
-    let body: { messages?: unknown; stream?: unknown; identityToken?: unknown };
+    let body: { messages?: unknown; stream?: unknown; identityToken?: unknown; attachments?: unknown };
     try {
       body = await req.json();
     } catch {
@@ -84,7 +84,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { messages, stream = true, identityToken } = body;
+    const { messages, stream = true, identityToken, attachments } = body;
+
+    // Optional attachments (uploaded and converted beforehand, named here by id + signed
+    // token): enforced against the CMS switch on the server, so a disabled capability cannot
+    // be invoked by editing the client.
+    const attachmentCheck = validateAttachments(attachments);
+    if (!attachmentCheck.ok) {
+      return NextResponse.json({ error: attachmentCheck.error }, { status: attachmentCheck.status });
+    }
+    let attachedFiles: ReadyAttachment[] = [];
+    if (attachmentCheck.refs.length > 0) {
+      const site = await getSiteContent();
+      if (site.ai?.fileAttachments !== true) {
+        return NextResponse.json({ error: "File attachments are not enabled for Orbit." }, { status: 403 });
+      }
+      try {
+        attachedFiles = await loadReadyAttachments(attachmentCheck.refs);
+      } catch (err) {
+        if (err instanceof UploadError) return NextResponse.json({ error: err.message }, { status: err.status });
+        throw err;
+      }
+    }
 
     // Verify session identity state from cryptographic token
     const rawToken =
@@ -172,9 +193,17 @@ export async function POST(req: NextRequest) {
 
       // Visitor was prompted for verification code and submitted candidate
       const candidate = extractCandidateCode(userText);
-      const isMatch = await verifyOwnerCandidate(candidate, ip);
+      const outcome = await verifyOwnerCandidate(candidate, clientKey);
 
-      if (isMatch) {
+      if (outcome === "unavailable") {
+        // The guess limits cannot be enforced right now: refuse without counting it as a
+        // failed attempt, so the visitor can try again later in this conversation
+        const nextToken = await signOrbitIdentityToken("CLAIMED_RUSHAN_PENDING_VERIFICATION");
+        const reply = "Verification is temporarily unavailable. Please try the code again in a few minutes.";
+        return createDirectResponse(reply, nextToken, isStreamRequested);
+      }
+
+      if (outcome === "match") {
         const nextToken = await signOrbitIdentityToken("VERIFIED_RUSHAN");
         const reply = "Identity confirmed. Welcome back, Rushan. You're my developer.";
         return createDirectResponse(reply, nextToken, isStreamRequested);
@@ -212,8 +241,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Query Aura Provider
-    const result = await queryAura(sanitizedMessages, isStreamRequested, currentIdentity);
+    // 4. Query Aura Provider (attachments ride only on the latest user turn)
+    const modelMessages: AuraMessage[] = attachedFiles.length
+      ? sanitizedMessages.map((m, i) =>
+          i === sanitizedMessages.length - 1 ? { ...m, content: withExtractedAttachments(m.content, attachedFiles) } : m
+        )
+      : sanitizedMessages;
+    const result = await queryAura(modelMessages, isStreamRequested, currentIdentity);
     const activeToken = rawToken || (await signOrbitIdentityToken(currentIdentity));
 
     if ("stream" in result) {

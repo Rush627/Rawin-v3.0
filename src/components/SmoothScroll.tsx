@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import Lenis from "lenis";
+import { MotionConfig } from "framer-motion";
 
 export default function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -40,12 +41,15 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
     // Expose lenis on window for global controls (e.g. Back to Top)
     (window as unknown as { __lenis?: Lenis | null }).__lenis = lenis;
 
+    // Track the latest frame id: cancelling only the first one would leave the loop
+    // running against a destroyed instance after a remount.
+    let animationFrameId = 0;
     function raf(time: number) {
       lenis.raf(time);
-      requestAnimationFrame(raf);
+      animationFrameId = requestAnimationFrame(raf);
     }
 
-    const animationFrameId = requestAnimationFrame(raf);
+    animationFrameId = requestAnimationFrame(raf);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
@@ -54,5 +58,6 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return <>{children}</>;
+  // reducedMotion="user": framer skips transform/layout animation for reduced-motion users
+  return <MotionConfig reducedMotion="user">{children}</MotionConfig>;
 }

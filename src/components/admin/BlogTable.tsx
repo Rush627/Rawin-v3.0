@@ -8,14 +8,16 @@ import {
   Edit3,
   Trash2,
   Calendar,
-  AlertTriangle,
-  Loader2,
   Archive,
   Eye,
+  ChevronDown,
+  Loader2,
 } from "lucide-react";
 import type { BlogPost, BlogPostStatus } from "@/lib/blog";
 import { togglePostFeaturedAction, deletePostAction, setPostStatusAction } from "@/app/saint-denis/blog/actions";
 import RawinSelect from "./RawinSelect";
+import ConfirmDialog from "@/components/studio/ConfirmDialog";
+import { FilterSegment } from "@/components/studio/filters";
 
 const TABLE_STATUS_OPTIONS = [
   { value: "published", label: "Publish" },
@@ -30,23 +32,23 @@ interface BlogTableProps {
 function StatusBadge({ status }: { status: BlogPostStatus }) {
   if (status === "published") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-success/10 text-success border border-success/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-success" />
         <span>PUBLISHED</span>
       </span>
     );
   }
   if (status === "draft") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-warning/10 text-warning border border-warning/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-warning" />
         <span>DRAFT</span>
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-white/[0.05] text-muted border border-white/[0.1]">
-      <Archive className="w-3 h-3 text-muted" />
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-surface-2 text-fg-muted border border-line">
+      <Archive className="w-3 h-3 text-fg-muted" />
       <span>ARCHIVED</span>
     </span>
   );
@@ -99,16 +101,15 @@ export default function BlogTable({ posts }: BlogTableProps) {
     const prevStatus = post.status;
     const targetId = post._id;
 
-    // Optimistic update immediately
-    setLocalPosts((prev) =>
-      prev.map((p) => (p._id === targetId ? { ...p, status: newStatus } : p))
-    );
+    // The new status is shown only once the server has saved it (the control shows it is busy)
     setChangingStatusId(targetId);
 
     try {
       await setPostStatusAction(targetId, newStatus);
+      setLocalPosts((prev) =>
+        prev.map((p) => (p._id === targetId ? { ...p, status: newStatus } : p))
+      );
     } catch (err: unknown) {
-      // Revert on error
       setLocalPosts((prev) =>
         prev.map((p) => (p._id === targetId ? { ...p, status: prevStatus } : p))
       );
@@ -150,50 +151,39 @@ export default function BlogTable({ posts }: BlogTableProps) {
     }
   };
 
-  // Filter tab labels: full on sm+, abbreviated on xs to avoid truncation at 320px
+  // Filter labels: full from 640px, abbreviated on phones so four fit at 320px
   const FILTER_TABS: Array<{ key: "all" | BlogPostStatus; full: string; short: string }> = [
-    { key: "all", full: "ALL", short: "ALL" },
-    { key: "published", full: "PUBLISHED", short: "PUB" },
-    { key: "draft", full: "DRAFT", short: "DRAFT" },
-    { key: "archived", full: "ARCHIVED", short: "ARCH" },
+    { key: "all", full: "All", short: "All" },
+    { key: "published", full: "Published", short: "Pub." },
+    { key: "draft", full: "Draft", short: "Draft" },
+    { key: "archived", full: "Archived", short: "Arch." },
   ];
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Top Filter Bar */}
+      {/* Status filter: one shared segmented control (short labels on phones) */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div className="w-full sm:w-auto grid grid-cols-4 sm:flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-          {FILTER_TABS.map(({ key, full, short }) => {
-            const count = key === "all"
-              ? localPosts.length
-              : localPosts.filter((p) => p.status === key).length;
+        <FilterSegment
+          label="Show articles"
+          value={filter}
+          onChange={setFilter}
+          stretch
+          options={FILTER_TABS.map(({ key, full, short }) => ({
+            value: key,
+            label: full,
+            short,
+            count: key === "all" ? localPosts.length : localPosts.filter((p) => p.status === key).length,
+          }))}
+        />
 
-            return (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={`px-1 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-medium transition-all cursor-pointer text-center flex items-center justify-center gap-0.5 sm:gap-1 ${
-                  filter === key
-                    ? "bg-pacific-cyan text-ink-black font-semibold shadow-sm"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                <span className="hidden sm:inline">{full}</span>
-                <span className="sm:hidden">{short}</span>
-                <span className="text-[9px] sm:text-[10px] opacity-80 shrink-0">({count})</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="text-[11px] sm:text-xs font-mono text-muted">
+        <p className="text-[12.5px] text-fg-muted" aria-live="polite">
           Showing {filteredPosts.length} of {localPosts.length} articles
-        </div>
+        </p>
       </div>
 
       {/* Error alert */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs font-mono flex items-center justify-between gap-3">
+        <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-mono flex items-center justify-between gap-3">
           <span>{errorMessage}</span>
           <button onClick={() => setErrorMessage(null)} className="underline cursor-pointer">
             Dismiss
@@ -203,134 +193,181 @@ export default function BlogTable({ posts }: BlogTableProps) {
 
       {/* Table / Empty State */}
       {filteredPosts.length === 0 ? (
-        <div className="glass-card rounded-2xl p-12 text-center border border-white/[0.08] flex flex-col items-center gap-4">
-          <FileText className="w-8 h-8 text-muted/40" />
-          <p className="text-muted text-sm font-mono">No articles found in this view.</p>
+        <div className="glass-card rounded-2xl p-12 text-center border border-line flex flex-col items-center gap-4">
+          <FileText className="w-8 h-8 text-fg-muted/40" />
+          <p className="text-fg-muted text-sm font-mono">No articles found in this view.</p>
           <Link
             href="/saint-denis/blog/new"
-            className="px-4 py-2 rounded-xl bg-pacific-cyan text-ink-black text-xs font-mono font-semibold"
+            className="px-4 py-2 rounded-xl bg-accent text-accent-fg text-xs font-mono font-semibold"
           >
             New Article
           </Link>
         </div>
       ) : (
         <>
-          {/* Desktop Table View (>= 768px) */}
-          <div className="hidden md:block glass-card rounded-2xl border border-white/[0.08] overflow-hidden">
+          {/* Desktop table (>= 768px). Fixed column layout: each column has a set width and the
+              article column takes the rest; below the minimum width the table scrolls inside its
+              own frame with Actions pinned, so Delete is never cut off. The status control is a
+              native select, so its menu is never clipped by the scrolling frame. */}
+          <div className="hidden md:block rounded-2xl border border-line bg-surface overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-white/[0.02] border-b border-white/[0.06] text-muted/70 uppercase text-[10px] tracking-wider">
-                  <tr>
-                    <th className="px-5 py-3.5">Article</th>
-                    <th className="px-5 py-3.5">Status</th>
-                    <th className="px-5 py-3.5 text-center">Featured</th>
-                    <th className="px-5 py-3.5">Published Date</th>
-                    <th className="px-5 py-3.5">Tags</th>
-                    <th className="px-5 py-3.5 text-right">Actions</th>
+              <table className="w-full min-w-[920px] table-fixed text-left text-[13px]">
+                <caption className="sr-only">Journal articles</caption>
+                <colgroup>
+                  <col />
+                  <col className="w-[156px]" />
+                  <col className="w-[108px]" />
+                  <col className="w-[120px]" />
+                  <col className="w-[160px]" />
+                  <col className="w-[184px]" />
+                </colgroup>
+                <thead className="border-b border-line bg-surface-2">
+                  <tr className="label-mono text-fg-subtle">
+                    <th scope="col" className="px-4 py-3 font-normal">Article</th>
+                    <th scope="col" className="px-4 py-3 font-normal">Status</th>
+                    <th scope="col" className="px-4 py-3 font-normal">Featured</th>
+                    <th scope="col" className="px-4 py-3 font-normal">Published</th>
+                    <th scope="col" className="px-4 py-3 font-normal">Tags</th>
+                    <th scope="col" className="sticky right-0 px-4 py-3 font-normal text-right bg-surface-2">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
-                  {filteredPosts.map((post) => (
-                    <tr key={post._id || post.slug} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-5 py-4 max-w-sm">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-bold font-space text-foreground line-clamp-1">
+                <tbody className="divide-y divide-line">
+                  {filteredPosts.map((post) => {
+                    const changing = changingStatusId === post._id;
+                    const shownTags = post.tags.slice(0, 2);
+                    const moreTags = post.tags.slice(2);
+                    return (
+                      <tr key={post._id || post.slug} className="group hover:bg-surface-2/60 transition-colors">
+                        <td className="px-4 py-3.5">
+                          <p className="font-medium text-[14.5px] leading-snug text-fg line-clamp-2 break-words" title={post.title}>
                             {post.title}
-                          </span>
-                          <div className="flex items-center gap-2 text-[11px] text-muted">
-                            <span className="font-mono text-pacific-cyan/80">/{post.slug}</span>
-                            <span className="text-white/20">•</span>
-                            <span>{post.readTime}</span>
+                          </p>
+                          <p className="mt-0.5 flex items-center gap-1.5 min-w-0 text-[12px] text-fg-subtle">
+                            <span className="font-mono truncate" title={`/${post.slug}`}>
+                              /{post.slug}
+                            </span>
+                            {post.readTime && (
+                              <>
+                                <span aria-hidden="true">·</span>
+                                <span className="shrink-0 whitespace-nowrap">{post.readTime}</span>
+                              </>
+                            )}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          <div className="relative">
+                            <select
+                              value={post.status}
+                              disabled={changing}
+                              onChange={(e) => handleStatusChange(post, e.target.value as BlogPostStatus)}
+                              aria-label={`Status of ${post.title}`}
+                              aria-busy={changing || undefined}
+                              className={`w-full appearance-none h-9 pl-6 pr-8 rounded-lg border bg-surface text-[13px] outline-none focus-visible:border-accent disabled:opacity-60 disabled:cursor-wait ${
+                                post.status === "published"
+                                  ? "border-success/30 text-success"
+                                  : post.status === "draft"
+                                    ? "border-warning/35 text-warning"
+                                    : "border-line text-fg-muted"
+                              }`}
+                            >
+                              <option value="published">Published</option>
+                              <option value="draft">Draft</option>
+                              <option value="archived">Archived</option>
+                            </select>
+                            <span aria-hidden="true" className={`pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full ${
+                              post.status === "published" ? "bg-success" : post.status === "draft" ? "bg-warning" : "bg-fg-subtle"
+                            }`} />
+                            {changing ? (
+                              <Loader2 aria-hidden="true" className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-fg-muted" />
+                            ) : (
+                              <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-fg-muted" />
+                            )}
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
-                          <StatusBadge status={post.status} />
-                          <RawinSelect
-                            name={`status-${post._id}`}
-                            value={post.status}
-                            onChange={(val) => handleStatusChange(post, val as BlogPostStatus)}
-                            options={TABLE_STATUS_OPTIONS}
-                            size="sm"
-                            fontMono
-                            disabled={changingStatusId === post._id}
-                          />
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-4 text-center">
-                        <button
-                          onClick={() => handleToggleFeatured(post)}
-                          disabled={togglingId === post._id}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold transition-all cursor-pointer ${
-                            post.featured
-                              ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30 hover:bg-pacific-cyan/25"
-                              : "bg-white/[0.03] text-muted/50 border border-white/[0.06] hover:text-muted"
-                          }`}
-                          title={post.featured ? "Remove from featured" : "Feature post"}
-                        >
-                          <Star className={`w-3 h-3 ${post.featured ? "fill-pacific-cyan" : ""}`} />
-                          <span>{post.featured ? "Featured" : "Normal"}</span>
-                        </button>
-                      </td>
-
-                      <td className="px-5 py-4 text-muted/80 whitespace-nowrap">
-                        {formatDate(post.publishedAt)}
-                      </td>
-
-                      <td className="px-5 py-4 max-w-xs">
-                        <div className="flex flex-wrap gap-1">
-                          {post.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-0.5 rounded text-[10px] bg-white/[0.03] text-muted/80 border border-white/[0.05]"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                          {post.tags.length > 3 && (
-                            <span className="text-[10px] text-muted/40 font-mono">
-                              +{post.tags.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {post.status === "published" && (
-                            <Link
-                              href={`/blog/${post.slug}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-muted hover:text-pacific-cyan transition-colors"
-                              title="View public post"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </Link>
-                          )}
-                          <Link
-                            href={`/saint-denis/blog/${post._id}`}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-foreground text-xs font-mono transition-colors"
-                            title="Edit post"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Edit</span>
-                          </Link>
+                        <td className="px-4 py-3.5">
                           <button
-                            onClick={() => setPostToDelete(post)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-mono transition-colors cursor-pointer"
-                            title="Delete post"
+                            type="button"
+                            onClick={() => handleToggleFeatured(post)}
+                            disabled={togglingId === post._id}
+                            aria-pressed={post.featured}
+                            aria-label={`Feature ${post.title}`}
+                            title={post.featured ? "Featured: select to remove" : "Not featured: select to feature"}
+                            className={`inline-flex items-center gap-1.5 h-8 min-w-[5.75rem] px-2.5 rounded-lg border text-[12.5px] transition-colors disabled:opacity-60 disabled:cursor-wait ${
+                              post.featured
+                                ? "border-accent/30 bg-accent/10 text-accent hover:bg-accent/15"
+                                : "border-line text-fg-subtle hover:text-fg hover:border-line-strong"
+                            }`}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Delete</span>
+                            <Star aria-hidden="true" className={`w-3.5 h-3.5 ${post.featured ? "fill-current" : ""}`} />
+                            {post.featured ? "Featured" : "Off"}
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+
+                        <td className="px-4 py-3.5 whitespace-nowrap tabular-nums text-fg-muted">
+                          {post.publishedAt ? formatDate(post.publishedAt) : <span className="text-fg-subtle">Not set</span>}
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          {post.tags.length === 0 ? (
+                            <span className="text-fg-subtle">
+                              <span aria-hidden="true">—</span>
+                              <span className="sr-only">No tags</span>
+                            </span>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-1 max-h-[3.5rem] overflow-hidden" title={post.tags.map((t) => `#${t}`).join("  ")}>
+                              {shownTags.map((tag) => (
+                                <span key={tag} className="max-w-full truncate px-1.5 h-6 leading-6 rounded-md border border-line bg-surface-2 text-[12px] text-fg-muted">
+                                  #{tag}
+                                </span>
+                              ))}
+                              {moreTags.length > 0 && (
+                                <span className="px-1.5 h-6 leading-6 text-[12px] text-fg-subtle tabular-nums">
+                                  +{moreTags.length}
+                                  <span className="sr-only"> more: {moreTags.join(", ")}</span>
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="sticky right-0 px-4 py-3.5 bg-surface group-hover:bg-[color-mix(in_oklab,var(--surface-2)_60%,var(--surface))] transition-colors">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {post.status === "published" && (
+                              <Link
+                                href={`/blog/${post.slug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-fg-muted hover:text-fg hover:bg-surface-2"
+                                aria-label={`View ${post.title} on the site (opens in a new tab)`}
+                                title="View on the site"
+                              >
+                                <Eye aria-hidden="true" className="w-4 h-4" />
+                              </Link>
+                            )}
+                            <Link
+                              href={`/saint-denis/blog/${post._id}`}
+                              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-line bg-surface text-fg text-[13px] hover:border-line-strong"
+                              aria-label={`Edit ${post.title}`}
+                            >
+                              <Edit3 aria-hidden="true" className="w-3.5 h-3.5" />
+                              Edit
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => setPostToDelete(post)}
+                              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-danger/30 bg-surface text-danger hover:bg-danger/10"
+                              aria-label={`Delete ${post.title}`}
+                              title="Delete article"
+                            >
+                              <Trash2 aria-hidden="true" className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -350,18 +387,18 @@ export default function BlogTable({ posts }: BlogTableProps) {
             {filteredPosts.map((post) => (
               <div
                 key={post._id || post.slug}
-                className="rounded-xl p-4 border border-white/[0.08] flex flex-col gap-0 bg-[rgba(22,22,34,0.5)] hover:border-white/[0.14] transition-colors"
+                className="rounded-xl p-4 border border-line flex flex-col gap-0 bg-surface-2/60 hover:border-line-strong transition-colors"
               >
                 {/* Article Title + Slug + Read Time */}
                 <div className="flex flex-col min-w-0 pb-3">
-                  <h2 className="text-sm font-bold font-space text-foreground leading-snug break-words">
+                  <h2 className="text-sm font-bold font-sans text-fg leading-snug break-words">
                     {post.title}
                   </h2>
-                  <div className="flex items-center gap-2 text-[11px] text-muted flex-wrap mt-1">
-                    <span className="font-mono text-pacific-cyan/80 break-all">
+                  <div className="flex items-center gap-2 text-[11px] text-fg-muted flex-wrap mt-1">
+                    <span className="font-mono text-accent/80 break-all">
                       /{post.slug}
                     </span>
-                    <span className="text-white/20">•</span>
+                    <span className="text-fg-subtle">•</span>
                     <span className="shrink-0">{post.readTime}</span>
                   </div>
                 </div>
@@ -376,18 +413,18 @@ export default function BlogTable({ posts }: BlogTableProps) {
                       disabled={togglingId === post._id}
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold transition-all cursor-pointer ${
                         post.featured
-                          ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30"
-                          : "bg-white/[0.03] text-muted/50 border border-white/[0.06] hover:text-muted"
+                          ? "bg-accent/15 text-accent border border-accent/30"
+                          : "bg-surface-2/60 text-fg-muted/50 border border-line hover:text-fg-muted"
                       }`}
                       title={post.featured ? "Remove from featured" : "Feature article"}
                     >
-                      <Star className={`w-3 h-3 ${post.featured ? "fill-pacific-cyan" : ""}`} />
+                      <Star className={`w-3 h-3 ${post.featured ? "fill-accent" : ""}`} />
                       <span>{post.featured ? "Featured" : "Normal"}</span>
                     </button>
                   </div>
 
-                  <span className="text-[10px] font-mono text-muted/70 flex items-center gap-1 shrink-0">
-                    <Calendar className="w-3 h-3 text-muted/50" />
+                  <span className="text-[10px] font-mono text-fg-muted/70 flex items-center gap-1 shrink-0">
+                    <Calendar className="w-3 h-3 text-fg-muted/50" />
                     <span>{formatDate(post.publishedAt)}</span>
                   </span>
                 </div>
@@ -398,7 +435,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                     {post.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-2 py-0.5 rounded text-[10px] font-mono bg-white/[0.03] text-muted/80 border border-white/[0.05]"
+                        className="px-2 py-0.5 rounded text-[10px] font-mono bg-surface-2/60 text-fg-muted/80 border border-line"
                       >
                         #{tag}
                       </span>
@@ -407,9 +444,9 @@ export default function BlogTable({ posts }: BlogTableProps) {
                 )}
 
                 {/* Status Selector row -- separate from action buttons */}
-                <div className="pt-3 border-t border-white/[0.06] pb-3">
+                <div className="pt-3 border-t border-line pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-muted/60 uppercase shrink-0">Status</span>
+                    <span className="text-[10px] font-mono text-fg-muted/60 uppercase shrink-0">Status</span>
                     <RawinSelect
                       name={`status-mobile-${post._id}`}
                       value={post.status}
@@ -423,7 +460,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                 </div>
 
                 {/* Action Buttons row -- View, Edit, Delete */}
-                <div className="pt-0 border-t border-white/[0.06]">
+                <div className="pt-0 border-t border-line">
                   <div className="flex items-center gap-2.5 pt-3">
                     {/* View -- only shown for published articles */}
                     {post.status === "published" ? (
@@ -431,7 +468,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                         href={`/blog/${post.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-muted hover:text-pacific-cyan text-xs font-mono transition-colors min-h-[36px] border border-white/[0.06]"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface-2 text-fg-muted hover:text-accent text-xs font-mono transition-colors min-h-[36px] border border-line"
                         title="View public article"
                         aria-label={`View public article ${post.title}`}
                       >
@@ -446,7 +483,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                     {/* Edit -- primary cyan action */}
                     <Link
                       href={`/saint-denis/blog/${post._id}`}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-pacific-cyan text-ink-black text-xs font-mono font-semibold hover:bg-pacific-cyan/90 transition-all shadow-[0_0_10px_rgba(24,155,173,0.2)] min-h-[36px]"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-accent text-accent-fg text-xs font-mono font-semibold hover:bg-accent/90 transition-all min-h-[36px]"
                       title="Edit article"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -457,7 +494,7 @@ export default function BlogTable({ posts }: BlogTableProps) {
                     <button
                       type="button"
                       onClick={() => setPostToDelete(post)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-mono transition-colors cursor-pointer min-h-[36px] border border-red-500/15"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger text-xs font-mono transition-colors cursor-pointer min-h-[36px] border border-danger/15"
                       title="Delete article"
                       aria-label={`Delete article ${post.title}`}
                     >
@@ -472,59 +509,17 @@ export default function BlogTable({ posts }: BlogTableProps) {
         </>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {postToDelete && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-black/80 backdrop-blur-md animate-in fade-in duration-200"
-        >
-          <div className="glass-card rounded-2xl max-w-md w-full p-6 sm:p-8 border border-white/[0.12] flex flex-col gap-6 shadow-2xl">
-            <div className="flex items-center gap-3 text-red-400">
-              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold font-space text-foreground">Confirm Deletion</h3>
-                <span className="text-xs font-mono text-muted">This cannot be undone</span>
-              </div>
-            </div>
-
-            <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              Are you sure you want to delete{" "}
-              <strong className="text-foreground font-semibold font-space">
-                {postToDelete.title}
-              </strong>? It will be removed from your blog.
-            </p>
-
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.08]">
-              <button
-                type="button"
-                onClick={() => setPostToDelete(null)}
-                disabled={isDeleting}
-                className="inline-flex items-center justify-center h-9 px-4 rounded-xl text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer select-none"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
-                className="inline-flex items-center justify-center gap-2 h-9 px-5 rounded-xl text-xs font-mono font-semibold bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-all cursor-pointer select-none whitespace-nowrap"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Deleting...</span>
-                  </>
-                ) : (
-                  <span>Delete Post</span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={Boolean(postToDelete)}
+        title={`Delete “${postToDelete?.title ?? ""}”?`}
+        confirmLabel="Delete article"
+        destructive
+        busy={isDeleting}
+        onCancel={() => setPostToDelete(null)}
+        onConfirm={handleDeleteConfirm}
+      >
+        The article is removed from the site immediately, together with its cover image. This cannot be undone.
+      </ConfirmDialog>
     </div>
   );
 }

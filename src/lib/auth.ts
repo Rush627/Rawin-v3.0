@@ -2,7 +2,9 @@ import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
+import type { ObjectId } from "mongodb";
 import { getDatabase } from "./mongodb";
+import { planCredentialCheck, sessionIsCurrent } from "./admin-credentials";
 
 import {
   SESSION_COOKIE_NAME,
@@ -15,11 +17,11 @@ export { SESSION_COOKIE_NAME, SESSION_EXPIRATION_SECONDS, getSecretKey };
 export type { AdminSessionPayload };
 
 /**
- * Signs a cryptographic JWT session token.
+ * Signs a cryptographic JWT session token, stamped with the account's session version.
  */
-export async function signSessionToken(email: string): Promise<string> {
+export async function signSessionToken(email: string, sessionVersion = 0): Promise<string> {
   const secretKey = getSecretKey();
-  return new SignJWT({ email: email.toLowerCase(), role: "admin" })
+  return new SignJWT({ email: email.toLowerCase(), role: "admin", sv: sessionVersion })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_EXPIRATION_SECONDS}s`)
@@ -27,7 +29,8 @@ export async function signSessionToken(email: string): Promise<string> {
 }
 
 /**
- * Verifies a cryptographic JWT session token.
+ * Verifies a token's signature and expiry only (no database). Use getAdminSession() for
+ * authorization: it also checks the session version against the account record.
  */
 export async function verifySessionToken(token: string): Promise<AdminSessionPayload | null> {
   try {
@@ -44,19 +47,26 @@ export async function verifySessionToken(token: string): Promise<AdminSessionPay
       email: payload.email,
       role: "admin",
       issuedAt: typeof payload.iat === "number" ? payload.iat : Date.now(),
+      sessionVersion: typeof payload.sv === "number" ? payload.sv : 0,
     };
   } catch {
     return null;
   }
 }
 
+const ADMINS_COLLECTION = "admins";
+/** A valid bcrypt hash of a random string: unknown accounts cost the same time as known ones. */
+const TIMING_DECOY_HASH = "$2b$12$uOn1q36Sctgkn0NuOmqh.OkLOJapB..G./0ZzCLFVZfzZ45EwBOoG";
+
 /**
- * Verifies admin credentials against MongoDB or environment fallback.
+ * Verifies admin credentials. The database record is the only credential once it exists; the
+ * environment credential only bootstraps a first account (see lib/admin-credentials).
+ * Fails closed when the database is unreachable, because the stored password may have changed.
  */
 export async function verifyAdminCredentials(
   emailInput: string,
   passwordInput: string
-): Promise<{ success: boolean; email?: string; error?: string }> {
+): Promise<{ success: boolean; email?: string; sessionVersion?: number; error?: string }> {
   const email = emailInput.trim().toLowerCase();
   const password = passwordInput;
 
@@ -64,82 +74,85 @@ export async function verifyAdminCredentials(
     return { success: false, error: "Email and password are required." };
   }
 
-  // 1. Check MongoDB Atlas admins collection
-  try {
-    const db = await getDatabase();
-    if (db) {
-      const adminsCol = db.collection("admins");
-      const adminDoc = await adminsCol.findOne({ email });
-
-      if (adminDoc && adminDoc.passwordHash) {
-        const passwordMatches = await bcrypt.compare(password, adminDoc.passwordHash);
-        if (passwordMatches) {
-          // Update last login timestamp asynchronously
-          adminsCol.updateOne({ _id: adminDoc._id }, { $set: { lastLoginAt: new Date() } }).catch(() => {});
-          return { success: true, email: adminDoc.email };
-        }
-      }
-    }
-  } catch (err) {
-    console.error("[Auth] Database check error:", err);
+  const db = await getDatabase();
+  if (!db) {
+    return { success: false, error: "Sign-in is temporarily unavailable. Please try again shortly." };
   }
 
-  // 2. Check environment credentials fallback
+  const adminsCol = db.collection(ADMINS_COLLECTION);
+  let record: { _id: ObjectId; email?: unknown; passwordHash?: unknown; sessionVersion?: unknown } | null;
+  try {
+    record = await adminsCol.findOne({ email });
+  } catch (err) {
+    console.error("[Auth] Admin lookup failed:", err instanceof Error ? err.message : String(err));
+    return { success: false, error: "Sign-in is temporarily unavailable. Please try again shortly." };
+  }
+
   const env = (typeof process !== "undefined" && process.env)
     ? (process.env as Record<string, string | undefined>)
     : {};
-  const envEmail = (env["ADMIN_EMAIL"] || "").trim().toLowerCase();
-  const envPassword = env["ADMIN_PASSWORD"] || "";
-  const envPasswordHash = env["ADMIN_PASSWORD_HASH"] || "";
+  const plan = planCredentialCheck({
+    email,
+    record,
+    envEmail: env["ADMIN_EMAIL"] || "",
+    envPasswordHash: env["ADMIN_PASSWORD_HASH"] || "",
+    envPassword: env["ADMIN_PASSWORD"] || "",
+    production: process.env.NODE_ENV === "production",
+  });
 
-  if (envEmail && email === envEmail) {
-    let matches = false;
-
-    if (envPasswordHash) {
-      matches = await bcrypt.compare(password, envPasswordHash);
-    } else if (envPassword) {
-      // Strictly disallowed in production
-      if (process.env.NODE_ENV === "production") {
-        console.error(
-          "[Auth Critical Error] Plaintext ADMIN_PASSWORD cannot be used in production. Please set ADMIN_PASSWORD_HASH."
-        );
-        return {
-          success: false,
-          error: "Authentication service misconfiguration. Contact administrator.",
-        };
-      }
-      matches = password === envPassword;
-    } else if (process.env.NODE_ENV === "production") {
-      // In production with no hash configured and user not in DB
-      return { success: false, error: "Invalid email or password." };
-    }
-
-    if (matches) {
-      // Sync into MongoDB admins collection if connected and missing
-      try {
-        const db = await getDatabase();
-        if (db) {
-          const adminsCol = db.collection("admins");
-          const existing = await adminsCol.findOne({ email: envEmail });
-          if (!existing) {
-            const hash = envPasswordHash || (await bcrypt.hash(password, 12));
-            await adminsCol.insertOne({
-              email: envEmail,
-              passwordHash: hash,
-              createdAt: new Date(),
-              lastLoginAt: new Date(),
-            });
-          }
-        }
-      } catch {
-        // Non-blocking sync
-      }
-
-      return { success: true, email: envEmail };
-    }
+  if (plan.kind === "deny") {
+    await bcrypt.compare(password, TIMING_DECOY_HASH).catch(() => false);
+    return { success: false, error: "Invalid email or password." };
   }
 
-  return { success: false, error: "Invalid email or password." };
+  if (plan.kind === "database") {
+    const ok = await bcrypt.compare(password, plan.hash);
+    if (!ok || !record) return { success: false, error: "Invalid email or password." };
+    adminsCol.updateOne({ _id: record._id }, { $set: { lastLoginAt: new Date() } }).catch(() => {});
+    return {
+      success: true,
+      email: typeof record.email === "string" ? record.email : email,
+      sessionVersion: typeof record.sessionVersion === "number" ? record.sessionVersion : 0,
+    };
+  }
+
+  // Bootstrap: the environment credential creates the first database record, which then rules
+  const ok = plan.kind === "bootstrap-hash" ? await bcrypt.compare(password, plan.hash) : password === plan.password;
+  if (!ok) return { success: false, error: "Invalid email or password." };
+  try {
+    const hash = plan.kind === "bootstrap-hash" ? plan.hash : await bcrypt.hash(password, 12);
+    await adminsCol.updateOne(
+      { email },
+      {
+        $setOnInsert: { email, passwordHash: hash, sessionVersion: 0, createdAt: new Date() },
+        $set: { lastLoginAt: new Date() },
+      },
+      { upsert: true }
+    );
+  } catch (err) {
+    // Without the record the session could never be validated: refuse rather than half sign in
+    console.error("[Auth] Bootstrap account write failed:", err instanceof Error ? err.message : String(err));
+    return { success: false, error: "Sign-in is temporarily unavailable. Please try again shortly." };
+  }
+  return { success: true, email, sessionVersion: 0 };
+}
+
+/**
+ * Increments the account's session version: every session issued before now stops working.
+ * Returns the new version (used to re-issue the caller's own session where appropriate).
+ */
+export async function bumpSessionVersion(email: string): Promise<number> {
+  const db = await getDatabase();
+  if (!db) throw new Error("Database connection unavailable.");
+  const res = await db
+    .collection(ADMINS_COLLECTION)
+    .findOneAndUpdate(
+      { email: email.toLowerCase() },
+      { $inc: { sessionVersion: 1 }, $set: { sessionsRevokedAt: new Date() } },
+      { returnDocument: "after" }
+    );
+  if (!res) throw new Error("Admin account not found.");
+  return typeof res.sessionVersion === "number" ? res.sessionVersion : 0;
 }
 
 /**
@@ -184,8 +197,8 @@ export function isLocalOrLanHost(host: string): boolean {
 /**
  * Creates and sets the secure HTTP-only admin session cookie.
  */
-export async function createAdminSession(email: string): Promise<void> {
-  const token = await signSessionToken(email);
+export async function createAdminSession(email: string, sessionVersion = 0): Promise<void> {
+  const token = await signSessionToken(email, sessionVersion);
   const cookieStore = await cookies();
 
   let isSecure = process.env.NODE_ENV === "production";
@@ -205,7 +218,7 @@ export async function createAdminSession(email: string): Promise<void> {
     // If accessing over plain HTTP on a local or private LAN host (e.g. physical phone connecting to
     // http://192.168.29.190:3000), we must not set the Secure cookie flag; otherwise physical mobile
     // browsers will reject or refuse to transmit the cookie over HTTP per RFC 6265bis.
-    // In real production HTTPS (e.g. https://rawin.world), isHttps or public domain host guarantees isSecure=true.
+    // In real production HTTPS (e.g. https://rawin.space), isHttps or public domain host guarantees isSecure=true.
     if (!isHttps && isLocalOrLanHost(host)) {
       isSecure = false;
     }
@@ -223,8 +236,10 @@ export async function createAdminSession(email: string): Promise<void> {
 }
 
 /**
- * Returns the active admin session if valid, or null.
- * Memoized within the render cycle with React cache to prevent redundant cookie reads and JWT verifications.
+ * Returns the active admin session if valid, or null. Valid means: signature and expiry check
+ * out, the account still exists, and the token's session version matches the account's (so a
+ * password change or "sign out everywhere" revokes it). Fails closed if the database is down.
+ * Memoized within the render cycle with React cache to prevent redundant reads.
  */
 async function fetchAdminSession(): Promise<AdminSessionPayload | null> {
   const cookieStore = await cookies();
@@ -234,7 +249,20 @@ async function fetchAdminSession(): Promise<AdminSessionPayload | null> {
     return null;
   }
 
-  return verifySessionToken(sessionCookie.value);
+  const payload = await verifySessionToken(sessionCookie.value);
+  if (!payload) return null;
+
+  try {
+    const db = await getDatabase();
+    if (!db) return null;
+    const record = await db
+      .collection(ADMINS_COLLECTION)
+      .findOne({ email: payload.email.toLowerCase() }, { projection: { sessionVersion: 1 } });
+    if (!record || !sessionIsCurrent(payload.sessionVersion, record.sessionVersion)) return null;
+  } catch {
+    return null;
+  }
+  return payload;
 }
 
 export const getAdminSession = cache(fetchAdminSession);

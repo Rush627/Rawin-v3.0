@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
-import Image from "next/image";
+import PublicImagePreview from "@/components/studio/PublicImagePreview";
 import {
   Upload,
   Image as ImageIcon,
@@ -151,14 +151,14 @@ export default function BlogCoverUpload({
   };
 
   return (
-    <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.08]">
+    <div className="flex flex-col gap-3 pt-3 border-t border-line">
       {/* Label and status */}
       <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
-        <label className="text-xs font-mono text-muted uppercase tracking-wider flex items-center gap-1.5">
-          <ImageIcon className="w-3.5 h-3.5 text-pacific-cyan" />
+        <label className="text-xs font-mono text-fg-muted uppercase tracking-wider flex items-center gap-1.5">
+          <ImageIcon className="w-3.5 h-3.5 text-accent" />
           Article Cover Image
         </label>
-        <span className="text-[10px] sm:text-[11px] font-mono text-muted/60">Optional · PNG, JPG, WebP · Max 5 MB</span>
+        <span className="text-[10px] sm:text-[11px] font-mono text-fg-muted/60">Optional · PNG, JPG, WebP · Max 5 MB</span>
       </div>
 
       {/* Hidden file input */}
@@ -179,32 +179,23 @@ export default function BlogCoverUpload({
 
       {/* Visual Preview / Upload Box */}
       {activePreview ? (
-        <div className="relative group rounded-xl border border-white/[0.12] bg-ink-black/60 overflow-hidden transition-all duration-300">
-          {/* Image Container with sensible aspect ratio */}
-          <div className="relative w-full aspect-[21/9] sm:aspect-[2.4/1] max-h-56 bg-ink-black/90 flex items-center justify-center overflow-hidden">
-            {/* Native img avoids external domain issues with temporary blob URLs */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={activePreview}
-              alt="Article cover preview"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink-black/80 via-transparent to-transparent pointer-events-none" />
-
+        <div className="relative rounded-xl border border-line-strong bg-surface overflow-hidden">
+          {/* Same box, crop and radius as the public page, at desktop or smartphone size */}
+          <PublicImagePreview src={activePreview} kind="article">
             {/* Loading Overlay */}
             {isPending && (
-              <div className="absolute inset-0 bg-ink-black/75 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-pacific-cyan z-10">
+              <div className="absolute inset-0 bg-surface backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-accent z-10">
                 <Loader2 className="w-6 h-6 animate-spin" />
                 <span className="text-xs font-mono">Processing cover image...</span>
               </div>
             )}
-          </div>
+          </PublicImagePreview>
 
           {/* Action Toolbar */}
-          <div className="p-3.5 flex flex-wrap items-center justify-between gap-3 bg-white/[0.02] border-t border-white/[0.08]">
+          <div className="p-3.5 flex flex-wrap items-center justify-between gap-3 bg-surface-2/60 border-t border-line">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-              <span className="text-xs font-mono text-foreground truncate max-w-[200px] sm:max-w-xs">
+              <span className="w-2 h-2 rounded-full bg-success shrink-0" />
+              <span className="text-xs font-mono text-fg truncate max-w-[200px] sm:max-w-xs">
                 {filename || (coverUrl ? "Uploaded cover active" : "Selected image")}
               </span>
             </div>
@@ -214,7 +205,7 @@ export default function BlogCoverUpload({
                 type="button"
                 onClick={triggerSelect}
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-foreground bg-white/[0.06] hover:bg-pacific-cyan/15 hover:text-pacific-cyan border border-white/[0.1] hover:border-pacific-cyan/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-fg bg-surface-2 hover:bg-accent/15 hover:text-accent border border-line hover:border-accent/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 Replace
@@ -223,7 +214,7 @@ export default function BlogCoverUpload({
                 type="button"
                 onClick={handleRemove}
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-rose-400/90 bg-rose-500/[0.08] hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-danger/90 bg-danger/[0.08] hover:bg-danger/20 border border-danger/20 hover:border-danger/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Remove
@@ -237,20 +228,20 @@ export default function BlogCoverUpload({
           type="button"
           onClick={triggerSelect}
           disabled={isPending}
-          className="group relative flex flex-col items-center justify-center gap-3 p-6 sm:p-8 rounded-xl border border-dashed border-white/[0.15] hover:border-pacific-cyan/50 bg-ink-black/40 hover:bg-pacific-cyan/[0.02] transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-center"
+          className="group relative flex flex-col items-center justify-center gap-3 p-6 sm:p-8 rounded-xl border border-dashed border-line-strong hover:border-accent/50 bg-surface hover:bg-accent/[0.02] transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-center"
         >
-          <div className="w-12 h-12 rounded-xl bg-white/[0.04] group-hover:bg-pacific-cyan/10 border border-white/[0.08] group-hover:border-pacific-cyan/30 flex items-center justify-center transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-surface-2 group-hover:bg-accent/10 border border-line group-hover:border-accent/30 flex items-center justify-center transition-colors">
             {isPending ? (
-              <Loader2 className="w-5 h-5 text-pacific-cyan animate-spin" />
+              <Loader2 className="w-5 h-5 text-accent animate-spin" />
             ) : (
-              <Upload className="w-5 h-5 text-muted group-hover:text-pacific-cyan transition-colors" />
+              <Upload className="w-5 h-5 text-fg-muted group-hover:text-accent transition-colors" />
             )}
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-foreground group-hover:text-pacific-cyan transition-colors">
+            <span className="text-sm font-medium text-fg group-hover:text-accent transition-colors">
               Upload Cover Image
             </span>
-            <span className="text-xs font-mono text-muted/70">
+            <span className="text-xs font-mono text-fg-muted/70">
               Drag and drop or click to browse · PNG, JPG, WebP up to 5 MB
             </span>
           </div>
@@ -262,8 +253,8 @@ export default function BlogCoverUpload({
         <div
           className={`flex items-center gap-2 p-2.5 rounded-lg text-xs font-mono ${
             statusMessage.type === "success"
-              ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
-              : "bg-rose-500/10 text-rose-300 border border-rose-500/20"
+              ? "bg-success/10 text-success border border-success/20"
+              : "bg-danger/10 text-danger border border-danger/20"
           }`}
         >
           {statusMessage.type === "success" ? (

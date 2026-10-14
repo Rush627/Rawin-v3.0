@@ -8,12 +8,12 @@ import {
   Star,
   ExternalLink,
   Code2,
-  AlertTriangle,
-  Loader2,
 } from "lucide-react";
 import { GithubIcon } from "@/components/SocialIcons";
 import type { Project, ProjectStatus } from "@/lib/projects";
 import { toggleFeaturedAction, deleteProjectAction } from "@/app/saint-denis/projects/actions";
+import ConfirmDialog from "@/components/studio/ConfirmDialog";
+import { StateBadge } from "@/components/studio/filters";
 
 interface ProjectsTableProps {
   projects: Project[];
@@ -22,23 +22,23 @@ interface ProjectsTableProps {
 function StatusPill({ status }: { status: ProjectStatus }) {
   if (status === "completed") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-success/10 text-success border border-success/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-success" />
         <span>COMPLETED</span>
       </span>
     );
   }
   if (status === "in-progress") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-warning/10 text-warning border border-warning/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
         <span>IN DEVELOPMENT</span>
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-pacific-cyan/10 text-pacific-cyan border border-pacific-cyan/20">
-      <span className="w-1.5 h-1.5 rounded-full bg-pacific-cyan" />
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-accent/10 text-accent border border-accent/20">
+      <span className="w-1.5 h-1.5 rounded-full bg-accent" />
       <span>PLANNED</span>
     </span>
   );
@@ -104,7 +104,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
   return (
     <div className="flex flex-col gap-6">
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/25 flex items-center justify-between gap-3 text-red-300 text-xs font-mono">
+        <div className="p-4 rounded-xl bg-danger/10 border border-danger/25 flex items-center justify-between gap-3 text-danger text-xs font-mono">
           <span>{errorMessage}</span>
           <button onClick={() => setErrorMessage(null)} className="underline cursor-pointer">
             Dismiss
@@ -113,133 +113,170 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
       )}
 
       {localProjects.length === 0 ? (
-        <div className="glass-card rounded-2xl p-12 text-center border border-white/[0.08] flex flex-col items-center gap-4">
-          <Code2 className="w-8 h-8 text-muted/40" />
-          <p className="text-muted text-sm font-mono">No projects found.</p>
+        <div className="glass-card rounded-2xl p-12 text-center border border-line flex flex-col items-center gap-4">
+          <Code2 className="w-8 h-8 text-fg-muted/40" />
+          <p className="text-fg-muted text-sm font-mono">No projects found.</p>
           <Link
             href="/saint-denis/projects/new"
-            className="px-4 py-2 rounded-xl bg-pacific-cyan text-ink-black text-xs font-mono font-semibold"
+            className="px-4 py-2 rounded-xl bg-accent text-accent-fg text-xs font-mono font-semibold"
           >
             Create Project
           </Link>
         </div>
       ) : (
         <>
-          {/* Desktop Table View (>= 768px) */}
-          <div className="hidden md:block glass-card rounded-2xl border border-white/[0.08] overflow-hidden">
+          {/* Desktop table (>= 768px). Fixed column layout: every column has a set width and the
+              project column takes the rest, so badges and actions never squeeze each other. Below
+              the table's minimum width it scrolls inside its own frame, with Actions pinned. */}
+          <div className="hidden md:block rounded-2xl border border-line bg-surface overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-white/[0.02] border-b border-white/[0.06] text-muted/70 uppercase text-[10px] tracking-wider">
-                  <tr>
-                    <th className="px-5 py-3.5 w-16">Order</th>
-                    <th className="px-5 py-3.5">Project</th>
-                    <th className="px-5 py-3.5">Category</th>
-                    <th className="px-5 py-3.5">Status</th>
-                    <th className="px-5 py-3.5 text-center">Featured</th>
-                    <th className="px-5 py-3.5">Links</th>
-                    <th className="px-5 py-3.5 text-right">Actions</th>
+              <table className="w-full min-w-[920px] table-fixed text-left text-[13px]">
+                <caption className="sr-only">Projects, in display order</caption>
+                <colgroup>
+                  <col className="w-[60px]" />
+                  <col />
+                  <col className="w-[136px]" />
+                  <col className="w-[148px]" />
+                  <col className="w-[116px]" />
+                  <col className="w-[96px]" />
+                  <col className="w-[180px]" />
+                </colgroup>
+                <thead className="border-b border-line bg-surface-2">
+                  <tr className="label-mono text-fg-subtle">
+                    <th scope="col" className="px-4 py-3 font-normal text-right">Order</th>
+                    <th scope="col" className="px-4 py-3 font-normal">Project</th>
+                    <th scope="col" className="px-4 py-3 font-normal">Category</th>
+                    <th scope="col" className="px-4 py-3 font-normal">Status</th>
+                    <th scope="col" className="px-4 py-3 font-normal">Featured</th>
+                    <th scope="col" className="px-3 py-3 font-normal">Links</th>
+                    <th scope="col" className="sticky right-0 px-4 py-3 font-normal text-right bg-surface-2">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
-                  {localProjects.map((project) => (
-                    <tr key={project._id || project.slug} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-5 py-4 text-muted/60 font-mono">
-                        #{project.displayOrder}
-                      </td>
+                <tbody className="divide-y divide-line">
+                  {localProjects.map((project) => {
+                    const toggling = togglingId === project._id;
+                    return (
+                      <tr key={project._id || project.slug} className="group hover:bg-surface-2/60 transition-colors">
+                        <td className="px-4 py-3.5 text-right font-mono text-[12.5px] tabular-nums text-fg-muted">
+                          {String(project.displayOrder ?? "").padStart(2, "0")}
+                        </td>
 
-                      <td className="px-5 py-4">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-bold font-space text-foreground">
+                        <td className="px-4 py-3.5">
+                          <p className="font-medium text-[14.5px] leading-snug text-fg line-clamp-2 break-words" title={project.title}>
                             {project.title}
-                          </span>
-                          <div className="flex items-center gap-2 text-[11px] text-muted">
-                            <span className="font-mono text-pacific-cyan/80">/{project.slug}</span>
-                            {project.shortName && (
-                              <span className="text-muted/40 font-mono">[{project.shortName}]</span>
+                          </p>
+                          {/* a div: the global `p { text-wrap: pretty }` would override truncate */}
+                          <div className="mt-0.5 font-mono text-[12px] text-fg-subtle truncate" title={`/${project.slug}${project.shortName ? ` · ${project.shortName}` : ""}`}>
+                            /{project.slug}
+                            {project.shortName && <span> · {project.shortName}</span>}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          {project.category ? (
+                            <span className="inline-block max-w-full px-2 py-1 rounded-md border border-line bg-surface-2 text-[12.5px] leading-tight text-fg-muted break-words">
+                              {project.category}
+                            </span>
+                          ) : (
+                            <span className="text-fg-subtle">
+                              <span aria-hidden="true">—</span>
+                              <span className="sr-only">No category</span>
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          {project.status === "completed" ? (
+                            <StateBadge tone="success">Completed</StateBadge>
+                          ) : project.status === "in-progress" ? (
+                            <StateBadge tone="warning">In development</StateBadge>
+                          ) : (
+                            <StateBadge tone="accent">Planned</StateBadge>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFeatured(project)}
+                            disabled={toggling}
+                            aria-pressed={project.featured}
+                            aria-label={`Feature ${project.title} on the home page`}
+                            title={project.featured ? "Featured on the home page: select to remove" : "Not featured: select to feature on the home page"}
+                            className={`inline-flex items-center gap-1.5 h-8 min-w-[5.75rem] px-2.5 rounded-lg border text-[12.5px] transition-colors disabled:opacity-60 disabled:cursor-wait ${
+                              project.featured
+                                ? "border-accent/30 bg-accent/10 text-accent hover:bg-accent/15"
+                                : "border-line text-fg-subtle hover:text-fg hover:border-line-strong"
+                            }`}
+                          >
+                            <Star aria-hidden="true" className={`w-3.5 h-3.5 ${project.featured ? "fill-current" : ""}`} />
+                            {project.featured ? "Featured" : "Off"}
+                          </button>
+                        </td>
+
+                        <td className="px-3 py-3.5">
+                          <div className="flex items-center gap-1">
+                            {project.githubUrl ? (
+                              <a
+                                href={project.githubUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-fg-muted hover:text-fg hover:bg-surface-2"
+                                title="Source code on GitHub"
+                                aria-label={`${project.title}: source code on GitHub (opens in a new tab)`}
+                              >
+                                <GithubIcon className="w-4 h-4" />
+                              </a>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-9 h-9 text-fg-subtle/70" title="No source link">
+                                <span aria-hidden="true">—</span>
+                                <span className="sr-only">No source link</span>
+                              </span>
+                            )}
+                            {project.liveUrl ? (
+                              <a
+                                href={project.liveUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-fg-muted hover:text-fg hover:bg-surface-2"
+                                title="Live site"
+                                aria-label={`${project.title}: live site (opens in a new tab)`}
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </a>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-9 h-9 text-fg-subtle/70" title="No live link">
+                                <span aria-hidden="true">—</span>
+                                <span className="sr-only">No live link</span>
+                              </span>
                             )}
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-5 py-4">
-                        <span className="px-2.5 py-1 rounded-md text-[11px] font-mono font-medium bg-white/[0.04] text-muted/90 border border-white/[0.06]">
-                          {project.category}
-                        </span>
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <StatusPill status={project.status} />
-                      </td>
-
-                      <td className="px-5 py-4 text-center">
-                        <button
-                          onClick={() => handleToggleFeatured(project)}
-                          disabled={togglingId === project._id}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold transition-all cursor-pointer ${
-                            project.featured
-                              ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30 hover:bg-pacific-cyan/25"
-                              : "bg-white/[0.03] text-muted/50 border border-white/[0.06] hover:text-muted"
-                          }`}
-                          title={project.featured ? "Remove from Home featured section" : "Feature on Home page"}
-                        >
-                          <Star className={`w-3 h-3 ${project.featured ? "fill-pacific-cyan" : ""}`} />
-                          <span>{project.featured ? "Featured" : "Hidden"}</span>
-                        </button>
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
-                          {project.githubUrl ? (
-                            <a
-                              href={project.githubUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1 rounded text-muted hover:text-foreground transition-colors"
-                              title="GitHub source link"
+                        <td className="sticky right-0 px-4 py-3.5 bg-surface group-hover:bg-[color-mix(in_oklab,var(--surface-2)_60%,var(--surface))] transition-colors">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              href={`/saint-denis/projects/${project._id}`}
+                              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-line bg-surface text-fg text-[13px] hover:border-line-strong"
+                              aria-label={`Edit ${project.title}`}
                             >
-                              <GithubIcon className="w-3.5 h-3.5" />
-                            </a>
-                          ) : (
-                            <span className="text-muted/30 text-[10px]">no gh</span>
-                          )}
-                          {project.liveUrl ? (
-                            <a
-                              href={project.liveUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1 rounded text-pacific-cyan hover:text-pacific-cyan/80 transition-colors"
-                              title="Live URL"
+                              <Edit3 aria-hidden="true" className="w-3.5 h-3.5" />
+                              Edit
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => setProjectToDelete(project)}
+                              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-danger/30 bg-surface text-danger text-[13px] hover:bg-danger/10"
+                              aria-label={`Delete ${project.title}`}
                             >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          ) : (
-                            <span className="text-muted/30 text-[10px]">no url</span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/saint-denis/projects/${project._id}`}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-foreground text-xs font-mono transition-colors"
-                            title="Edit project"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Edit</span>
-                          </Link>
-                          <button
-                            onClick={() => setProjectToDelete(project)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-mono transition-colors cursor-pointer"
-                            title="Delete project"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                              <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -250,29 +287,29 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
             {localProjects.map((project) => (
               <div
                 key={project._id || project.slug}
-                className="glass-card rounded-xl p-3.5 sm:p-4 border border-white/[0.08] flex flex-col gap-3 hover:border-white/[0.14] transition-colors"
+                className="glass-card rounded-xl p-3.5 sm:p-4 border border-line flex flex-col gap-3 hover:border-line-strong transition-colors"
               >
                 {/* Header Row: Title, Short Name, Slug, Edit Button */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-col min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-sm font-bold font-space text-foreground leading-snug">
+                      <h2 className="text-sm font-bold font-sans text-fg leading-snug">
                         {project.title}
                       </h2>
                       {project.shortName && (
-                        <span className="text-[10px] font-mono text-pacific-cyan/80 bg-pacific-cyan/[0.08] border border-pacific-cyan/20 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="text-[10px] font-mono text-accent/80 bg-accent/[0.08] border border-accent/20 px-1.5 py-0.5 rounded shrink-0">
                           {project.shortName}
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] font-mono text-muted/60 truncate mt-0.5">
+                    <span className="text-[11px] font-mono text-fg-muted/60 truncate mt-0.5">
                       /{project.slug}
                     </span>
                   </div>
 
                   <Link
                     href={`/saint-denis/projects/${project._id}`}
-                    className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-pacific-cyan text-ink-black text-xs font-mono font-semibold hover:bg-pacific-cyan/90 transition-all shadow-[0_0_10px_rgba(24,155,173,0.25)] min-h-[34px]"
+                    className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-accent text-accent-fg text-xs font-mono font-semibold hover:bg-accent/90 transition-all min-h-[34px]"
                     title="Edit project"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -282,22 +319,22 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
 
                 {/* Metadata Row: Category, Status, Order, Year */}
                 <div className="flex items-center gap-2 flex-wrap text-[11px] font-mono">
-                  <span className="px-2 py-0.5 rounded-md bg-white/[0.04] text-muted/90 border border-white/[0.06]">
+                  <span className="px-2 py-0.5 rounded-md bg-surface-2 text-fg-muted/90 border border-line">
                     {project.category}
                   </span>
                   <StatusPill status={project.status} />
-                  <span className="text-muted/50 text-[10px]">
+                  <span className="text-fg-muted/50 text-[10px]">
                     #{project.displayOrder}
                   </span>
                   {project.year && (
-                    <span className="text-muted/50 text-[10px]">
+                    <span className="text-fg-muted/50 text-[10px]">
                       · {project.year}
                     </span>
                   )}
                 </div>
 
                 {/* Footer Actions: Featured Toggle, External Links, Delete */}
-                <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                <div className="pt-2.5 border-t border-line flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
@@ -305,12 +342,12 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                       disabled={togglingId === project._id}
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold transition-all cursor-pointer min-h-[30px] ${
                         project.featured
-                          ? "bg-pacific-cyan/15 text-pacific-cyan border border-pacific-cyan/30 hover:bg-pacific-cyan/25"
-                          : "bg-white/[0.03] text-muted/50 border border-white/[0.06] hover:text-muted"
+                          ? "bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25"
+                          : "bg-surface-2/60 text-fg-muted/50 border border-line hover:text-fg-muted"
                       }`}
                       title={project.featured ? "Remove from Home featured section" : "Feature on Home page"}
                     >
-                      <Star className={`w-3 h-3 ${project.featured ? "fill-pacific-cyan" : ""}`} />
+                      <Star className={`w-3 h-3 ${project.featured ? "fill-accent" : ""}`} />
                       <span>{project.featured ? "Featured" : "Hidden"}</span>
                     </button>
 
@@ -319,7 +356,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                         href={project.githubUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg text-muted hover:text-foreground bg-white/[0.03] border border-white/[0.06] hover:border-white/20 transition-colors min-h-[30px] min-w-[30px] flex items-center justify-center"
+                        className="p-1.5 rounded-lg text-fg-muted hover:text-fg bg-surface-2/60 border border-line hover:border-line-strong transition-colors min-h-11 min-w-11 flex items-center justify-center"
                         title="GitHub source link"
                         aria-label={`${project.title} GitHub repository`}
                       >
@@ -332,7 +369,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                         href={project.liveUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg text-pacific-cyan hover:text-pacific-cyan/80 bg-pacific-cyan/10 border border-pacific-cyan/20 transition-colors min-h-[30px] min-w-[30px] flex items-center justify-center"
+                        className="p-1.5 rounded-lg text-accent hover:text-accent/80 bg-accent/10 border border-accent/20 transition-colors min-h-11 min-w-11 flex items-center justify-center"
                         title="Live preview URL"
                         aria-label={`${project.title} live preview`}
                       >
@@ -344,7 +381,7 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                   <button
                     type="button"
                     onClick={() => setProjectToDelete(project)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-mono transition-colors cursor-pointer min-h-[30px]"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger text-xs font-mono transition-colors cursor-pointer min-h-[30px]"
                     title="Delete project"
                     aria-label={`Delete ${project.title}`}
                   >
@@ -358,62 +395,16 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
         </>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {projectToDelete && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-black/80 backdrop-blur-md animate-in fade-in duration-200"
-        >
-          <div className="glass-card rounded-2xl max-w-md w-full p-6 sm:p-8 border border-white/[0.12] flex flex-col gap-6 shadow-2xl">
-            <div className="flex items-center gap-3 text-red-400">
-              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold font-space text-foreground">Confirm Deletion</h3>
-                <span className="text-xs font-mono text-muted">This cannot be undone</span>
-              </div>
-            </div>
-
-            <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              Are you sure you want to delete{" "}
-              <strong className="text-foreground font-semibold font-space">
-                {projectToDelete.title}
-              </strong>? It will be removed from your portfolio.
-            </p>
-
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.08]">
-              <button
-                type="button"
-                onClick={() => setProjectToDelete(null)}
-                disabled={isDeleting}
-                className="inline-flex items-center justify-center h-9 px-4 rounded-xl text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer select-none"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
-                className="inline-flex items-center justify-center gap-2 h-9 px-5 rounded-xl text-xs font-mono font-semibold bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-all cursor-pointer select-none whitespace-nowrap"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Deleting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete Project</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={Boolean(projectToDelete)}
+        title={`Delete “${projectToDelete?.title ?? ""}”?`}
+        confirmLabel="Delete project"
+        destructive busy={isDeleting}
+        onCancel={() => setProjectToDelete(null)}
+        onConfirm={handleDeleteConfirm}
+      >
+        The project is removed from the site immediately, together with its preview image. This cannot be undone.
+      </ConfirmDialog>
     </div>
   );
 }

@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAssetFile, type AssetKey } from "@/lib/site-content";
+import { getAssetFile } from "@/lib/site-content";
+import { assetRouteTarget } from "@/lib/brand-assets";
 import { Readable } from "stream";
 import { ObjectId } from "mongodb";
 
 export const dynamic = "force-dynamic";
 
-const FALLBACK_ASSETS: Record<AssetKey, string> = {
-  profilePhoto: "/images/profile.png",
-  logo: "/images/logo.png",
-  favicon: "/favicon.png",
-};
-
+/**
+ * Versioned identity asset (the file id is in the URL, so the bytes never change: immutable).
+ * A missing file falls back to the bundled default for that slot; milestone images have none
+ * and answer 404.
+ */
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ type: string; fileId: string }> }
@@ -20,29 +20,13 @@ export async function GET(
   if (!fileId || !ObjectId.isValid(fileId)) {
     return NextResponse.json({ error: "Invalid asset file ID" }, { status: 400 });
   }
-
-  let assetKey: string;
-  let fallbackUrl: string;
-
-  if (rawType === "profile" || rawType === "profilePhoto") {
-    assetKey = "profilePhoto";
-    fallbackUrl = FALLBACK_ASSETS.profilePhoto;
-  } else if (rawType === "logo") {
-    assetKey = "logo";
-    fallbackUrl = FALLBACK_ASSETS.logo;
-  } else if (rawType === "favicon" || rawType === "icon") {
-    assetKey = "favicon";
-    fallbackUrl = FALLBACK_ASSETS.favicon;
-  } else if (rawType.startsWith("evolution-")) {
-    assetKey = rawType;
-    fallbackUrl = `/images/${rawType}.png`;
-  } else {
+  const target = assetRouteTarget(rawType);
+  if (!target) {
     return NextResponse.json({ error: "Invalid asset type" }, { status: 400 });
   }
 
   try {
-    const asset = await getAssetFile(assetKey, fileId);
-
+    const asset = await getAssetFile(target.key, fileId);
     if (asset && asset.stream) {
       const webStream = Readable.toWeb(asset.stream) as ReadableStream;
       return new Response(webStream, {
@@ -50,14 +34,16 @@ export async function GET(
         headers: {
           "Content-Type": asset.contentType,
           "Cache-Control": "public, max-age=31536000, immutable",
-          "Content-Disposition": `inline; filename="${asset.filename}"`,
+          "Content-Disposition": `inline; filename="${asset.filename.replace(/[^A-Za-z0-9._-]/g, "_")}"`,
         },
       });
     }
   } catch (err) {
-    console.warn(`[AssetAPI] Notice while serving versioned asset (${assetKey}/${fileId}):`, err);
+    console.warn(`[AssetAPI] Versioned asset unavailable (${target.key}/${fileId}):`, err instanceof Error ? err.message : String(err));
   }
 
-  // Graceful fallback to static file if not in GridFS
-  return NextResponse.redirect(new URL(fallbackUrl, req.url), 307);
+  if (!target.fallback) {
+    return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+  }
+  return NextResponse.redirect(new URL(target.fallback, req.url), 307);
 }

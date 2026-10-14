@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
+import { getSiteContent } from "@/lib/site-content";
 import ProjectForm from "@/components/admin/ProjectForm";
 import { createProjectAction } from "../actions";
 
@@ -13,5 +14,6 @@ export default async function NewProjectPage() {
     redirect("/saint-denis/login?redirect=/saint-denis/projects/new");
   }
 
-  return <ProjectForm action={createProjectAction} isEditing={false} />;
+  const content = await getSiteContent();
+  return <ProjectForm action={createProjectAction} isEditing={false} categories={content.taxonomy?.projectCategories} />;
 }

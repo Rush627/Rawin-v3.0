@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { invalidateCacheTag } from "@/lib/cache";
+import { forgetPublicSlugs } from "@/lib/request-gate";
+import { recordFormerItem } from "@/lib/orbit-knowledge";
+import { isIllustrationSetting } from "@/components/blog/motifs";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
+import { checkImageUpload } from "@/lib/brand-assets";
 import {
   createPost,
   updatePost,
@@ -49,6 +53,10 @@ export async function createPostAction(
   const status = (formData.get("status") as BlogPostStatus) || "draft";
   const featured = formData.get("featured") === "on" || formData.get("featured") === "true";
   const rawPublishedAt = (formData.get("publishedAt") as string || "").trim();
+  const category = (formData.get("category") as string || "").trim().slice(0, 50);
+  const illustrationRaw = (formData.get("illustration") as string || "auto").trim();
+  const illustration = isIllustrationSetting(illustrationRaw) ? illustrationRaw : "auto";
+  const illustrationCaption = (formData.get("illustrationCaption") as string || "").trim().slice(0, 160);
 
   if (!title) {
     return { error: "Post title is required." };
@@ -109,6 +117,9 @@ export async function createPostAction(
     slug,
     title,
     author: author || undefined,
+    ...(category ? { category } : {}),
+    ...(illustration !== "auto" ? { illustration } : {}),
+    ...(illustrationCaption ? { illustrationCaption } : {}),
     excerpt,
     content,
     tags,
@@ -144,7 +155,7 @@ export async function createPostAction(
   }
 
   try {
-    invalidateCacheTag("blog");
+    invalidateCacheTag("blog"); forgetPublicSlugs();
   } catch {}
   revalidatePath("/");
   revalidatePath("/blog");
@@ -177,6 +188,10 @@ export async function updatePostAction(
   const status = (formData.get("status") as BlogPostStatus) || "draft";
   const featured = formData.get("featured") === "on" || formData.get("featured") === "true";
   const rawPublishedAt = (formData.get("publishedAt") as string || "").trim();
+  const category = (formData.get("category") as string || "").trim().slice(0, 50);
+  const illustrationRaw = (formData.get("illustration") as string || "auto").trim();
+  const illustration = isIllustrationSetting(illustrationRaw) ? illustrationRaw : "auto";
+  const illustrationCaption = (formData.get("illustrationCaption") as string || "").trim().slice(0, 160);
 
   if (!title) {
     return { error: "Post title is required." };
@@ -237,6 +252,11 @@ export async function updatePostAction(
     slug,
     title,
     author: author || "",
+    // Only touch the optional category when the form actually submits the field
+    ...(formData.has("category") ? { category } : {}),
+    // Editorial diagram: only touched when the form submits the fields
+    ...(formData.has("illustration") ? { illustration } : {}),
+    ...(formData.has("illustrationCaption") ? { illustrationCaption } : {}),
     excerpt,
     content,
     tags,
@@ -275,7 +295,7 @@ export async function updatePostAction(
   }
 
   try {
-    invalidateCacheTag("blog");
+    invalidateCacheTag("blog"); forgetPublicSlugs();
   } catch {}
   revalidatePath("/");
   revalidatePath("/blog");
@@ -296,7 +316,7 @@ export async function togglePostFeaturedAction(id: string, currentFeatured: bool
   await updatePost(id, { featured: !currentFeatured });
 
   try {
-    invalidateCacheTag("blog");
+    invalidateCacheTag("blog"); forgetPublicSlugs();
   } catch {}
   revalidatePath("/");
   revalidatePath("/blog");
@@ -315,7 +335,7 @@ export async function setPostStatusAction(id: string, newStatus: BlogPostStatus)
   await updatePost(id, { status: newStatus });
 
   try {
-    invalidateCacheTag("blog");
+    invalidateCacheTag("blog"); forgetPublicSlugs();
   } catch {}
   revalidatePath("/");
   revalidatePath("/blog");
@@ -335,18 +355,28 @@ export async function deletePostAction(id: string): Promise<void> {
 
   const post = await getPostById(id);
 
-  // Clean up GridFS cover before deleting the document
+  // The record first: if that fails, nothing else has changed
+  const deleted = await deletePost(id);
+  if (!deleted) throw new Error("Article not found.");
   await deleteBlogCoverForPost(id);
 
-  await deletePost(id);
-
   try {
-    invalidateCacheTag("blog");
+    invalidateCacheTag("blog"); forgetPublicSlugs();
   } catch {}
   revalidatePath("/");
   revalidatePath("/blog");
   if (post?.slug) {
     revalidatePath(`/blog/${post.slug}`);
+  }
+
+  // Only an article readers could see leaves a historical record (drafts never were public)
+  if (post?.status === "published") {
+    try {
+      await recordFormerItem("article", post.slug, post.title);
+      invalidateCacheTag("orbit-knowledge");
+    } catch (err) {
+      console.error("[Blog] Historical record not saved:", err instanceof Error ? err.message : String(err));
+    }
   }
 }
 
@@ -403,11 +433,13 @@ export async function uploadBlogCoverAction(
       return { error: "File exceeds the 5 MB size limit." };
     }
 
-    const url = await storeBlogCoverFile(postId, buffer, file.type, file.name);
+    const check = checkImageUpload("blogCover", new Uint8Array(buffer));
+    if (!check.ok) return { error: check.error };
+    const url = await storeBlogCoverFile(postId, buffer, check.type, file.name);
     const post = await getPostById(postId);
 
     try {
-      invalidateCacheTag("blog");
+      invalidateCacheTag("blog"); forgetPublicSlugs();
     } catch {}
     revalidatePath("/");
     revalidatePath("/blog");
@@ -453,7 +485,7 @@ export async function removeBlogCoverAction(
     }
 
     try {
-      invalidateCacheTag("blog");
+      invalidateCacheTag("blog"); forgetPublicSlugs();
     } catch {}
     revalidatePath("/");
     revalidatePath("/blog");

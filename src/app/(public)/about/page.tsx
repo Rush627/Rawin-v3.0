@@ -1,405 +1,326 @@
+import Image from "next/image";
 import Link from "next/link";
-import type { Metadata } from "next";
-import {
-  MapPin,
-  ArrowRight,
-  Layers,
-  Eye,
-  Zap,
-  Palette,
-  Briefcase,
-  Target,
-  Send,
-  Download,
-  Terminal,
-  Cpu,
-  Boxes,
-  Compass,
-  Sparkles,
-  Code,
-  Globe,
-  History,
-  FolderGit2,
-  Server,
-  Cloud,
-  type LucideIcon,
-} from "lucide-react";
-import RawinEvolution from "@/components/RawinEvolution";
-import ProfileCard from "@/components/ProfileCard";
-import BorderGlow from "@/components/BorderGlow";
-import EngineeringJourneyCircuit from "@/components/EngineeringJourneyCircuit";
-import MobileHowIBuild from "@/components/MobileHowIBuild";
-import MobileAboutExperience from "@/components/MobileAboutExperience";
-import MobileCurrentFocus from "@/components/MobileCurrentFocus";
-import MobileAboutCTA from "@/components/MobileAboutCTA";
-import AboutNarrativePanel from "@/components/AboutNarrativePanel";
-import { TIMELINE } from "@/data/experience";
+import { ArrowUpRight } from "lucide-react";
+import SectionHead from "@/components/system/SectionHead";
+import Reveal from "@/components/system/Reveal";
+import MaskText from "@/components/system/MaskText";
+import Chronology from "@/components/home/Chronology";
+import EvolutionChapters from "@/components/about/EvolutionChapters";
+import PrinciplesList from "@/components/about/PrinciplesList";
+import { journeyForDisplay } from "@/lib/cms/fields";
 import { getSiteContent } from "@/lib/site-content";
+import { pageMetadata } from "@/lib/page-metadata";
 
-export const metadata: Metadata = {
-  title: "About | Rushan Siddiqui : Full Stack Developer",
-  description:
-    "Learn about Rushan Siddiqui's background, evolution from static web pages to modern engineering systems, and core development principles.",
-};
+export function generateMetadata() {
+  return pageMetadata("about", "/about");
+}
 
 export const revalidate = 3600;
 
-const ICON_MAP: Record<string, LucideIcon> = {
-  layers: Layers,
-  eye: Eye,
-  zap: Zap,
-  palette: Palette,
-  briefcase: Briefcase,
-  target: Target,
-  terminal: Terminal,
-  cpu: Cpu,
-  boxes: Boxes,
-  compass: Compass,
-  sparkles: Sparkles,
-  code: Code,
-  globe: Globe,
-  history: History,
-  folder: FolderGit2,
-  server: Server,
-  cloud: Cloud,
-};
-
-function resolveIcon(name?: string, fallback: LucideIcon = Zap): LucideIcon {
-  if (!name) return fallback;
-  return ICON_MAP[name.toLowerCase()] || fallback;
-}
-
 const DEFAULT_PRINCIPLES = [
-  {
-    number: "01",
-    title: "ARCHITECTURE",
-    icon: "layers",
-    statement: "Build systems that stay understandable.",
-  },
-  {
-    number: "02",
-    title: "EXPERIENCE",
-    icon: "eye",
-    statement: "Make interfaces feel intentional.",
-  },
-  {
-    number: "03",
-    title: "PERFORMANCE",
-    icon: "zap",
-    statement: "Keep complexity from reaching the user.",
-  },
-  {
-    number: "04",
-    title: "CRAFT",
-    icon: "palette",
-    statement: "Details matter.",
-  },
+  { number: "01", title: "Architecture", statement: "Build systems that stay understandable." },
+  { number: "02", title: "Experience", statement: "Make interfaces feel intentional." },
+  { number: "03", title: "Performance", statement: "Keep complexity from reaching the user." },
+  { number: "04", title: "Craft", statement: "Details matter." },
 ];
 
 const DEFAULT_FOCUS_AREAS = [
   {
-    title: "WEB APPLICATIONS",
-    icon: "terminal",
+    title: "Web Applications",
     description: "Full-stack apps with Next.js, TypeScript, and MongoDB. Focused on clean state and reliable API routes.",
   },
   {
-    title: "INTERACTIVE INTERFACES",
-    icon: "compass",
+    title: "Interactive Interfaces",
     description: "Responsive layouts, micro-interactions, and fluid transitions that make software enjoyable to use.",
   },
   {
-    title: "AI INTEGRATION",
-    icon: "cpu",
+    title: "AI Integration",
     description: "Streaming responses, edge function workflows, and practical assistant tools inside web apps.",
   },
   {
-    title: "MODERN WEB ARCHITECTURE",
-    icon: "boxes",
+    title: "Modern Web Architecture",
     description: "Modular component systems, Tailwind styling, and maintainable project structures.",
   },
 ];
 
+/** CMS titles are often stored in capitals; present them in editorial case. */
+function editorialCase(value: string) {
+  if (value !== value.toUpperCase()) return value;
+  return value.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+}
+
+/** Split a heading so its final words carry italic emphasis. */
+function splitEmphasis(text: string, tail = 1): [string, string] {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= tail) return ["", text];
+  return [words.slice(0, -tail).join(" "), words.slice(-tail).join(" ")];
+}
+
 export default async function AboutPage() {
   const siteContent = await getSiteContent();
-  const aboutContent = siteContent.about;
+  const about = siteContent.about;
 
-  const principlesList =
-    aboutContent.principles && aboutContent.principles.length > 0
-      ? aboutContent.principles
-      : DEFAULT_PRINCIPLES;
+  const principles = about.principles?.length ? about.principles : DEFAULT_PRINCIPLES;
+  const focusAreas = about.focusAreas?.length ? about.focusAreas : DEFAULT_FOCUS_AREAS;
+  const location = siteContent.contact.location;
+  const portrait = siteContent.assets.profilePhoto.url;
+  const portraitAlt = siteContent.assets?.profilePhoto?.alt || "Rushan Siddiqui";
 
-  const focusList =
-    aboutContent.focusAreas && aboutContent.focusAreas.length > 0
-      ? aboutContent.focusAreas
-      : DEFAULT_FOCUS_AREAS;
+  const [titleHead, titleTail] = splitEmphasis(about.title || "About Rushan Siddiqui", 1);
+  const progression = [
+    about.progressionItem1 || "Interface",
+    about.progressionItem2 || "Performance",
+    about.progressionItem3 || "Systems",
+  ];
+  const metadataList = [
+    about.metadataItem1 || "UI",
+    about.metadataItem2 || "Frontend",
+    about.metadataItem3 || "Backend",
+    about.metadataItem4 || "Architecture",
+  ].filter(Boolean);
+
+  const lead =
+    about.leadText ||
+    "I build for the web, starting with interfaces and gradually moving deeper into the systems behind them.";
+  const narrative =
+    about.narrativeText ||
+    "What began as an early curiosity with layouts and styling has grown into a disciplined focus on the entire web stack.";
+
+  const [ctaHead, ctaTail] = splitEmphasis(about.ctaHeading || "Have something worth building?", 2);
 
   return (
-    <div className="w-full max-w-4xl mx-auto pt-32 sm:pt-36 lg:pt-28 pb-20 px-4 sm:px-6 flex flex-col gap-14 sm:gap-16 lg:gap-20">
-      {/* SECTION 1: IDENTITY / INTRODUCTION */}
-      <section className="flex flex-col gap-8 sm:gap-10" data-particle-protected>
-        {/* Intro Composition: 2-column desktop (Left: ProfileCard, Right: Text), vertical stack on mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] items-center gap-8 md:gap-12">
-          {/* ProfileCard: Centered on mobile, Left on desktop */}
-          <div className="flex justify-center md:justify-start w-full md:w-auto shrink-0">
-            <ProfileCard
-              avatarUrl={siteContent.assets?.profilePhoto?.url || "/images/profile.png"}
-              name="Rushan Siddiqui"
-              title="Full Stack Developer"
-              showUserInfo={false}
-              enableTilt={true}
-              enableMobileTilt={false}
-              behindGlowEnabled={true}
-              behindGlowColor="rgba(24, 155, 173, 0.4)"
-              behindGlowSize="45%"
-              innerGradient="linear-gradient(145deg, rgba(96, 73, 110, 0.4) 0%, rgba(24, 155, 173, 0.25) 100%)"
+    <div className="flex flex-col">
+      {/* Opening — the profile as one editorial composition: heading, descriptor and the
+          profile facts beside the portrait (desktop); on phones the facts and a smaller
+          portrait share a row beneath the heading, so the whole profile reads in the first
+          screen instead of the portrait starting cut off below it. */}
+      <header className="relative mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+10.25rem)] sm:pt-[11.25rem] lg:pt-[clamp(8.5rem,17vh,12.25rem)]">
+        <div className="flex items-center justify-between gap-4 label-mono text-fg-muted mb-8 sm:mb-12">
+          <span className="inline-flex items-center gap-3">
+            <span className="text-accent">01</span>
+            <span className="h-px w-8 bg-line-strong" />
+            <span>{about.eyebrow || "About"}</span>
+          </span>
+          <span aria-hidden="true" className="hidden sm:inline text-fg-subtle">
+            RAWIN / v3
+          </span>
+        </div>
+
+        <div className="grid grid-cols-12 gap-x-4 sm:gap-x-6 lg:gap-x-10 gap-y-8 sm:gap-y-10 items-end">
+          <div className="col-span-12 lg:col-span-7 lg:row-start-1 self-start">
+            <MaskText
+              as="h1"
+              immediate
+              className="display-lg text-fg"
+              lines={
+                titleHead
+                  ? [<span key="l0">{titleHead}</span>, <em key="t" className="italic text-accent">{titleTail}</em>]
+                  : [<em key="t" className="italic text-accent">{titleTail}</em>]
+              }
             />
+            {about.subtitle && (
+              <p className="mt-5 sm:mt-8 max-w-[52ch] text-[16px] sm:text-lg leading-relaxed text-fg-muted">{about.subtitle}</p>
+            )}
           </div>
 
-          {/* Editorial Introduction: Centered on mobile, Left on desktop */}
-          <div className="flex flex-col gap-3 sm:gap-4 text-center md:text-left items-center md:items-start">
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight font-space leading-[1.15] flex flex-col items-center md:items-start">
-              {(() => {
-                const title = aboutContent.title || "About Rushan Siddiqui";
-                const parts = title.split(" ");
-                if (parts.length > 1) {
-                  return (
-                    <>
-                      <span className="text-foreground">{parts[0]}</span>
-                      <span className="text-pacific-cyan">{parts.slice(1).join(" ")}</span>
-                    </>
-                  );
-                }
-                return <span className="text-pacific-cyan">{title}</span>;
-              })()}
-            </h1>
-            <p className="text-sm sm:text-lg text-muted/90 font-medium max-w-md">
-              {aboutContent.subtitle}
-            </p>
-            <div className="flex items-center justify-center md:justify-start gap-2 text-xs text-muted/70 font-mono mt-1">
-              <MapPin className="w-3.5 h-3.5 text-pacific-cyan shrink-0" />
-              <span>{siteContent.contact?.location || siteContent.global.location}</span>
-            </div>
-          </div>
-        </div>
+          <dl className="col-span-7 sm:col-span-7 lg:col-span-7 lg:row-start-2 self-center lg:self-end grid grid-cols-1 lg:grid-cols-3 lg:gap-x-8 border-t border-line">
+            {[
+              { label: "Based in", value: location },
+              { label: "Practice", value: "Full stack · Interface" },
+              { label: "Status", value: siteContent.home.heroBadge || "Open to work" },
+            ].map((m) => (
+              <div key={m.label} className="py-3 sm:py-3.5 border-b border-line">
+                <dt className="label-mono text-fg-subtle">{m.label}</dt>
+                <dd className="mt-1 sm:mt-1.5 text-[14px] sm:text-[15px] leading-snug text-fg">{m.value}</dd>
+              </div>
+            ))}
+          </dl>
 
-        {/* Narrative Panel: Build Philosophy / Engineering Mindset */}
-        <AboutNarrativePanel
-          eyebrow={aboutContent.narrativeEyebrow}
-          leadText={aboutContent.leadText}
-          narrativeText={aboutContent.narrativeText}
-          progressionItem1={aboutContent.progressionItem1}
-          progressionItem2={aboutContent.progressionItem2}
-          progressionItem3={aboutContent.progressionItem3}
-          metadataItem1={aboutContent.metadataItem1}
-          metadataItem2={aboutContent.metadataItem2}
-          metadataItem3={aboutContent.metadataItem3}
-          metadataItem4={aboutContent.metadataItem4}
-        />
-      </section>
-
-      {/* SECTION 2: RAWIN EVOLUTION */}
-      <RawinEvolution
-        milestones={aboutContent.evolution}
-        eyebrow={aboutContent.evolutionEyebrow}
-        heading={aboutContent.evolutionHeading}
-        description={aboutContent.evolutionDescription}
-        milestoneLabels={aboutContent.milestoneLabels}
-      />
-
-      {/* SECTION 3: HOW I BUILD */}
-      <section className="flex flex-col gap-6 sm:gap-8 w-full" data-particle-protected>
-        <div className="flex flex-col gap-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
-            <Layers className="w-3.5 h-3.5" />
-            <span>{aboutContent.principlesEyebrow || "HOW I BUILD"}</span>
-          </div>
-          <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground font-space">
-            {aboutContent.principlesHeading || "A few principles I keep close."}
-          </h2>
-          {aboutContent.principlesDescription && (
-            <p className="text-xs sm:text-sm lg:text-base text-muted max-w-2xl leading-relaxed">
-              {aboutContent.principlesDescription}
-            </p>
-          )}
-        </div>
-
-        {/* Desktop 4-card grid (>=1024px) */}
-        <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {principlesList.map((principle, idx) => {
-            const Icon = resolveIcon(principle.icon, Layers);
-            return (
-              <BorderGlow key={principle.number || idx} borderRadius={16} className="h-full">
-                <div
-                  className="glass-card rounded-2xl p-6 border border-white/[0.06] flex flex-col justify-between gap-4 group h-full"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-xl bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center text-pacific-cyan group-hover:border-pacific-cyan/50 transition-colors">
-                      <Icon className="w-5 h-5 transition-transform group-hover:scale-110" />
-                    </div>
-                    <span className="font-mono text-xs font-bold text-muted/50">
-                      {principle.number}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <h3 className="text-lg font-bold text-foreground font-space tracking-wide">
-                      {principle.title}
-                    </h3>
-                    <p className="text-sm text-muted/90 leading-relaxed">
-                      &quot;{principle.statement}&quot;
-                    </p>
-                  </div>
-                </div>
-              </BorderGlow>
-            );
-          })}
-        </div>
-
-        {/* Mobile & Tablet Engineering Principles Rail (<1024px) */}
-        <div className="block lg:hidden w-full">
-          <MobileHowIBuild principles={principlesList} />
-        </div>
-      </section>
-
-      {/* SECTION 4: ENGINEERING JOURNEY */}
-      <section className="flex flex-col gap-6 sm:gap-8 w-full" data-particle-protected>
-        <div className="flex flex-col gap-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
-            <Briefcase className="w-3.5 h-3.5" />
-            <span>{aboutContent.journeyEyebrow || "ENGINEERING JOURNEY"}</span>
-          </div>
-          <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground font-space">
-            {aboutContent.journeyHeading || "ENGINEERING JOURNEY"}
-          </h2>
-          <p className="text-xs sm:text-sm lg:text-base text-muted max-w-2xl leading-relaxed">
-            {aboutContent.journeyDescription}
-          </p>
-        </div>
-
-        {/* Desktop Continuous Horizontal Stream (>=1024px) */}
-        <div className="hidden lg:block w-full">
-          <EngineeringJourneyCircuit items={TIMELINE} />
-        </div>
-
-        {/* Mobile & Tablet Dedicated Vertical Timeline (<1024px) */}
-        <div className="block lg:hidden w-full">
-          <MobileAboutExperience items={TIMELINE} />
-        </div>
-      </section>
-
-      {/* SECTION 5: CURRENT FOCUS */}
-      <section className="flex flex-col gap-6 sm:gap-8 w-full" data-particle-protected>
-        <div className="flex flex-col gap-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
-            <Target className="w-3.5 h-3.5" />
-            <span>{aboutContent.focusEyebrow || "CURRENT FOCUS"}</span>
-          </div>
-          <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground font-space">
-            {aboutContent.focusHeading || "What I'm building toward."}
-          </h2>
-          <p className="text-xs sm:text-sm lg:text-base text-muted max-w-2xl leading-relaxed">
-            {aboutContent.focusDescription || "Exploring where thoughtful interface design and modern engineering can meet."}
-          </p>
-        </div>
-
-        {/* Desktop Grid (>=1024px) */}
-        <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {focusList.map((focus, idx) => {
-            const Icon = resolveIcon(focus.icon, Terminal);
-            return (
-              <BorderGlow key={focus.title || idx} borderRadius={16} className="h-full">
-                <div
-                  className="glass-card rounded-2xl p-6 border border-white/[0.06] flex flex-col gap-3 group h-full"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-surface border border-white/[0.08] flex items-center justify-center text-pacific-cyan group-hover:border-pacific-cyan/40 transition-colors">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <h3 className="text-base font-bold text-foreground font-space tracking-wide">
-                    {focus.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted leading-relaxed">
-                    {focus.description}
-                  </p>
-                </div>
-              </BorderGlow>
-            );
-          })}
-        </div>
-
-        {/* Mobile & Tablet Compact Focus Modules (<1024px) */}
-        <div className="block lg:hidden w-full">
-          <MobileCurrentFocus focusAreas={focusList} />
-        </div>
-      </section>
-
-      {/* SECTION 6: CTA */}
-      {/* Desktop CTA (>=1024px) */}
-      <div className="hidden lg:block w-full">
-        <BorderGlow borderRadius={16} className="w-full">
-          <section
-            className="relative glass-card rounded-2xl p-8 sm:p-10 border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 overflow-hidden"
-            data-particle-protected
+          <Reveal
+            as="figure"
+            className="col-span-5 lg:col-start-9 lg:col-span-4 lg:row-start-1 lg:row-span-2 self-center lg:self-end justify-self-end w-full lg:w-[min(100%,22rem,calc((100svh-16rem)*0.75))]"
           >
-            {/* Subtle oversized typographic background watermark — partially clipped N at right boundary */}
-            <div
-              aria-hidden="true"
-              className="absolute -bottom-8 lg:-bottom-12 -right-10 lg:-right-14 xl:-right-16 text-[10rem] lg:text-[12rem] xl:text-[14rem] font-black font-space text-white/[0.03] select-none pointer-events-none tracking-tighter leading-none whitespace-nowrap z-0"
-            >
-              RAWIN
+            <div data-field-surface="image" className="relative aspect-[3/4] w-full overflow-hidden rounded-[999px_999px_20px_20px] sm:rounded-[999px_999px_28px_28px] bg-sunken shadow-[var(--shadow-3)]">
+              <Image
+                src={portrait}
+                alt={portraitAlt}
+                fill
+                unoptimized
+                loading="eager"
+                sizes="(min-width: 1024px) 22rem, 42vw"
+                className="object-cover object-[50%_25%] grayscale contrast-[1.1]"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 mix-blend-soft-light opacity-70"
+                style={{ background: "linear-gradient(200deg, var(--accent), transparent 50%, var(--mint))" }}
+              />
             </div>
+          </Reveal>
+        </div>
+      </header>
 
-            <div className="relative z-10 flex flex-col gap-2">
-              <span className="text-xs font-mono font-semibold tracking-wider text-pacific-cyan uppercase">
-                {aboutContent.ctaEyebrow || "LET'S BUILD TOGETHER"}
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground font-space">
-                {aboutContent.ctaHeading || "Have something worth building?"}
-              </h2>
-              <p className="text-sm text-muted">
-                {aboutContent.ctaDescription || "Open to full-time roles, freelance projects, and collaborations."}
+      {/* Chapter I — how I think: the narrative and the progression it leads to. Desktop: a
+          compact label column (2/12) and a wide content column (10/12), so the heading and
+          paragraph use the page width at comfortable measures (32ch / 66ch). Phones are
+          unaffected: everything below lg is single-column as before. */}
+      <section
+        aria-labelledby="about-narrative"
+        className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 mt-20 sm:mt-28 lg:mt-36 grid grid-cols-12 gap-x-4 lg:gap-x-10 gap-y-6"
+      >
+        <p id="about-narrative" className="col-span-12 lg:col-span-2 label-mono text-fg-muted lg:pt-3">
+          <span className="text-accent mr-3">I.</span>
+          {about.narrativeEyebrow || "How I think"}
+        </p>
+        <div className="col-span-12 lg:col-span-10 flex flex-col gap-12">
+          <div>
+            <MaskText
+              as="p"
+              className="font-display text-[clamp(1.75rem,3.6vw,3.4rem)] leading-[1.06] tracking-[-0.02em] about-lead text-fg max-w-[24ch] lg:max-w-[32ch]"
+              lines={[lead]}
+            />
+            <Reveal delay={0.1}>
+              <p className="mt-6 sm:mt-8 text-[15.5px] sm:text-[17px] leading-relaxed text-fg-muted max-w-[60ch] lg:max-w-[66ch] first-letter:font-display first-letter:text-[3.4em] first-letter:float-left first-letter:leading-[0.8] first-letter:mr-2 first-letter:mt-1 first-letter:text-fg">
+                {narrative}
               </p>
-            </div>
+            </Reveal>
+          </div>
 
-            <div className="relative z-10 flex flex-wrap items-center gap-3 shrink-0">
-              <Link
-                href="/resume"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pacific-cyan text-ink-black font-semibold text-sm hover:bg-pacific-cyan/90 transition-all shadow-[0_0_20px_rgba(24,155,173,0.3)]"
+          {/* Progression chain: one line at every width (compacted on phones) */}
+          <Reveal className="border-t border-line pt-6">
+            <ol className="about-progression flex flex-nowrap sm:flex-wrap items-baseline gap-x-2 sm:gap-x-3 gap-y-2">
+              {progression.map((step, i) => (
+                <li key={step} className="flex items-baseline gap-1.5 sm:gap-3 whitespace-nowrap">
+                  <span className="font-mono text-[10px] sm:text-[11px] text-fg-subtle">{String(i + 1).padStart(2, "0")}</span>
+                  <span
+                    className={`about-progression-word font-display text-[clamp(1.35rem,3vw,2.6rem)] leading-none ${
+                      i === progression.length - 1 ? "italic text-accent" : "text-fg"
+                    }`}
+                  >
+                    {editorialCase(step)}
+                  </span>
+                  {i < progression.length - 1 && <span aria-hidden="true" className="text-fg-subtle">→</span>}
+                </li>
+              ))}
+            </ol>
+            <ul className="about-chips mt-5 sm:mt-6 flex flex-nowrap sm:flex-wrap gap-1.5 sm:gap-2" aria-label="Disciplines">
+              {metadataList.map((m) => (
+                <li key={m} className="label-mono text-fg-muted px-3 py-1.5 rounded-full border border-line whitespace-nowrap">
+                  {m}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+        </div>
+      </section>
+
+      <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 flex flex-col gap-28 sm:gap-36 lg:gap-44 mt-28 sm:mt-36 lg:mt-44">
+        {/* Chapter II — Evolution */}
+        <section aria-labelledby="evolution-title">
+          <SectionHead
+            id="evolution-title"
+            index="II."
+            eyebrow={about.evolutionEyebrow || "A record of the build"}
+            title={(() => {
+              const [h, t] = splitEmphasis(about.evolutionHeading || "From a first HTML page to a full engineering platform.", 2);
+              return [<span key="l1">{h}</span>, <em key="e" className="italic text-accent">{t}</em>];
+            })()}
+            aside={about.evolutionDescription}
+            className="mb-14 sm:mb-20"
+          />
+          <EvolutionChapters milestones={about.evolution} labels={about.milestoneLabels} />
+        </section>
+
+        {/* Chapter III — Principles */}
+        <section aria-labelledby="principles-title">
+          <SectionHead
+            id="principles-title"
+            index="III."
+            eyebrow={about.principlesEyebrow || "How I build"}
+            title={[<span key="l2">{about.principlesHeading || "A few principles I keep close."}</span>]}
+            aside={about.principlesDescription}
+            className="mb-12 sm:mb-16"
+          />
+          <PrinciplesList
+            principles={principles.map((p) => ({ number: p.number, title: p.title, statement: p.statement }))}
+            titles={principles.map((p) => editorialCase(p.title))}
+          />
+        </section>
+
+        {/* Chapter IV — Journey */}
+        <section aria-labelledby="journey-title">
+          <SectionHead
+            id="journey-title"
+            index="IV."
+            eyebrow={about.journeyEyebrow || "Engineering journey"}
+            title={[<span key="l3">{editorialCase(about.journeyHeading || "Engineering journey")}</span>]}
+            aside={about.journeyDescription}
+            className="mb-6 sm:mb-10"
+          />
+          <Chronology items={journeyForDisplay(about.journey)} />
+        </section>
+
+        {/* Chapter V — Focus */}
+        <section aria-labelledby="focus-title">
+          <SectionHead
+            id="focus-title"
+            index="V."
+            eyebrow={about.focusEyebrow || "Current focus"}
+            title={[<span key="l4">{about.focusHeading || "What I'm building toward."}</span>]}
+            aside={about.focusDescription}
+            className="mb-12 sm:mb-16"
+          />
+          <ul className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-px bg-line border border-line rounded-[24px] overflow-hidden">
+            {focusAreas.map((f, i) => (
+              <Reveal
+                as="li"
+                key={f.title || i}
+                delay={i * 0.05}
+                className="bg-bg px-4 py-5 sm:p-8 flex flex-row items-baseline gap-3.5 sm:flex-col sm:items-stretch sm:gap-10 sm:min-h-[260px]"
               >
-                <Download className="w-4 h-4" />
-                <span>{aboutContent.ctaResumeText || "View Resume"}</span>
-              </Link>
-              <Link
-                href="/contact"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-card text-foreground font-medium text-sm hover:border-pacific-cyan/40 transition-colors"
-              >
-                <Send className="w-4 h-4 text-pacific-cyan" />
-                <span>{aboutContent.ctaContactText || "Get in Touch"}</span>
+                {/* phones: the number sits beside its title on the same baseline; from sm it heads the card */}
+                <span className="font-mono text-[11px] text-accent shrink-0 w-5 sm:w-auto">{String(i + 1).padStart(2, "0")}</span>
+                <div className="min-w-0 sm:mt-auto">
+                  <h3 className="type-content sm:text-[1.9rem] text-fg">{editorialCase(f.title)}</h3>
+                  <p className="mt-1.5 sm:mt-3 text-sm text-fg-muted leading-relaxed">{f.description}</p>
+                </div>
+              </Reveal>
+            ))}
+          </ul>
+        </section>
+
+        {/* Closing */}
+        <section aria-labelledby="about-cta" className="relative">
+          <p className="label-mono text-fg-muted mb-8">
+            <span className="text-accent mr-3">VI.</span>
+            {about.ctaEyebrow || "Let's build together"}
+          </p>
+          <MaskText
+            as="h2"
+            className="display-lg text-fg max-w-[16ch]"
+            lines={ctaHead ? [<span key="l5">{ctaHead}</span>, <em key="e" className="italic text-accent">{ctaTail}</em>] : [ctaTail]}
+          />
+          <div className="mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+            <p className="text-[17px] text-fg-muted max-w-[46ch]">
+              {about.ctaDescription || "Open to full-time roles, freelance projects, and collaborations."}
+            </p>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-x-5 gap-y-3">
+              <div className="action-pair">
+                <Link href="/contact" className="btn btn-primary">
+                  <span>{about.ctaContactText || "Get in Touch"}</span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </Link>
+                <Link href="/resume" className="btn btn-ghost">
+                  <span>{about.ctaResumeText || "View Resume"}</span>
+                </Link>
+              </div>
+              <Link href="/projects" className="group inline-flex items-center gap-2 min-h-11 w-fit text-sm font-medium text-fg">
+                <span className="link-draw">View projects</span>
+                <ArrowUpRight className="w-4 h-4 transition-transform group-hover:rotate-45" />
               </Link>
             </div>
-          </section>
-        </BorderGlow>
-      </div>
-
-      {/* Mobile & Tablet Editorial Closing CTA (<1024px) */}
-      <div className="block lg:hidden w-full">
-        <MobileAboutCTA
-          eyebrow={aboutContent.ctaEyebrow}
-          heading={aboutContent.ctaHeading}
-          description={aboutContent.ctaDescription}
-          resumeText={aboutContent.ctaResumeText}
-          contactText={aboutContent.ctaContactText}
-        />
-      </div>
-
-      {/* Section link to projects */}
-      <div className="flex justify-center -mt-6 sm:-mt-8 lg:-mt-10">
-        <Link
-          href="/projects"
-          className="group inline-flex items-center justify-center gap-2 sm:gap-2.5 px-5 py-2.5 sm:px-6 sm:py-2.5 rounded-xl bg-gradient-to-b from-[#141420]/90 via-[#0e0e17]/95 to-[#0b0b12]/90 border border-white/10 hover:border-pacific-cyan/45 text-xs sm:text-sm font-mono tracking-wide text-muted/90 hover:text-foreground transition-all duration-200 cursor-pointer shadow-[0_2px_12px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.06)] hover:shadow-[0_0_24px_rgba(24,155,173,0.18),inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-[0.98] min-h-[44px] sm:min-h-[42px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/50 focus-visible:border-pacific-cyan/50"
-        >
-          <span className="font-medium">View Projects</span>
-          <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pacific-cyan transition-transform duration-200 group-hover:translate-x-1 shrink-0" />
-        </Link>
+          </div>
+        </section>
       </div>
     </div>
   );

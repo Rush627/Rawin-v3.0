@@ -1,116 +1,59 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import Image from "next/image";
-import { ShieldCheck, LogOut, ExternalLink } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { getAdminSession } from "@/lib/auth";
 import { getSiteContent } from "@/lib/site-content";
+import { BUNDLED } from "@/lib/brand-assets";
 import { logoutAction } from "./actions";
+import AdminShell from "@/components/studio/AdminShell";
 
 export const metadata: Metadata = {
-  title: "Admin Portal | RAWIN 3.0",
-  description: "Private administrative management portal for RAWIN 3.0.",
+  title: "RAWIN Studio",
+  description: "Private administration for RAWIN.",
   robots: {
     index: false,
     follow: false,
   },
 };
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [session, content] = await Promise.all([
-    getAdminSession(),
-    getSiteContent(),
-  ]);
+function SignOutButton() {
+  return (
+    <form action={logoutAction}>
+      <button
+        type="submit"
+        className="inline-flex items-center justify-center gap-2 min-h-11 px-3 rounded-xl text-[13px] text-fg-muted hover:text-danger hover:bg-danger/10"
+        aria-label="Sign out of this browser"
+        title="Sign out"
+      >
+        <LogOut aria-hidden="true" className="w-4 h-4" />
+        <span className="hidden lg:inline">Sign out</span>
+      </button>
+    </form>
+  );
+}
 
-  // If unauthenticated (e.g. at /saint-denis/login), render isolated content without admin chrome
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await getAdminSession();
+
+  // Signed out (e.g. /saint-denis/login): the page renders on its own, without studio chrome
   if (!session) {
     return <div data-admin-portal="true">{children}</div>;
   }
 
+  // The studio identity follows the same Header brand choice as the public header (cached
+  // content; saving Site Content invalidates it like every other consumer). If the content
+  // cannot be read, the studio still opens with the typographic wordmark.
+  const content = await getSiteContent().catch(() => null);
+  const brand = {
+    mode: content?.global?.headerBrand === "logo" ? ("logo" as const) : ("wordmark" as const),
+    logos: {
+      light: content?.assets.logoLight ?? { url: BUNDLED.logoLight, alt: "RAWIN" },
+      dark: content?.assets.logoDark ?? { url: BUNDLED.logoDark, alt: "RAWIN" },
+    },
+  };
+
   return (
-    <div
-      data-admin-portal="true"
-      className="min-h-screen min-h-dvh w-full bg-ink-black text-foreground flex flex-col"
-    >
-      {/* Top Admin Navigation Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-ink-black/80 backdrop-blur-xl px-3.5 sm:px-8 py-2.5 sm:py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
-          {/* Brand Left */}
-          <div className="flex items-center gap-2.5 sm:gap-4">
-            <Link
-              href="/saint-denis"
-              className="flex items-center gap-2 sm:gap-2.5 group transition-opacity"
-              aria-label="RAWIN Admin Dashboard"
-            >
-              <Image
-                src={content.assets?.logo?.url || "/images/logo.png"}
-                alt={content.assets?.logo?.alt || "RAWIN Logo"}
-                width={95}
-                height={32}
-                unoptimized
-                className="h-5 sm:h-6 w-auto object-contain"
-              />
-              <span className="text-[10px] sm:text-[11px] font-mono px-1.5 sm:px-2 py-0.5 rounded-md bg-pacific-cyan/10 text-pacific-cyan border border-pacific-cyan/25 font-semibold">
-                ADMIN
-              </span>
-            </Link>
-
-            <div className="hidden sm:block h-4 w-[1px] bg-white/10" />
-
-            <Link
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-mono text-muted hover:text-pacific-cyan transition-colors"
-            >
-              <span>View Live Website</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
-          </div>
-
-          {/* Smartphone Compact Live Website Link */}
-          <Link
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="sm:hidden inline-flex items-center gap-1 text-[11px] font-mono text-muted hover:text-pacific-cyan transition-colors px-2 py-1 rounded-md hover:bg-white/[0.04] shrink-0 select-none min-h-[32px]"
-            aria-label="View live website"
-          >
-            <span>Live Website</span>
-            <ExternalLink className="w-2.5 h-2.5 text-pacific-cyan/80" />
-          </Link>
-
-          {/* User Status & Logout Right */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div
-              className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs font-mono text-muted"
-              title={session.email}
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="truncate max-w-[200px]">{session.email}</span>
-            </div>
-
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-muted hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all cursor-pointer min-h-[36px]"
-                title="Sign out of administrative session"
-              >
-                <LogOut className="w-3.5 h-3.5 text-red-400" />
-                <span>Logout</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Admin Content */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-8 py-5 sm:py-12">
-        {children}
-      </main>
-    </div>
+    <AdminShell email={session.email} brand={brand} signOut={<SignOutButton />}>
+      {children}
+    </AdminShell>
   );
 }

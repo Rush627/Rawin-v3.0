@@ -58,7 +58,7 @@ export default function OfflineDetector() {
   return (
     <div
       data-error-overlay="true"
-      className="fixed inset-0 z-[9999] bg-ink-black flex flex-col"
+      className="fixed inset-0 z-[9999] bg-bg flex flex-col"
     >
       <RawinErrorView
         code="OFFLINE"

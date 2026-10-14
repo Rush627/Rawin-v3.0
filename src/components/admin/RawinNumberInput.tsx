@@ -69,7 +69,7 @@ export default function RawinNumberInput({
 
   return (
     <div
-      className={`group relative flex items-center rounded-xl bg-ink-black/60 backdrop-blur-md border border-white/[0.08] hover:border-white/20 focus-within:border-pacific-cyan focus-within:ring-1 focus-within:ring-pacific-cyan/40 transition-all ${className}`}
+      className={`group relative flex items-center rounded-xl bg-surface backdrop-blur-md border border-line hover:border-line-strong focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/40 transition-all ${className}`}
     >
       <input
         ref={inputRef}
@@ -80,7 +80,7 @@ export default function RawinNumberInput({
         max={max}
         step={step}
         onChange={handleChange}
-        className="w-full pl-4 pr-10 py-2.5 bg-transparent text-[16px] sm:text-sm text-foreground font-mono outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        className="w-full pl-4 pr-10 py-2.5 bg-transparent text-[16px] sm:text-sm text-fg font-mono outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         {...props}
       />
       <div className="absolute right-1.5 inset-y-1.5 flex flex-col justify-center gap-0.5 pr-0.5">
@@ -89,7 +89,7 @@ export default function RawinNumberInput({
           tabIndex={-1}
           aria-label="Increment display order"
           onClick={() => handleStep("up")}
-          className="flex items-center justify-center w-6 h-3.5 rounded text-muted/60 hover:text-pacific-cyan hover:bg-white/[0.06] active:bg-pacific-cyan/20 transition-colors cursor-pointer select-none"
+          className="flex items-center justify-center w-6 h-3.5 rounded text-fg-muted/60 hover:text-accent hover:bg-surface-2 active:bg-accent/20 transition-colors cursor-pointer select-none"
         >
           <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
         </button>
@@ -98,7 +98,7 @@ export default function RawinNumberInput({
           tabIndex={-1}
           aria-label="Decrement display order"
           onClick={() => handleStep("down")}
-          className="flex items-center justify-center w-6 h-3.5 rounded text-muted/60 hover:text-pacific-cyan hover:bg-white/[0.06] active:bg-pacific-cyan/20 transition-colors cursor-pointer select-none"
+          className="flex items-center justify-center w-6 h-3.5 rounded text-fg-muted/60 hover:text-accent hover:bg-surface-2 active:bg-accent/20 transition-colors cursor-pointer select-none"
         >
           <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
         </button>

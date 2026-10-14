@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
+import { getSiteContent } from "@/lib/site-content";
 import { getProjectById } from "@/lib/projects";
 import ProjectForm from "@/components/admin/ProjectForm";
 import { updateProjectAction } from "../actions";
@@ -27,5 +28,6 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
 
   const boundUpdateAction = updateProjectAction.bind(null, id);
 
-  return <ProjectForm initialData={project} action={boundUpdateAction} isEditing={true} />;
+  const content = await getSiteContent();
+  return <ProjectForm initialData={project} action={boundUpdateAction} isEditing={true} categories={content.taxonomy?.projectCategories} />;
 }

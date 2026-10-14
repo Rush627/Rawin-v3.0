@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import RawinErrorView from "@/components/RawinErrorView";
 import type { PublicAvailability } from "@/lib/site-content";
 
+const LIVE_POLL_MS = 5 * 60 * 1000;
+
 export interface AvailabilityWatcherProps {
   initialStatus?: "live" | "offline" | "maintenance";
   isServerFallback?: boolean;
@@ -22,10 +24,21 @@ export default function AvailabilityWatcher({
   const abortControllerRef = useRef<AbortController | null>(null);
   const hasTriggeredReloadRef = useRef(false);
 
-  const checkAvailability = useCallback(async () => {
+  // Poll briskly only while the site is down (so the 503 screen notices recovery quickly); while
+  // live, check every 5 minutes: the proxy already enforces maintenance on the next navigation,
+  // and each check is a serverless invocation.
+  const lastCheckRef = useRef(0);
+  const statusRef = useRef(state.status);
+  useEffect(() => {
+    statusRef.current = state.status;
+  }, [state.status]);
+  const checkAvailability = useCallback(async (force = false) => {
     // Never poll on administrative routes
     if (isAdmin) return;
     if (isCheckingRef.current) return;
+    const live = statusRef.current === "live" && !isServerFallback;
+    if (!force && live && Date.now() - lastCheckRef.current < LIVE_POLL_MS) return;
+    lastCheckRef.current = Date.now();
 
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -64,7 +77,7 @@ export default function AvailabilityWatcher({
     if (isAdmin) return;
 
     // Check availability on initial mount
-    checkAvailability();
+    checkAvailability(true);
 
     // Conservative polling (every 12 seconds), automatically paused when tab is hidden
     const interval = setInterval(() => {
@@ -83,7 +96,7 @@ export default function AvailabilityWatcher({
 
     // Immediate re-check when network connection is restored
     const handleOnline = () => {
-      checkAvailability();
+      checkAvailability(true);
     };
     window.addEventListener("online", handleOnline);
 
@@ -94,7 +107,7 @@ export default function AvailabilityWatcher({
         channel = new BroadcastChannel("rawin_availability_sync");
         channel.onmessage = (event) => {
           if (event.data?.type === "AVAILABILITY_CHANGED") {
-            checkAvailability();
+            checkAvailability(true);
           }
         };
       } catch {}
@@ -141,7 +154,7 @@ export default function AvailabilityWatcher({
   return (
     <div
       data-error-overlay="true"
-      className="fixed inset-0 z-[9998] bg-ink-black flex flex-col overflow-y-auto"
+      className="fixed inset-0 z-[9998] bg-bg flex flex-col overflow-y-auto"
       role="region"
       aria-label="Website Availability Notice"
     >

@@ -13,7 +13,6 @@ import {
   type OrbitKnowledgeStatus,
   type OrbitKnowledgeItem,
 } from "@/lib/orbit-knowledge";
-import { invalidateAuraKnowledgeCache } from "@/lib/aura/knowledge";
 
 export interface KnowledgeActionState {
   success?: boolean;
@@ -91,7 +90,6 @@ export async function createKnowledgeAction(
       enabled,
     });
 
-    invalidateAuraKnowledgeCache();
     try {
       invalidateCacheTag("orbit-knowledge");
     } catch {}
@@ -176,7 +174,6 @@ export async function updateKnowledgeAction(
       return { error: "Knowledge entry not found or update failed." };
     }
 
-    invalidateAuraKnowledgeCache();
     try {
       invalidateCacheTag("orbit-knowledge");
     } catch {}
@@ -214,7 +211,6 @@ export async function deleteKnowledgeAction(id: string): Promise<KnowledgeAction
       return { error: "Failed to delete knowledge entry." };
     }
 
-    invalidateAuraKnowledgeCache();
     try {
       invalidateCacheTag("orbit-knowledge");
     } catch {}
@@ -254,7 +250,6 @@ export async function toggleKnowledgeAction(
       return { error: "Failed to toggle status." };
     }
 
-    invalidateAuraKnowledgeCache();
     try {
       invalidateCacheTag("orbit-knowledge");
     } catch {}

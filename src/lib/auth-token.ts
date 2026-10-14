@@ -27,4 +27,6 @@ export interface AdminSessionPayload {
   email: string;
   role: "admin";
   issuedAt: number;
+  /** account session version the token was issued under (see lib/admin-credentials) */
+  sessionVersion: number;
 }

@@ -4,6 +4,14 @@ import { invalidateCacheTag } from "./cache";
 import { ObjectId, GridFSBucket } from "mongodb";
 import type { Readable } from "stream";
 import { getDatabase } from "./mongodb";
+import { checkImageUpload } from "./brand-assets";
+
+/*
+ * Reads throw when the database is unreachable instead of answering [] / null: a thrown error
+ * is never stored by unstable_cache, so an outage shows the error page (and the last good
+ * static page keeps being served during revalidation) rather than an empty site cached for an
+ * hour. `null` from a by-slug/by-id read now always means "no such record".
+ */
 
 export type ProjectStatus = "planned" | "in-progress" | "completed";
 
@@ -29,6 +37,8 @@ export interface Project {
   role?: string;
   outcome?: string;
   year?: string;
+  /** Optional visual tone (see lib/project-tone). Absent on older documents. */
+  tone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -86,6 +96,7 @@ function mapProjectDoc(doc: any): Project {
     role: doc.role || "",
     outcome: doc.outcome || "",
     year: doc.year || new Date().getFullYear().toString(),
+    ...(typeof doc.tone === "string" && doc.tone ? { tone: doc.tone } : {}),
     createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt || new Date().toISOString(),
     updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt || new Date().toISOString(),
   };
@@ -97,7 +108,7 @@ function mapProjectDoc(doc: any): Project {
 async function fetchProjectsFromDb(): Promise<Project[]> {
   try {
     const db = await getDatabase();
-    if (!db) return [];
+    if (!db) throw new Error("Database connection unavailable.");
     const docs = await db
       .collection(COLLECTION_NAME)
       .find({})
@@ -107,7 +118,7 @@ async function fetchProjectsFromDb(): Promise<Project[]> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Projects] Error fetching projects:", msg);
-    return [];
+    throw err;
   }
 }
 
@@ -130,7 +141,7 @@ export const getProjects = cache(async (): Promise<Project[]> => {
 async function fetchFeaturedProjectsFromDb(): Promise<Project[]> {
   try {
     const db = await getDatabase();
-    if (!db) return [];
+    if (!db) throw new Error("Database connection unavailable.");
     const docs = await db
       .collection(COLLECTION_NAME)
       .find({ featured: true })
@@ -140,7 +151,7 @@ async function fetchFeaturedProjectsFromDb(): Promise<Project[]> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Projects] Error fetching featured projects:", msg);
-    return [];
+    throw err;
   }
 }
 
@@ -163,13 +174,13 @@ export const getFeaturedProjects = cache(async (): Promise<Project[]> => {
 async function fetchProjectBySlugFromDb(slug: string): Promise<Project | null> {
   try {
     const db = await getDatabase();
-    if (!db) return null;
+    if (!db) throw new Error("Database connection unavailable.");
     const doc = await db.collection(COLLECTION_NAME).findOne({ slug: slug.trim().toLowerCase() });
     return doc ? mapProjectDoc(doc) : null;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[Projects] Error fetching project by slug (${slug}):`, msg);
-    return null;
+    throw err;
   }
 }
 
@@ -191,14 +202,14 @@ export const getProjectBySlug = cache(async (slug: string): Promise<Project | nu
 export async function getProjectById(id: string): Promise<Project | null> {
   try {
     const db = await getDatabase();
-    if (!db) return null;
+    if (!db) throw new Error("Database connection unavailable.");
     if (!ObjectId.isValid(id)) return null;
     const doc = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(id) });
     return doc ? mapProjectDoc(doc) : null;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[Projects] Error fetching project by id (${id}):`, msg);
-    return null;
+    throw err;
   }
 }
 
@@ -322,6 +333,10 @@ export async function storeProjectPreviewFile(
   mimeType: string,
   filename: string
 ): Promise<string> {
+  // The stored type comes from the file's bytes, never from the browser's declared type
+  const check = checkImageUpload("projectPreview", new Uint8Array(fileBuffer));
+  if (!check.ok) throw new Error(check.error);
+  mimeType = check.type;
   const db = await getDatabase();
   if (!db) throw new Error("Database connection unavailable.");
   if (!ObjectId.isValid(projectId)) throw new Error("Invalid project ID.");

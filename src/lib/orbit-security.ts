@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { getDatabase } from "./mongodb";
 import { getSecretKey } from "./auth";
+import { ownerVerificationAllowed } from "./aura/durable-limit";
 
 export type OrbitIdentityState =
   | "UNKNOWN"
@@ -230,27 +231,32 @@ export async function getOwnerVerificationStatus(): Promise<{
  */
 export async function verifyOwnerCandidate(
   candidateCode: string,
-  ip = "127.0.0.1"
-): Promise<boolean> {
-  if (!checkVerificationRateLimit(ip)) {
-    return false;
+  clientKey = "unidentified"
+): Promise<"match" | "mismatch" | "unavailable"> {
+  // Per-instance burst guard, then the shared limits (see ownerVerificationAllowed): fail closed
+  // when they cannot be enforced, and a limited attempt is reported as a mismatch.
+  if (!checkVerificationRateLimit(clientKey)) {
+    return "mismatch";
   }
+  const gate = await ownerVerificationAllowed(clientKey);
+  if (gate === "unavailable") return "unavailable";
+  if (gate === "limited") return "mismatch";
 
   const trimmed = candidateCode.trim();
   if (!trimmed || trimmed.length < 4 || trimmed.length > 32) {
-    return false;
+    return "mismatch";
   }
 
   try {
     const hash = await getOwnerVerificationHash();
     if (!hash) {
       // Fail closed when record is missing or database is unavailable
-      return false;
+      return "mismatch";
     }
-    return await bcrypt.compare(trimmed, hash);
+    return (await bcrypt.compare(trimmed, hash)) ? "match" : "mismatch";
   } catch (err) {
     console.error("[Orbit Security] Error during candidate comparison:", err);
-    return false;
+    return "mismatch";
   }
 }
 

@@ -78,6 +78,8 @@ export async function changePasswordAction(
           passwordHash: newPasswordHash,
           updatedAt: new Date(),
         },
+        // every session issued before the change (on any device) stops working
+        $inc: { sessionVersion: 1 },
         $setOnInsert: {
           email: session.email,
           createdAt: new Date(),
@@ -96,7 +98,7 @@ export async function changePasswordAction(
 
     return {
       success: true,
-      message: "Password updated successfully. Session terminated for security. Please sign in with your new password.",
+      message: "Password updated. Every session, on every device, has been signed out. Please sign in with your new password.",
       requiresLogin: true,
     };
   } catch (err) {

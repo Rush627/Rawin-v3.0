@@ -219,21 +219,21 @@ export default function RawinSelect({
           fontMono ? "font-mono" : "font-sans"
         } ${
           isExtraSmall
-            ? "px-3 py-1.5 text-xs rounded-lg bg-ink-black/60 border border-white/[0.08] hover:border-white/20 text-foreground shadow-sm"
+            ? "px-3 py-1.5 text-xs rounded-lg bg-surface border border-line hover:border-line-strong text-fg shadow-sm"
             : isSmall
-            ? "px-2.5 py-1 text-xs rounded-lg bg-ink-black/80 border border-white/[0.12] hover:border-white/25 text-muted hover:text-foreground shadow-sm"
-            : "px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm min-h-[40px] rounded-xl bg-ink-black/70 border border-white/[0.12] hover:border-white/25 text-foreground shadow-sm"
+            ? "px-2.5 py-1 text-xs rounded-lg bg-surface border border-line-strong hover:border-line-strong text-fg-muted hover:text-fg shadow-sm"
+            : "px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm min-h-[40px] rounded-xl bg-surface border border-line-strong hover:border-line-strong text-fg shadow-sm"
         } ${
           error
-            ? "border-rose-500/60 ring-1 ring-rose-500/30"
+            ? "border-danger/60 ring-1 ring-danger/30"
             : isOpen
-            ? "border-pacific-cyan ring-1 ring-pacific-cyan/40"
-            : "focus-visible:border-pacific-cyan focus-visible:ring-1 focus-visible:ring-pacific-cyan/40"
+            ? "border-accent ring-1 ring-accent/40"
+            : "focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/40"
         } ${disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
           {selectedOption?.icon && (
-            <span className="shrink-0 text-pacific-cyan flex items-center">
+            <span className="shrink-0 text-accent flex items-center">
               {selectedOption.icon}
             </span>
           )}
@@ -241,7 +241,7 @@ export default function RawinSelect({
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           {selectedOption?.badge && (
-            <span className="shrink-0 ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-muted border border-white/[0.08] whitespace-nowrap">
+            <span className="shrink-0 ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-2 text-fg-muted border border-line whitespace-nowrap">
               {selectedOption.badge}
             </span>
           )}
@@ -249,7 +249,7 @@ export default function RawinSelect({
         <ChevronDown
           className={`shrink-0 transition-transform duration-200 ${
             isExtraSmall || isSmall ? "w-3 h-3" : "w-4 h-4"
-          } ${isOpen ? "rotate-180 text-pacific-cyan" : "text-muted/60"}`}
+          } ${isOpen ? "rotate-180 text-accent" : "text-fg-muted/60"}`}
         />
       </button>
 
@@ -262,7 +262,7 @@ export default function RawinSelect({
           tabIndex={-1}
           className={`absolute left-0 ${
             openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"
-          } z-[70] rounded-xl bg-ink-black/95 backdrop-blur-xl border border-white/[0.12] shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_24px_rgba(24,155,173,0.1)] p-1.5 flex flex-col gap-0.5 max-h-60 overflow-y-auto ${
+          } z-[70] rounded-xl bg-surface backdrop-blur-xl border border-line-strong  p-1.5 flex flex-col gap-0.5 max-h-60 overflow-y-auto ${
             isSmall && !isExtraSmall ? "min-w-[150px] text-xs" : "w-full min-w-0 max-w-full text-xs"
           } animate-in fade-in zoom-in-95 duration-100`}
         >
@@ -298,17 +298,17 @@ export default function RawinSelect({
                     : "cursor-pointer"
                 } ${
                   isSelected
-                    ? "bg-pacific-cyan/15 text-pacific-cyan font-medium border border-pacific-cyan/30"
+                    ? "bg-accent/15 text-accent font-medium border border-accent/30"
                     : isHighlighted
-                    ? "bg-white/[0.08] text-foreground"
-                    : "text-foreground/80 hover:bg-white/[0.04] hover:text-foreground"
+                    ? "bg-surface-2 text-fg"
+                    : "text-fg/80 hover:bg-surface-2 hover:text-fg"
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   {option.icon && (
                     <span
                       className={`shrink-0 flex items-center ${
-                        isSelected ? "text-pacific-cyan" : "text-muted"
+                        isSelected ? "text-accent" : "text-fg-muted"
                       }`}
                     >
                       {option.icon}
@@ -316,14 +316,14 @@ export default function RawinSelect({
                   )}
                   <span className="truncate">{option.label}</span>
                   {option.badge && (
-                    <span className="ml-1.5 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-muted border border-white/[0.08]">
+                    <span className="ml-1.5 text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-2 text-fg-muted border border-line">
                       {option.badge}
                     </span>
                   )}
                 </div>
                 {isSelected && (
                   <Check
-                    className={`shrink-0 stroke-[2.5] text-pacific-cyan ${
+                    className={`shrink-0 stroke-[2.5] text-accent ${
                       isExtraSmall || isSmall ? "w-3 h-3" : "w-3.5 h-3.5"
                     }`}
                   />

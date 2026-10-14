@@ -23,6 +23,8 @@ export interface OrbitKnowledgeItem {
   enabled: boolean;
   priority: OrbitKnowledgePriority;
   status: OrbitKnowledgeStatus;
+  /** Set on the minimal historical record kept when a public project or article is deleted */
+  origin?: { type: "project" | "article"; key: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -64,7 +66,9 @@ export async function ensureOrbitKnowledgeIndexes(): Promise<void> {
 async function fetchOrbitKnowledgeListFromDb(): Promise<OrbitKnowledgeItem[]> {
   try {
     const db = await getDatabase();
-    if (!db) return [];
+    // Throw rather than return []: an empty list would be cached for an hour as if every
+    // entry had been deleted (unstable_cache never stores a thrown error).
+    if (!db) throw new Error("Database connection unavailable.");
 
     const docs = await db
       .collection(COLLECTION_NAME)
@@ -80,13 +84,14 @@ async function fetchOrbitKnowledgeListFromDb(): Promise<OrbitKnowledgeItem[]> {
       enabled: doc.enabled !== false,
       priority: (doc.priority || "normal") as OrbitKnowledgePriority,
       status: (doc.status || "current") as OrbitKnowledgeStatus,
+      ...(doc.origin && typeof doc.origin.key === "string" ? { origin: { type: doc.origin.type === "article" ? ("article" as const) : ("project" as const), key: doc.origin.key } } : {}),
       createdAt: doc.createdAt || new Date().toISOString(),
       updatedAt: doc.updatedAt || new Date().toISOString(),
     }));
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[OrbitKnowledge] Error retrieving knowledge list:", msg);
-    return [];
+    throw err;
   }
 }
 
@@ -133,6 +138,7 @@ export async function getOrbitKnowledgeById(id: string): Promise<OrbitKnowledgeI
       enabled: doc.enabled !== false,
       priority: (doc.priority || "normal") as OrbitKnowledgePriority,
       status: (doc.status || "current") as OrbitKnowledgeStatus,
+      ...(doc.origin && typeof doc.origin.key === "string" ? { origin: { type: doc.origin.type === "article" ? ("article" as const) : ("project" as const), key: doc.origin.key } } : {}),
       createdAt: doc.createdAt || new Date().toISOString(),
       updatedAt: doc.updatedAt || new Date().toISOString(),
     };
@@ -330,6 +336,32 @@ export async function getActiveOrbitKnowledgeForAura(): Promise<OrbitKnowledgeIt
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[OrbitKnowledge] Error fetching active knowledge for Aura:", msg);
-    return [];
+    throw err;
   }
+}
+
+/**
+ * Keeps a minimal historical record when a public project or published article is deleted, so
+ * Orbit can acknowledge that it existed without describing it: the former title and its status
+ * only, never the description, body or any other field. Upserted by origin, so deleting the same
+ * item again does not duplicate it. Admin-only (called from the delete actions).
+ */
+export async function recordFormerItem(type: "project" | "article", key: string, title: string): Promise<void> {
+  const db = await getDatabase();
+  if (!db) throw new Error("Database connection unavailable.");
+  const now = new Date().toISOString();
+  const label = type === "project" ? "project" : "article";
+  const name = title.trim().slice(0, 150) || key;
+  const content =
+    type === "project"
+      ? `${name} was previously a project in the RAWIN portfolio. It is no longer listed among the current projects. No verified details about it are available: do not describe its features, technologies, links, dates or why it was removed.`
+      : `"${name}" was previously published on the RAWIN blog. It is no longer available on the website. No verified details about it are available: do not summarise its content or say why it was removed.`;
+  await db.collection(COLLECTION_NAME).updateOne(
+    { "origin.type": type, "origin.key": key },
+    {
+      $set: { title: `${name} (former ${label})`, content, status: "historical", enabled: true, updatedAt: now },
+      $setOnInsert: { category: "rawin", priority: "normal", origin: { type, key }, createdAt: now },
+    },
+    { upsert: true }
+  );
 }

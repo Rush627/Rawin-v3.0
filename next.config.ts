@@ -6,6 +6,7 @@ try {
 } catch { }
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   serverExternalPackages: ["mongodb"],
   images: {},
   experimental: {
@@ -28,12 +29,20 @@ const nextConfig: NextConfig = {
             value: "DENY",
           },
           {
+            // Structural policy only: no framing, no <base> or plugin injection, forms post to
+            // this origin. A script-src policy would need per-request nonces for the inline
+            // theme script and Next's own inline scripts, so it is not enabled here.
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
+          },
+          {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), payment=()",
+            // Microphone stays limited to this origin so Orbit dictation can work; everything else is off.
+            value: "camera=(), microphone=(self), geolocation=(), payment=()",
           },
           ...(process.env.NODE_ENV === "production"
             ? [

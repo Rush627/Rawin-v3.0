@@ -1,399 +1,231 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import type { Metadata } from "next";
-import { BookOpen, ArrowRight, Sparkles, PenLine } from "lucide-react";
-import { getPublishedPosts } from "@/lib/blog";
-import type { BlogPost } from "@/lib/blog";
+import { ArrowUpRight } from "lucide-react";
+import { getPublishedPosts, type BlogPost } from "@/lib/blog";
+import MaskText from "@/components/system/MaskText";
+import Reveal from "@/components/system/Reveal";
+import ArticleCover from "@/components/blog/ArticleCover";
+import { formatPostDate, formatReadTime } from "@/components/blog/format";
+import { pageMetadata } from "@/lib/page-metadata";
 
-export const metadata: Metadata = {
-  title: "The Dev Log | Rushan Siddiqui",
-  description:
-    "Exploring the intersection of software architecture, intelligent agents, and performant web systems.",
-};
+export function generateMetadata() {
+  return pageMetadata("blog", "/blog");
+}
 
 export const revalidate = 3600;
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "RECENT";
-  try {
-    const d = new Date(dateStr);
-    return d
-      .toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", month: "short", year: "numeric" })
-      .toUpperCase();
-  } catch {
-    return (dateStr || "RECENT").toUpperCase();
-  }
-}
-
-function formatReadTime(readTime?: string): string {
-  if (!readTime) return "5 MIN READ";
-  const upper = readTime.toUpperCase();
-  if (upper.includes("READ")) return upper;
-  return `${upper} READ`;
-}
-
-/** Typographic cover fallback shown when no coverImage is present */
-function ArticleCoverFallback({ title, index }: { title: string; index: number }) {
-  const accents = [
-    "from-pacific-cyan/20 to-transparent",
-    "from-apricot-cream/15 to-transparent",
-    "from-pacific-cyan/10 via-apricot-cream/10 to-transparent",
-  ];
-  const accent = accents[index % accents.length];
-
+function Meta({ post, className = "", stacked = false }: { post: BlogPost; className?: string; stacked?: boolean }) {
   return (
-    <div
-      aria-hidden="true"
-      className={`relative w-full h-full bg-gradient-to-br ${accent} overflow-hidden`}
-    >
-      {/* Dot grid */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-        }}
-      />
-      {/* First letter accent */}
-      <div className="absolute bottom-4 right-5 text-[5rem] sm:text-[6rem] font-bold font-space text-white/[0.05] leading-none select-none pointer-events-none">
-        {title.trim().charAt(0).toUpperCase()}
-      </div>
-      {/* Thin top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-pacific-cyan/60 to-transparent" />
-    </div>
+    <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 label-mono text-fg-subtle ${className}`}>
+      {post.category && <span className="text-accent">{post.category}</span>}
+      <span>{formatPostDate(post.publishedAt)}</span>
+      {/* the separator only reads on one line; a stacked column (archive, md+) drops it */}
+      <span aria-hidden="true" className={stacked ? "md:hidden" : ""}>
+        ·
+      </span>
+      <span>{formatReadTime(post.readTime)}</span>
+    </p>
   );
 }
 
-/** Featured Article : Editorial Lead Entry */
-function FeaturedArticle({ post, isFeatured }: { post: BlogPost; isFeatured: boolean }) {
+/** Featured / latest story: cover and text share one balanced grid (cover about 56% on desktop). */
+function LeadStory({ post, featured }: { post: BlogPost; featured: boolean }) {
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="group block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/50 rounded-2xl"
-      aria-label={`Read ${post.title}`}
+      className="group grid grid-cols-1 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-y-5 sm:gap-y-7 lg:gap-x-12 xl:gap-x-16 lg:items-center"
     >
-      <article className="relative w-full rounded-2xl border border-white/[0.08] group-hover:border-pacific-cyan/30 overflow-hidden transition-all duration-300 bg-gradient-to-b from-[#161626]/95 via-[#131322]/90 to-[#101019]/95 shadow-[0_4px_24px_rgba(0,0,0,0.28)] md:grid md:grid-cols-12 md:gap-0">
-        {/* Subtle ambient radial highlight */}
-        <div
-          className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,rgba(24,155,173,0.06)_0%,transparent_60%)]"
-          aria-hidden="true"
+      <div className="relative">
+        <ArticleCover
+          post={post}
+          priority
+          scale="lg"
+          sizes="(min-width: 1024px) 700px, 100vw"
+          className="w-full aspect-[16/10] rounded-[20px] sm:rounded-[28px] border border-line shadow-[var(--shadow-3)]"
         />
-
-        {/* Cover image or fallback */}
-        <div className="relative w-full h-52 sm:h-60 md:h-full min-h-[220px] md:min-h-[300px] md:col-span-5 lg:col-span-5 overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.06] bg-ink-black/60 shrink-0">
-          {post.coverImage ? (
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              fill
-              priority
-              unoptimized
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.015]"
-              sizes="(max-width: 768px) 100vw, 500px"
-            />
-          ) : (
-            <ArticleCoverFallback title={post.title} index={0} />
-          )}
-          {/* Subtle bottom gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.7)] via-transparent to-transparent pointer-events-none" />
-
-          {/* Featured marker */}
-          {isFeatured && (
-            <div className="absolute top-3.5 left-3.5 flex items-center">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-ink-black/85 backdrop-blur-sm border border-pacific-cyan/30 text-pacific-cyan uppercase tracking-wider">
-                Featured
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Content area */}
-        <div className="relative z-10 p-5 sm:p-6 lg:p-7 md:col-span-7 lg:col-span-7 flex flex-col justify-between gap-3.5 sm:gap-4">
-          <div className="flex flex-col gap-2.5 sm:gap-3">
-            {/* Metadata row */}
-            <div className="flex items-center gap-2 text-[11px] font-mono text-muted/70 tracking-wider uppercase flex-wrap">
-              <span>{formatDate(post.publishedAt)}</span>
-              <span className="text-white/20" aria-hidden="true">
-                &middot;
-              </span>
-              <span>{formatReadTime(post.readTime)}</span>
-              {isFeatured && (
-                <>
-                  <span className="text-white/20" aria-hidden="true">
-                    &middot;
-                  </span>
-                  <span className="text-apricot-cream/90 font-medium">Featured</span>
-                </>
-              )}
-            </div>
-
-            {/* Title */}
-            <h2 className="text-xl sm:text-2xl lg:text-[1.65rem] font-bold font-space text-foreground leading-snug tracking-tight group-hover:text-pacific-cyan transition-colors duration-200">
-              {post.title}
-            </h2>
-
-            {/* Byline */}
-            {post.author && post.author.trim() && (
-              <p className="text-xs sm:text-sm font-mono text-muted/80 tracking-wide">
-                By <span className="text-foreground/90 font-medium">{post.author.trim()}</span>
-              </p>
+        {/* positioned wrapper: .glass-fallback sets position:relative (unlayered), which would
+            override an absolute utility on the same element */}
+        <span className="absolute top-3 left-3 sm:top-5 sm:left-5">
+          <span className="block glass-fallback rounded-full px-3 py-1 sm:px-3.5 sm:py-1.5 label-mono text-fg">{featured ? "Featured" : "Latest"}</span>
+        </span>
+      </div>
+      <div className="min-w-0">
+        <Meta post={post} />
+        <h2 className="blog-lead-title mt-3 sm:mt-5 font-display text-fg group-hover:italic">{post.title}</h2>
+        {post.excerpt && (
+          <p className="mt-3 sm:mt-5 text-[15.5px] sm:text-[17px] leading-relaxed text-fg-muted line-clamp-3 sm:line-clamp-4">{post.excerpt}</p>
+        )}
+        <div className="mt-5 sm:mt-8 pt-4 sm:pt-5 border-t border-line flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <span className="text-sm text-fg-muted">
+            {post.author ? (
+              <>
+                By <span className="text-fg">{post.author}</span>
+              </>
+            ) : (
+              "RAWIN Dev Log"
             )}
-
-            {/* Excerpt */}
-            {post.excerpt && (
-              <p className="text-xs sm:text-sm text-muted/80 leading-relaxed font-sans line-clamp-3">
-                {post.excerpt}
-              </p>
-            )}
-          </div>
-
-          {/* Bottom row: tags + arrow */}
-          <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex flex-wrap gap-1.5">
-              {post.tags.slice(0, 4).map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-muted/70 bg-white/[0.03] border border-white/[0.06]"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-
-            <span className="inline-flex items-center gap-1.5 text-xs font-mono text-pacific-cyan/80 group-hover:text-pacific-cyan transition-colors ml-auto">
-              <span>Read Entry</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200" />
-            </span>
-          </div>
+          </span>
+          <span className="inline-flex items-center gap-2 min-h-10 text-sm font-medium text-fg">
+            <span className="link-draw">Read the entry</span>
+            <ArrowUpRight className="w-4 h-4 transition-transform group-hover:rotate-45" />
+          </span>
         </div>
-      </article>
+      </div>
     </Link>
   );
 }
 
-/** Regular Article Card : Editorial Engineering Log Card */
-function ArticleCard({ post, index }: { post: BlogPost; index: number }) {
+/** Secondary entries: equal editorial cards, one cover ratio. */
+function PairStory({ post }: { post: BlogPost }) {
   return (
-    <Link
-      href={`/blog/${post.slug}`}
-      className="group block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pacific-cyan/50 rounded-2xl"
-      aria-label={`Read ${post.title}`}
-    >
-      <article className="h-full flex flex-col rounded-2xl border border-white/[0.08] group-hover:border-pacific-cyan/30 overflow-hidden bg-gradient-to-b from-[#161626]/95 via-[#131322]/90 to-[#101019]/95 shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all duration-300">
-        {/* Cover image or fallback */}
-        {post.coverImage ? (
-          <div className="relative w-full aspect-[16/9] sm:aspect-[16/10] max-h-44 sm:max-h-48 overflow-hidden border-b border-white/[0.06] bg-ink-black/60 shrink-0">
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              fill
-              loading="lazy"
-              unoptimized
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.015]"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 450px"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.7)] via-transparent to-transparent pointer-events-none" />
-            {post.featured && (
-              <div className="absolute top-2.5 left-2.5 flex items-center">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-semibold bg-ink-black/85 backdrop-blur-sm border border-pacific-cyan/30 text-pacific-cyan uppercase tracking-wider">
-                  Featured
-                </span>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="relative w-full aspect-[16/9] sm:aspect-[16/10] max-h-40 sm:max-h-44 overflow-hidden border-b border-white/[0.06] shrink-0">
-            <ArticleCoverFallback title={post.title} index={index + 1} />
-          </div>
-        )}
-
-        {/* Content area */}
-        <div className="flex flex-col gap-3 p-4 sm:p-5 flex-1 justify-between">
-          <div className="flex flex-col gap-2">
-            {/* Metadata row */}
-            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono text-muted/70 tracking-wider uppercase flex-wrap">
-              <span>{formatDate(post.publishedAt)}</span>
-              <span className="text-white/20" aria-hidden="true">
-                &middot;
-              </span>
-              <span>{formatReadTime(post.readTime)}</span>
-              {post.featured && (
-                <>
-                  <span className="text-white/20" aria-hidden="true">
-                    &middot;
-                  </span>
-                  <span className="text-apricot-cream/90 font-medium">Featured</span>
-                </>
-              )}
-            </div>
-
-            {/* Title */}
-            <h3 className="text-base sm:text-lg font-bold font-space text-foreground leading-snug tracking-tight group-hover:text-pacific-cyan transition-colors duration-200 line-clamp-2 sm:line-clamp-3">
-              {post.title}
-            </h3>
-
-            {/* Byline */}
-            {post.author && post.author.trim() && (
-              <p className="text-[11px] sm:text-xs font-mono text-muted/80 tracking-wide">
-                By <span className="text-foreground/90 font-medium">{post.author.trim()}</span>
-              </p>
-            )}
-
-            {/* Excerpt */}
-            {post.excerpt && (
-              <p className="text-xs text-muted/80 leading-relaxed font-sans line-clamp-2 sm:line-clamp-3">
-                {post.excerpt}
-              </p>
-            )}
-          </div>
-
-          {/* Bottom row: tags + arrow */}
-          <div className="pt-2.5 sm:pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-auto">
-            <div className="flex flex-wrap gap-1">
-              {post.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="px-1.5 py-0.5 rounded text-[10px] font-mono text-muted/70 bg-white/[0.03] border border-white/[0.06]"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-            <ArrowRight className="w-3.5 h-3.5 text-pacific-cyan/70 group-hover:text-pacific-cyan group-hover:translate-x-1 transition-all duration-200 shrink-0 ml-auto" />
-          </div>
-        </div>
-      </article>
+    <Link href={`/blog/${post.slug}`} className="group block">
+      <ArticleCover post={post} sizes="(min-width: 768px) 600px, 100vw" className="w-full aspect-[16/10] rounded-[18px] sm:rounded-[22px] border border-line" />
+      <Meta post={post} className="mt-4 sm:mt-5" />
+      <h3 className="blog-card-title mt-2.5 sm:mt-3 font-display text-fg group-hover:italic">{post.title}</h3>
+      {post.excerpt && <p className="mt-2 sm:mt-3 text-[15px] text-fg-muted leading-relaxed line-clamp-2 sm:line-clamp-3 max-w-[56ch]">{post.excerpt}</p>}
     </Link>
   );
 }
 
 export default async function BlogPage() {
   const posts = await getPublishedPosts();
-
-  // Featured article: prefer first featured post, else first published post
-  const featuredPost = posts.find((p) => p.featured) ?? posts[0] ?? null;
-  const featuredIsFeatured = featuredPost?.featured ?? false;
-
-  // Remaining posts (excluding the featured)
-  const remainingPosts = featuredPost
-    ? posts.filter((p) => (p._id || p.slug) !== (featuredPost._id || featuredPost.slug))
-    : [];
+  const lead = posts.find((p) => p.featured) ?? posts[0] ?? null;
+  const rest = lead ? posts.filter((p) => (p._id || p.slug) !== (lead._id || lead.slug)) : [];
+  const pair = rest.slice(0, 2);
+  const archive = rest.slice(2);
+  // archive numbering continues the page's own sequence (lead, pair, then the archive)
+  const archiveStart = (lead ? 1 : 0) + pair.length;
+  const topics = Array.from(new Set(posts.flatMap((p) => [p.category, ...p.tags]).filter(Boolean) as string[])).slice(0, 10);
 
   return (
-    <div className="w-full max-w-5xl mx-auto pt-32 sm:pt-36 lg:pt-28 pb-10 sm:pb-12 px-4 sm:px-6 flex flex-col gap-10 sm:gap-12 lg:gap-14">
-      {/* ─── PAGE HEADER / EDITORIAL HERO ─── */}
-      <section className="flex flex-col gap-3.5 sm:gap-4.5 max-w-3xl">
-        {/* Eyebrow badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
-          <BookOpen className="w-3.5 h-3.5" />
-          <span>Articles &amp; Architecture Notes</span>
+    <div className="blog-scope flex flex-col">
+      {/* Hero: a title column and a context column on one grid (shared with the featured story
+          and the archive below). The context column carries the entry statistics and the topic
+          index; on phones they follow the title, the topics as one swipeable line. The header
+          starts lower on phones so the Orbit pill above it has room to breathe. */}
+      <header className="blog-shell blog-hero">
+        <div className="flex items-center justify-between gap-4 label-mono text-fg-muted mb-5 sm:mb-10 lg:mb-12">
+          <span className="inline-flex items-center gap-3 min-w-0">
+            <span className="blog-ice">03</span>
+            <span className="h-px w-8 bg-line-strong shrink-0" />
+            <span className="truncate">Articles &amp; architecture notes</span>
+          </span>
+          <span aria-hidden="true" className="hidden sm:inline text-fg-subtle">
+            RAWIN / v3
+          </span>
         </div>
-
-        {/* Primary Editorial Heading */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground font-space leading-[1.15]">
-            The Dev <span className="text-pacific-cyan">Log</span>
-          </h1>
-          {/* Thin accent rule */}
-          <div className="flex items-center gap-2.5 mt-0.5">
-            <div className="h-[2px] w-10 bg-pacific-cyan/50 rounded-full" />
-            <div className="h-[1px] w-5 bg-pacific-cyan/20 rounded-full" />
-          </div>
-        </div>
-
-        {/* Subheading / Positioning Statement */}
-        <p className="text-sm sm:text-base lg:text-lg text-muted/90 leading-relaxed max-w-2xl">
-          Exploring the intersection of software architecture, intelligent agents, and performant web systems.
-        </p>
-
-        {/* Dynamic Article Count */}
-        {posts.length > 0 && (
-          <div className="flex items-center gap-2 text-xs font-mono text-muted/60">
-            <PenLine className="w-3.5 h-3.5 text-pacific-cyan/60" />
-            <span>
-              {posts.length} published article{posts.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-        )}
-      </section>
-
-      {/* ─── CONTENT STATES ─── */}
-      {posts.length === 0 ? (
-        /* Empty state */
-        <section
-          className="flex flex-col items-center gap-5 py-24 text-center"
-          aria-label="No articles yet"
-        >
-          <div className="w-14 h-14 rounded-2xl bg-pacific-cyan/10 border border-pacific-cyan/20 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-pacific-cyan/60" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-bold font-space text-foreground">Writing is in progress</h2>
-            <p className="text-sm text-muted font-mono max-w-sm leading-relaxed">
-              New technical reflections and architecture notes will appear here once published.
+        <div className="blog-hero-grid">
+          <div className="min-w-0" style={{ "--fit-max": "4rem" } as CSSProperties}>
+            <MaskText
+              as="h1"
+              immediate
+              className="blog-hero-title text-fg"
+              lines={[
+                <span key="t">
+                  The Dev <em className="italic text-accent">Log</em>
+                </span>,
+              ]}
+              phoneInline={{ chars: "The Dev Log".length }}
+            />
+            <p className="mt-3 sm:mt-7 max-w-[44ch] text-[15.5px] sm:text-lg leading-relaxed text-fg-muted">
+              Exploring the intersection of software architecture, intelligent agents, and performant web systems.
             </p>
           </div>
-        </section>
-      ) : (
-        <>
-          {/* ─── FEATURED ARTICLE ─── */}
-          {featuredPost && (
-            <section aria-label={featuredIsFeatured ? "Featured article" : "Latest article"}>
-              <FeaturedArticle post={featuredPost} isFeatured={featuredIsFeatured} />
-            </section>
-          )}
+          <aside className="blog-hero-aside" aria-label="About the log">
+            <dl className="grid grid-cols-2 gap-x-6 border-t border-line">
+              {[
+                { label: "Entries", value: String(posts.length).padStart(2, "0") },
+                { label: "Latest", value: lead ? formatPostDate(lead.publishedAt) : "-" },
+              ].map((m) => (
+                <div key={m.label} className="py-2.5 sm:py-3.5 border-b border-line">
+                  <dt className="label-mono text-fg-subtle">{m.label}</dt>
+                  <dd className="mt-1 sm:mt-1.5 text-[14px] sm:text-[15px] text-fg">{m.value}</dd>
+                </div>
+              ))}
+            </dl>
+            {topics.length > 0 && (
+              <div className="blog-topics">
+                <span className="label-mono text-fg-subtle shrink-0">Filed under</span>
+                <ul>
+                  {topics.map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </aside>
+        </div>
+      </header>
 
-          {/* ─── RECENT ENTRIES STREAM ─── */}
-          {remainingPosts.length > 0 && (
-            <section aria-label="Recent entries" className="flex flex-col gap-6">
-              {/* Section header */}
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-muted/60 uppercase tracking-widest">
-                    Recent Entries
+      <div className="blog-shell">
+        {!lead ? (
+          <section aria-label="No articles yet" className="py-28 sm:py-36 grid grid-cols-12 gap-4">
+            <div className="col-span-12 md:col-span-8">
+              <p className="label-mono text-fg-subtle">Issue 00</p>
+              <p className="mt-6 display-md text-fg">
+                Writing is <em className="italic text-accent">in progress.</em>
+              </p>
+              <p className="mt-6 text-fg-muted max-w-[44ch]">
+                New technical reflections and architecture notes will appear here once published.
+              </p>
+            </div>
+          </section>
+        ) : (
+          <div className="flex flex-col gap-16 sm:gap-24 lg:gap-28 mt-10 sm:mt-16 lg:mt-20">
+            <section aria-label={lead.featured ? "Featured article" : "Latest article"}>
+              <LeadStory post={lead} featured={lead.featured} />
+            </section>
+
+            {pair.length > 0 && (
+              <section aria-label="Recent entries" className="grid grid-cols-1 md:grid-cols-2 gap-x-8 lg:gap-x-12 gap-y-12">
+                {pair.map((p, i) => (
+                  <Reveal key={p._id || p.slug} delay={i * 0.08}>
+                    <PairStory post={p} />
+                  </Reveal>
+                ))}
+              </section>
+            )}
+
+            {archive.length > 0 && (
+              <section aria-labelledby="archive-title">
+                <div className="flex items-baseline justify-between gap-4 pb-3 sm:pb-4 border-b border-line-strong">
+                  <h2 id="archive-title" className="font-display text-[clamp(1.75rem,6vw,2.75rem)] leading-none text-fg">
+                    The <em className="italic text-accent">archive</em>
+                  </h2>
+                  <span className="label-mono text-fg-subtle shrink-0">
+                    {archive.length} {archive.length === 1 ? "entry" : "entries"}
                   </span>
                 </div>
-                <span className="text-xs font-mono text-muted/40">
-                  {remainingPosts.length} {remainingPosts.length === 1 ? "entry" : "entries"}
-                </span>
-              </div>
-
-              {/* Grid */}
-              <div
-                className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6"
-                role="list"
-                aria-label="Article list"
-              >
-                {remainingPosts.map((post, i) => (
-                  <div key={post._id || post.slug} role="listitem">
-                    <ArticleCard post={post} index={i} />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Edge case: only 1 post total (featured only, no remaining) */}
-          {remainingPosts.length === 0 && posts.length > 1 && (
-            <section aria-label="Recent entries" className="flex flex-col gap-6">
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <span className="text-xs font-mono text-muted/60 uppercase tracking-widest">
-                  Recent Entries
-                </span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6" role="list">
-                {posts.slice(1).map((post, i) => (
-                  <div key={post._id || post.slug} role="listitem">
-                    <ArticleCard post={post} index={i} />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
+                <ol>
+                  {archive.map((p, i) => (
+                    <li key={p._id || p.slug} className="border-b border-line">
+                      {/* phones: number + text; md+: number, title and excerpt, date, thumbnail */}
+                      <Link
+                        href={`/blog/${p.slug}`}
+                        className="group grid grid-cols-[2rem_minmax(0,1fr)] md:grid-cols-[2.5rem_minmax(0,1fr)_9rem_9.5rem] lg:grid-cols-[2.75rem_minmax(0,1fr)_10rem_11rem] gap-x-3 md:gap-x-6 lg:gap-x-8 gap-y-2 py-5 sm:py-7 md:items-center"
+                      >
+                        <span className="blog-ice font-mono text-[11px] pt-1.5 md:pt-0 md:self-start md:mt-2">
+                          {String(archiveStart + i + 1).padStart(2, "0")}
+                        </span>
+                        <div className="min-w-0">
+                          <h3 className="blog-row-title font-display text-fg transition-transform duration-500 group-hover:translate-x-1 group-hover:italic">
+                            {p.title}
+                          </h3>
+                          {p.excerpt && <p className="mt-1.5 text-[14px] leading-relaxed text-fg-muted line-clamp-2 max-w-[64ch]">{p.excerpt}</p>}
+                        </div>
+                        <Meta post={p} stacked className="col-start-2 md:col-start-auto md:flex-col md:items-start md:gap-y-1" />
+                        <div className="hidden md:block">
+                          <ArticleCover post={p} scale="sm" sizes="180px" className="w-full aspect-[16/10] rounded-xl border border-line" />
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-

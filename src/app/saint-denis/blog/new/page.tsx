@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
+import { getSiteContent } from "@/lib/site-content";
 import PostForm from "@/components/admin/PostForm";
 import { createPostAction } from "../actions";
 
@@ -14,5 +15,6 @@ export default async function NewPostPage() {
     redirect("/saint-denis/login?redirect=/saint-denis/blog/new");
   }
 
-  return <PostForm action={createPostAction} isEditing={false} />;
+  const content = await getSiteContent();
+  return <PostForm action={createPostAction} isEditing={false} categories={content.taxonomy?.blogCategories} />;
 }

@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { invalidateCacheTag } from "@/lib/cache";
+import { forgetPublicSlugs } from "@/lib/request-gate";
+import { recordFormerItem } from "@/lib/orbit-knowledge";
 import { redirect } from "next/navigation";
+import { isProjectTone } from "@/lib/project-tone";
 import { getAdminSession } from "@/lib/auth";
+import { checkImageUpload } from "@/lib/brand-assets";
 import {
   createProject,
   updateProject,
@@ -57,6 +61,8 @@ export async function createProjectAction(
   const outcome = (formData.get("outcome") as string || "").trim();
   const year = (formData.get("year") as string || new Date().getFullYear().toString()).trim();
   const rawFocus = (formData.get("engineeringFocus") as string || "").trim();
+  const rawTone = (formData.get("tone") as string || "").trim();
+  const tone = isProjectTone(rawTone) ? rawTone : "";
 
   if (!title) {
     return { error: "Project title is required." };
@@ -167,6 +173,7 @@ export async function createProjectAction(
     role,
     outcome,
     year,
+    ...(tone ? { tone } : {}),
   };
 
   try {
@@ -195,7 +202,7 @@ export async function createProjectAction(
   }
 
   try {
-    invalidateCacheTag("projects");
+    invalidateCacheTag("projects"); forgetPublicSlugs();
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
@@ -236,6 +243,8 @@ export async function updateProjectAction(
   const outcome = (formData.get("outcome") as string || "").trim();
   const year = (formData.get("year") as string || new Date().getFullYear().toString()).trim();
   const rawFocus = (formData.get("engineeringFocus") as string || "").trim();
+  const rawTone = (formData.get("tone") as string || "").trim();
+  const tone = isProjectTone(rawTone) ? rawTone : "";
 
   if (!title) {
     return { error: "Project title is required." };
@@ -346,6 +355,7 @@ export async function updateProjectAction(
     role,
     outcome,
     year,
+    ...(formData.has("tone") ? { tone } : {}),
   };
 
   try {
@@ -383,7 +393,7 @@ export async function updateProjectAction(
   }
 
   try {
-    invalidateCacheTag("projects");
+    invalidateCacheTag("projects"); forgetPublicSlugs();
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
@@ -402,7 +412,7 @@ export async function toggleFeaturedAction(id: string, currentFeatured: boolean)
 
   await updateProject(id, { featured: !currentFeatured });
   try {
-    invalidateCacheTag("projects");
+    invalidateCacheTag("projects"); forgetPublicSlugs();
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
@@ -417,15 +427,27 @@ export async function deleteProjectAction(id: string): Promise<void> {
     throw new Error("Unauthorized.");
   }
 
-  // Clean up GridFS preview before deleting the document
+  const project = await getProjectById(id);
+  // The record first: if that fails, nothing else has changed
+  const deleted = await deleteProject(id);
+  if (!deleted) throw new Error("Project not found.");
   await deleteProjectPreviewForProject(id);
-
-  await deleteProject(id);
   try {
-    invalidateCacheTag("projects");
+    invalidateCacheTag("projects"); forgetPublicSlugs();
   } catch {}
   revalidatePath("/");
   revalidatePath("/projects");
+
+  // Every project is public, so keep the minimal historical record Orbit may acknowledge.
+  // The deletion already succeeded; a failure here is logged, not reported as a failed delete.
+  if (project) {
+    try {
+      await recordFormerItem("project", project.slug, project.title);
+      invalidateCacheTag("orbit-knowledge");
+    } catch (err) {
+      console.error("[Projects] Historical record not saved:", err instanceof Error ? err.message : String(err));
+    }
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -481,10 +503,12 @@ export async function uploadProjectPreviewAction(
       return { error: "File exceeds the 5 MB size limit." };
     }
 
-    const url = await storeProjectPreviewFile(projectId, buffer, file.type, file.name);
+    const check = checkImageUpload("projectPreview", new Uint8Array(buffer));
+    if (!check.ok) return { error: check.error };
+    const url = await storeProjectPreviewFile(projectId, buffer, check.type, file.name);
 
     try {
-      invalidateCacheTag("projects");
+      invalidateCacheTag("projects"); forgetPublicSlugs();
     } catch {}
     revalidatePath("/");
     revalidatePath("/projects");
@@ -526,7 +550,7 @@ export async function removeProjectPreviewAction(
     }
 
     try {
-      invalidateCacheTag("projects");
+      invalidateCacheTag("projects"); forgetPublicSlugs();
     } catch {}
     revalidatePath("/");
     revalidatePath("/projects");

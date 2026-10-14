@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useId } from "react";
-import "./NeoToggle.css";
 
 export type NeoToggleProps = {
   checked: boolean;
@@ -12,79 +11,30 @@ export type NeoToggleProps = {
   className?: string;
 };
 
-export const NeoToggle: React.FC<NeoToggleProps> = ({
-  checked,
-  onChange,
-  disabled = false,
-  ariaLabel,
-  id,
-  className = "",
-}) => {
+/** Theme-aware switch used across the admin. API kept stable for existing call sites. */
+export const NeoToggle: React.FC<NeoToggleProps> = ({ checked, onChange, disabled = false, ariaLabel, id, className = "" }) => {
   const generatedId = useId();
   const resolvedId = id || generatedId;
 
   return (
-    <div
-      className={`neo-toggle-container ${checked ? "is-checked" : ""} ${
-        disabled ? "is-disabled" : ""
-      } ${className}`.trim()}
+    <label
+      htmlFor={resolvedId}
+      className={`relative inline-flex items-center shrink-0 ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${className}`.trim()}
     >
       <input
-        className="neo-toggle-input"
         id={resolvedId}
         type="checkbox"
+        role="switch"
+        className="peer sr-only"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
         disabled={disabled}
         aria-label={ariaLabel}
+        aria-checked={checked}
       />
-      <label className="neo-toggle" htmlFor={resolvedId}>
-        <div className="neo-track">
-          <div className="neo-background-layer" />
-          <div className="neo-grid-layer" />
-          <div className="neo-spectrum-analyzer" aria-hidden="true">
-            <span className="neo-spectrum-bar" />
-            <span className="neo-spectrum-bar" />
-            <span className="neo-spectrum-bar" />
-            <span className="neo-spectrum-bar" />
-            <span className="neo-spectrum-bar" />
-          </div>
-          <div className="neo-track-highlight" />
-
-          <div className="neo-thumb">
-            <div className="neo-thumb-pulse" />
-            <div className="neo-thumb-ring" />
-            <div className="neo-thumb-core">
-              <div className="neo-thumb-icon">
-                <svg
-                  className="neo-thumb-wave"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M2 12h4l2.5-6 4 12 3-8 2.5 4h4"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="neo-status" aria-hidden="true">
-          <div className="neo-status-indicator">
-            <span className="neo-status-dot" />
-            <span className="neo-status-text">
-              {checked ? "ACTIVE" : "STANDBY"}
-            </span>
-          </div>
-        </div>
-      </label>
-    </div>
+      <span className="block w-12 h-7 rounded-full bg-sunken border border-line-strong transition-colors duration-300 peer-checked:bg-accent peer-checked:border-accent peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--focus)]" />
+      <span className="absolute left-1 top-1 w-5 h-5 rounded-full bg-fg-subtle shadow-[var(--shadow-1)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] peer-checked:translate-x-5 peer-checked:bg-accent-fg" />
+    </label>
   );
 };
 

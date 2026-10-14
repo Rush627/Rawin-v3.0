@@ -1,10 +1,11 @@
 import SmoothScroll from "@/components/SmoothScroll";
-import ParticleField from "@/components/ParticleField";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import TorchSpotlight from "@/components/TorchSpotlight";
+import SiteHeader from "@/components/shell/SiteHeader";
+import SiteFooter from "@/components/shell/SiteFooter";
 import RawinErrorView from "@/components/RawinErrorView";
-import { getSiteContent, DEFAULT_SITE_CONTENT } from "@/lib/site-content";
+import CustomCursor from "@/components/system/CustomCursor";
+import CursorField from "@/components/system/CursorField";
+import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
+import { getSiteContent, DEFAULT_SITE_CONTENT, maintenanceActiveNow } from "@/lib/site-content";
 
 export default async function PublicLayout({
   children,
@@ -13,10 +14,8 @@ export default async function PublicLayout({
 }) {
   const content = await getSiteContent();
 
-  const now = Date.now();
-  const endsAtTime = content.maintenance?.endsAt ? new Date(content.maintenance.endsAt).getTime() : null;
-  const isMaintenanceExpired = Boolean(endsAtTime && endsAtTime <= now);
-  const isMaintenanceActive = Boolean(content.maintenance?.enabled && !isMaintenanceExpired);
+  // content may be cached for a while: the end of a timed window is checked at request time
+  const isMaintenanceActive = maintenanceActiveNow(content.maintenance);
 
   if (isMaintenanceActive) {
     const isMaintenanceMessage = content.maintenance?.showMessage;
@@ -38,10 +37,8 @@ export default async function PublicLayout({
           }
           actionLabel="Refresh"
         />
-        {/* Render children in a hidden container so Next.js nested layout slot invariant is always satisfied */}
-        <div className="hidden" aria-hidden="true">
-          {children}
-        </div>
+        {/* The proxy normally answers maintenance requests itself (HTTP 503, /maintenance). This
+            branch only covers the few seconds its cache may lag: page content is not rendered. */}
       </main>
     );
   }
@@ -53,22 +50,37 @@ export default async function PublicLayout({
 
   return (
     <SmoothScroll>
-      <ParticleField />
-      <Navbar logo={content.assets?.logo} />
-      <div className="flex-1 flex flex-col relative z-10">
+      <div aria-hidden="true" className="rawin-atmosphere" />
+      <CursorField />
+      <CustomCursor />
+      <a
+        href="#main"
+        className="skip-link btn btn-primary btn-sm"
+      >
+        Skip to content
+      </a>
+      <SiteHeader
+        brandMode={content.global?.headerBrand === "logo" ? "logo" : "wordmark"}
+        logos={{ light: content.assets.logoLight, dark: content.assets.logoDark }}
+        email={content.contact.email}
+        socials={content.contact?.socials}
+      />
+      {/* No z-index here: LiquidGL places its canvas on <body> at (lens z - 1), so main must not
+          trap the hero panels inside its own stacking context. */}
+      <main id="main" className="flex-1 flex flex-col relative">
         {children}
-      </div>
-      <Footer
+      </main>
+      <AnalyticsTracker />
+      <SiteFooter
         content={content.global}
+        availability={content.availability}
         contact={{
           ...content.contact,
           phone: content.contact?.showPhoneNumber ? content.contact.phone : "",
         }}
-        logo={content.assets?.logo}
         footerCopyright={footerCopyright}
         currentYear={currentYear}
       />
-      <TorchSpotlight />
     </SmoothScroll>
   );
 }

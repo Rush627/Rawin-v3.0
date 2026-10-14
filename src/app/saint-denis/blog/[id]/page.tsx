@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
+import { getSiteContent } from "@/lib/site-content";
 import { getPostById } from "@/lib/blog";
 import PostForm from "@/components/admin/PostForm";
 import { updatePostAction } from "../actions";
@@ -28,5 +29,6 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
 
   const boundUpdateAction = updatePostAction.bind(null, id);
 
-  return <PostForm initialData={post} action={boundUpdateAction} isEditing={true} />;
+  const content = await getSiteContent();
+  return <PostForm initialData={post} action={boundUpdateAction} isEditing={true} categories={content.taxonomy?.blogCategories} />;
 }

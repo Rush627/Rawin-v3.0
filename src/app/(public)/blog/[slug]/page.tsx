@@ -1,16 +1,30 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
-import { ArrowLeft, Calendar, Clock, BookOpen } from "lucide-react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { getPostBySlug, getPublishedPosts } from "@/lib/blog";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import MaskText from "@/components/system/MaskText";
+import ArticleCover from "@/components/blog/ArticleCover";
+import ReadingProgress from "@/components/blog/ReadingProgress";
+import ArticleContents from "@/components/blog/ArticleContents";
+import EditorialFigure from "@/components/blog/EditorialFigure";
+import { resolveMotif } from "@/components/blog/motifs";
+import { formatPostDate, formatReadTime } from "@/components/blog/format";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
 
 export const revalidate = 3600;
+
+/** The page header already sets the title; drop a leading Markdown H1 that merely repeats it. */
+function withoutRepeatedTitle(content: string, title: string) {
+  const m = content.match(/^\s*#\s+(.+?)[ \t]*(?:\r?\n|$)/);
+  if (!m) return content;
+  const norm = (t: string) => t.replace(/[*_`]/g, "").trim().toLowerCase();
+  return norm(m[1]) === norm(title) ? content.slice(m[0].length) : content;
+}
 
 export async function generateStaticParams() {
   try {
@@ -37,7 +51,9 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   return {
     title: authorName ? `${post.title} | ${authorName}` : `${post.title} | RAWIN`,
     description: post.excerpt || `Technical article on ${post.tags.join(", ")}${authorName ? ` by ${authorName}` : ""}.`,
+    alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
+      url: `/blog/${post.slug}`,
       title: post.title,
       description: post.excerpt,
       type: "article",
@@ -53,147 +69,149 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   };
 }
 
-function formatDateLong(dateStr?: string): string {
-  if (!dateStr) return "Published";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", month: "long", day: "numeric", year: "numeric" });
-  } catch {
-    return dateStr;
-  }
-}
-
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const post = await getPostBySlug(slug, false);
+  const [post, posts] = await Promise.all([getPostBySlug(slug, false), getPublishedPosts()]);
 
   if (!post || post.status !== "published") {
     notFound();
   }
 
+  const idx = posts.findIndex((p) => p.slug === post.slug);
+  const newer = idx > 0 ? posts[idx - 1] : null;
+  const older = idx >= 0 && idx < posts.length - 1 ? posts[idx + 1] : null;
+  const author = post.author?.trim();
+
+  const filed = post.category || post.tags[0] || "Dev log";
+  const motif = resolveMotif(post);
+  const meta = [
+    { label: "Written by", value: author || "RAWIN" },
+    { label: "Published", value: <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt, "long")}</time> },
+    { label: "Reading", value: formatReadTime(post.readTime) },
+    { label: "Filed", value: filed },
+  ];
+  const tagList = (className: string) =>
+    post.tags.length > 0 && (
+      <ul className={`article-tags ${className}`} aria-label="Article tags">
+        {post.tags.map((tag) => (
+          <li key={tag}>#{tag}</li>
+        ))}
+      </ul>
+    );
+
   return (
-    <article className="w-full max-w-5xl mx-auto pt-32 sm:pt-36 lg:pt-28 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8 flex flex-col gap-8 sm:gap-10">
+    <article className="blog-scope flex flex-col" aria-labelledby="article-title">
+      <ReadingProgress targetId="article-body" />
 
-      {/* ─── Back navigation ─── */}
-      <nav aria-label="Return to blog">
-        <Link
-          href="/blog"
-          className="inline-flex items-center gap-2 text-xs font-mono text-muted/60 hover:text-pacific-cyan transition-colors group"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Back to Articles</span>
-        </Link>
-      </nav>
-
-      {/* ─── Article header ─── */}
-      <header className="flex flex-col gap-5 sm:gap-6 pb-8 border-b border-white/[0.08]">
-
-        {/* Eyebrow row */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium glass-pill text-pacific-cyan w-fit border border-pacific-cyan/20">
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Architecture Note</span>
-          </div>
-
-          {post.featured && (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-apricot-cream/10 border border-apricot-cream/20 text-apricot-cream">
-              FEATURED
+      {/* One reading grid for the whole article (see .article-grid). Desktop: a context column
+          (back link, category, metadata, then tags in the rail) beside a ~780px reading column
+          that carries the title, standfirst, body and next entries; the cover spans both, so the
+          whole composition is centred and both columns are used from the first line down.
+          Phones and tablets: a single column, metadata as a compact row under the standfirst. */}
+      <div className="article-shell">
+        <div className="article-grid">
+          <nav aria-label="Return to blog" className="article-crumb label-mono text-fg-muted">
+            <Link href="/blog" className="group inline-flex items-center gap-2 hover:text-fg transition-colors">
+              <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+              <span>The Dev Log</span>
+            </Link>
+            <span className="flex items-center gap-3">
+              {post.featured && <span className="blog-ice">Featured</span>}
+              {post.category && <span className="text-accent">{post.category}</span>}
             </span>
-          )}
-        </div>
+          </nav>
 
-        {/* Title */}
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.65rem] font-bold tracking-tight text-foreground font-space leading-[1.2] max-w-4xl">
-          {post.title}
-        </h1>
+          <header className="article-head">
+            <MaskText as="h1" id="article-title" immediate className="article-title font-display text-fg" lines={[post.title]} />
+            {post.excerpt && <p className="article-standfirst font-display italic">{post.excerpt}</p>}
+          </header>
 
-        {/* Excerpt / lead */}
-        {post.excerpt && (
-          <p className="text-base sm:text-lg md:text-xl text-apricot-cream/85 font-medium leading-relaxed max-w-4xl">
-            {post.excerpt}
-          </p>
-        )}
-
-        {/* Meta row */}
-        <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-muted/60 pt-1">
-          {post.author && post.author.trim() && (
-            <>
-              <span className="text-muted/80">
-                By <span className="text-foreground/90 font-medium">{post.author.trim()}</span>
-              </span>
-              <span className="text-white/20" aria-hidden="true">&middot;</span>
-            </>
-          )}
-          <span className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-pacific-cyan/60" />
-            {formatDateLong(post.publishedAt)}
-          </span>
-          <span className="text-white/20" aria-hidden="true">&middot;</span>
-          <span className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-pacific-cyan/60" />
-            {post.readTime}
-          </span>
-        </div>
-
-        {/* Tags */}
-        {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5" aria-label="Article tags">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2.5 py-1 rounded text-xs font-mono text-pacific-cyan/80 bg-pacific-cyan/[0.07] border border-pacific-cyan/15"
-              >
-                #{tag}
-              </span>
+          <dl className="article-meta">
+            {meta.map((m) => (
+              <div key={m.label}>
+                <dt className="label-mono text-fg-subtle">{m.label}</dt>
+                <dd className="text-fg">{m.value}</dd>
+              </div>
             ))}
-          </div>
-        )}
+          </dl>
 
-        {/* Cover image */}
-        {post.coverImage && (
-          <div className="relative w-full rounded-2xl overflow-hidden border border-white/[0.08] aspect-[16/9] sm:aspect-[21/9] md:aspect-[2.4/1] max-h-[440px] mt-2 bg-ink-black/60">
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              fill
-              priority
-              unoptimized
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 1024px"
+          <ArticleCover
+            post={post}
+            priority
+            scale="lg"
+            sizes="(min-width: 1280px) 1080px, 100vw"
+            className="article-cover w-full rounded-[20px] sm:rounded-[28px] border border-line shadow-[var(--shadow-2)]"
+          />
+
+          {/* Desktop rail */}
+          <aside className="article-rail hidden lg:block" aria-label="Article topics">
+            <div className="sticky top-28 flex flex-col gap-7">
+              <ArticleContents bodyId="article-body" variant="rail" />
+              <div>
+                <p className="label-mono text-fg-subtle mb-3">Filed under</p>
+                {tagList("")}
+              </div>
+              <Link href="/blog" className="group inline-flex items-center gap-2 text-sm text-fg">
+                <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+                <span className="link-draw">All entries</span>
+              </Link>
+            </div>
+          </aside>
+
+          <section id="article-body" aria-label="Article content" className="article-body min-w-0">
+            <div className="lg:hidden">
+              <ArticleContents bodyId="article-body" variant="inline" />
+            </div>
+            <MarkdownRenderer
+              content={withoutRepeatedTitle(post.content, post.title)}
+              figure={motif ? <EditorialFigure motif={motif} caption={post.illustrationCaption} /> : undefined}
             />
-            {/* Subtle bottom fade */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(16,16,25,0.4)] to-transparent pointer-events-none" />
-          </div>
-        )}
-      </header>
 
-      {/* ─── Markdown body ─── */}
-      <section aria-label="Article content" className="py-2 w-full">
-        <MarkdownRenderer content={post.content} />
-      </section>
+            {/* the rail carries the tags on desktop; phones and tablets show them here */}
+            <div className="lg:hidden">{tagList("mt-8")}</div>
 
-      {/* ─── Footer strip ─── */}
-      <footer className="pt-8 sm:pt-10 border-t border-white/[0.08] flex items-center justify-between gap-4">
-        <div className="flex flex-col gap-1 min-w-0">
-          {post.author && post.author.trim() && (
-            <p className="text-xs sm:text-sm font-mono text-muted/80 tracking-wide truncate">
-              Written by <span className="text-foreground/90 font-medium">{post.author.trim()}</span>
-            </p>
-          )}
-          <div className="text-[11px] font-mono text-muted/40 tracking-wider uppercase">
-            RAWIN &middot; DEV LOG
-          </div>
+            <footer className="article-end flex items-center justify-between gap-4">
+              <p className="text-sm text-fg-muted">
+                {author ? (
+                  <>
+                    Written by <span className="text-fg">{author}</span>
+                  </>
+                ) : (
+                  "RAWIN · Dev Log"
+                )}
+              </p>
+              <span aria-hidden="true" className="text-accent">✦</span>
+            </footer>
+
+            {/* Adjacent entries: the close of the reading column */}
+            {(newer || older) && (
+              <nav aria-label="More articles" className="article-next">
+                {[
+                  { post: older, label: "Previous entry" },
+                  { post: newer, label: "Next entry" },
+                ]
+                  .filter((e) => e.post)
+                  .map(({ post: p, label }) => (
+                    <Link
+                      key={label}
+                      href={`/blog/${p!.slug}`}
+                      className="group flex flex-col gap-3 rounded-[20px] border border-line bg-surface/40 hover:bg-surface hover:border-line-strong p-5 sm:p-6 transition-colors"
+                    >
+                      <span className="label-mono text-fg-subtle">{label}</span>
+                      <span className="font-display text-[clamp(1.3rem,4.6vw,1.65rem)] leading-[1.08] tracking-[-0.015em] text-fg group-hover:italic [text-wrap:balance]">
+                        {p!.title}
+                      </span>
+                      <span className="mt-auto inline-flex items-center gap-2 text-sm text-fg-muted">
+                        {formatReadTime(p!.readTime)}
+                        <ArrowUpRight className="w-4 h-4 transition-transform group-hover:rotate-45" />
+                      </span>
+                    </Link>
+                  ))}
+              </nav>
+            )}
+          </section>
         </div>
-
-        <Link
-          href="/blog"
-          className="inline-flex items-center gap-2 text-xs font-mono text-muted/60 hover:text-pacific-cyan transition-colors group shrink-0 ml-auto"
-          aria-label="Return to blog articles"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Return</span>
-        </Link>
-      </footer>
+      </div>
     </article>
   );
 }
