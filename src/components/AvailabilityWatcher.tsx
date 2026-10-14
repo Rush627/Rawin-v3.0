@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import RawinErrorView from "@/components/RawinErrorView";
+import RawinErrorView, { type RawinErrorViewProps } from "@/components/RawinErrorView";
 import type { PublicAvailability } from "@/lib/site-content";
 
 const MAINTENANCE_POLL_MS = 2500; // 2.5s for fast maintenance recovery detection
@@ -11,11 +11,16 @@ const LIVE_POLL_MS = 8000; // 8s for live CMS synchronization (target 5-10s)
 export interface AvailabilityWatcherProps {
   initialStatus?: "live" | "offline" | "maintenance";
   isServerFallback?: boolean;
+  /** The CMS header brand, so the overlay shows the same identity as the server-rendered screen */
+  brandMode?: RawinErrorViewProps["brandMode"];
+  logos?: RawinErrorViewProps["logos"];
 }
 
 export default function AvailabilityWatcher({
   initialStatus = "live",
   isServerFallback = false,
+  brandMode,
+  logos,
 }: AvailabilityWatcherProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -219,6 +224,8 @@ export default function AvailabilityWatcher({
         maintenanceMessage={isMaintenance ? state.message : undefined}
         endsAt={isMaintenance ? state.endsAt : undefined}
         actionLabel="Refresh"
+        brandMode={brandMode}
+        logos={logos}
         onAction={() => {
           checkAvailability(true);
         }}

@@ -63,16 +63,20 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(SITE_URL),
     title: home.title,
     description: home.description,
+    // The one declaration of the site icons (no hand-written <link> tags duplicate it). Before
+    // paint the theme boot script replaces the rel="icon" links with the active theme's icon;
+    // crawlers and no-JS clients read these. Google Search needs a multiple of 48 px (the 192 px
+    // PNG; /favicon.ico also carries 48 px). The CMS icon may be an upload of any image type, so
+    // no type is declared for it. The touch icon URL is versioned (?v=3) to retire the copies iOS
+    // keeps of the previous artwork; the bare /apple-touch-icon.png also exists for clients that
+    // probe the conventional path.
     icons: {
       icon: [
-        { url: content.assets.faviconDark.url, sizes: "32x32", type: "image/png" },
-        { url: "/brand/favicon-dark-192.png", sizes: "192x192", type: "image/png" },
-        { url: "/favicon.ico", sizes: "any" },
+        { url: content.assets.faviconDark.url, sizes: "32x32" },
+        { url: BUNDLED.faviconDarkLarge, sizes: "192x192", type: "image/png" },
+        { url: BUNDLED.faviconIco },
       ],
-      apple: [
-        { url: `${BUNDLED.appleTouchIcon}?v=3`, sizes: "180x180", type: "image/png" },
-      ],
-      shortcut: ["/favicon.ico"],
+      apple: [{ url: `${BUNDLED.appleTouchIcon}?v=3`, sizes: "180x180", type: "image/png" }],
     },
     manifest: "/manifest.webmanifest",
     openGraph: {
@@ -119,16 +123,6 @@ export default async function RootLayout({
       data-favicon-dark={content.assets.faviconDark.url}
     >
       <head>
-        {/* Canonical icon declarations: static links for search crawlers and mobile browsers,
-            with id="rawin-favicon" for theme-aware dynamic switching by the inline boot script. */}
-        <link id="rawin-favicon" rel="icon" href={content.assets.faviconDark.url} sizes="32x32" type="image/png" />
-        <link rel="icon" href="/brand/favicon-dark-192.png" sizes="192x192" type="image/png" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href={`${BUNDLED.appleTouchIcon}?v=3`} sizes="180x180" />
-        <link rel="manifest" href="/manifest.webmanifest" />
-        <noscript>
-          <link rel="icon" href={content.assets.faviconDark.url} />
-        </noscript>
         <meta
           id="rawin-theme-color"
           suppressHydrationWarning
@@ -149,7 +143,7 @@ export default async function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className="min-h-screen min-h-dvh text-fg antialiased flex flex-col font-sans relative"
+        className="min-h-viewport text-fg antialiased flex flex-col font-sans relative"
       >
         <ThemeProvider>
           <GlassProvider>
@@ -157,7 +151,12 @@ export default async function RootLayout({
                 only activates when the pre-paint script flags html[data-intro] on "/". */}
             <EntranceIntro />
             <OfflineDetector />
-            <AvailabilityWatcher initialStatus={initialStatus} isServerFallback={showMaintenance} />
+            <AvailabilityWatcher
+              initialStatus={initialStatus}
+              isServerFallback={showMaintenance}
+              brandMode={content.global?.headerBrand === "logo" ? "logo" : "wordmark"}
+              logos={{ light: content.assets.logoLight, dark: content.assets.logoDark }}
+            />
             {children}
           </GlassProvider>
         </ThemeProvider>

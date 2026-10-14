@@ -1,34 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  DictationController,
+  SpeechController,
+  VOICE_ERRORS,
+  browserDictationEnv,
+  browserLocale,
+  browserSpeechEnv,
+  getRecognitionCtor,
+  joinText,
+  rankVoices,
+  type VoiceError,
+  type VoiceLike,
+} from "@/components/orbit/voice-engine";
 
-/* ------------------------------------------------------------------ Web Speech typings */
-interface SpeechRecognitionResultLike {
-  isFinal: boolean;
-  0: { transcript: string };
-}
-interface SpeechRecognitionEventLike {
-  resultIndex: number;
-  results: ArrayLike<SpeechRecognitionResultLike>;
-}
-interface SpeechRecognitionLike {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-}
-type RecognitionCtor = new () => SpeechRecognitionLike;
-
-function getRecognitionCtor(): RecognitionCtor | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
-  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
-}
+// The lifecycles live in voice-engine.ts (framework-free, unit-tested); these hooks bind them
+// to React. Re-exported for existing importers.
+export { speakable, chunkSentences, scoreVoice } from "@/components/orbit/voice-engine";
+export type { VoiceError, VoiceErrorKind } from "@/components/orbit/voice-engine";
 
 const noopSubscribe = () => () => {};
 /** True only on the client, after hydration, when the feature exists. */
@@ -36,218 +26,48 @@ function useClientSupport(check: () => boolean) {
   return useSyncExternalStore(noopSubscribe, check, () => false);
 }
 
-/* ------------------------------------------------------------------ Errors */
-export type VoiceErrorKind =
-  | "unsupported"
-  | "insecure"
-  | "permission"
-  | "no-device"
-  | "device-busy"
-  | "no-speech"
-  | "service"
-  | "network"
-  | "transcription"
-  | "unexpected";
-
-export interface VoiceError {
-  kind: VoiceErrorKind;
-  message: string;
-  /** The microphone works but the browser's recogniser does not */
-  serviceProblem?: boolean;
-  /** Soft notices (e.g. nothing heard) rather than failures */
-  soft?: boolean;
-}
-
-const ERR = {
-  unsupported: { kind: "unsupported", message: "This browser doesn't support speech recognition. You can type your message instead." },
-  insecure: { kind: "insecure", message: "Voice input needs a secure (HTTPS) connection." },
-  permission: {
-    kind: "permission",
-    message: "Microphone access is blocked for this site. Allow it from the site settings next to the address bar, then try again.",
-  },
-  "no-device": { kind: "no-device", message: "No usable microphone was detected." },
-  "device-busy": { kind: "device-busy", message: "The microphone is being used by another application." },
-  "no-speech": { kind: "no-speech", message: "No speech was detected. Try again when you're ready.", soft: true },
-  service: {
-    kind: "service",
-    message: "This browser's speech-recognition service is turned off or unavailable. Your microphone is fine.",
-    serviceProblem: true,
-  },
-  network: {
-    kind: "network",
-    message:
-      "This browser couldn't reach its speech-recognition service. Your microphone is fine; this happens in some browsers (such as Brave or Opera) and on restricted networks.",
-    serviceProblem: true,
-  },
-  unexpected: { kind: "unexpected", message: "Voice input stopped unexpectedly. Try again, or type your message." },
-} satisfies Record<string, VoiceError>;
-
-/** Map Web Speech error codes. "not-allowed" only means a permission problem when the
- *  microphone itself was refused; the hook checks the microphone first to tell them apart. */
-function recognitionError(code: string, micGranted: boolean): VoiceError | null {
-  switch (code) {
-    case "aborted":
-      return null; // our own stop/cancel
-    case "no-speech":
-      return ERR["no-speech"];
-    case "audio-capture":
-      return ERR["no-device"];
-    case "network":
-      return ERR.network;
-    case "service-not-allowed":
-      return ERR.service;
-    case "not-allowed":
-      return micGranted ? ERR.service : ERR.permission;
-    case "language-not-supported":
-      return { kind: "service", message: "Speech recognition doesn't support this language in this browser.", serviceProblem: true };
-    default:
-      return ERR.unexpected;
-  }
-}
-
 function mediaError(e: unknown): VoiceError {
   const name = e instanceof DOMException ? e.name : "";
-  if (name === "NotAllowedError" || name === "SecurityError") return ERR.permission;
-  if (name === "NotFoundError" || name === "OverconstrainedError") return ERR["no-device"];
-  if (name === "NotReadableError") return ERR["device-busy"];
-  return ERR.unexpected;
-}
-
-function joinText(existing: string, addition: string) {
-  const a = existing.replace(/\s+$/, "");
-  const b = addition.trim();
-  if (!b) return existing;
-  return (a ? `${a} ${b}` : b).slice(0, 4000);
+  if (name === "NotAllowedError" || name === "SecurityError") return VOICE_ERRORS.permission;
+  if (name === "NotFoundError" || name === "OverconstrainedError") return VOICE_ERRORS["no-device"];
+  if (name === "NotReadableError") return VOICE_ERRORS["device-busy"];
+  return VOICE_ERRORS.unexpected;
 }
 
 /* ------------------------------------------------------------------ Browser dictation */
 /**
- * Dictation through the browser's own speech recognition. One session at a time; interim
- * words stream into the composer after whatever was already typed, nothing is sent
- * automatically, and the session is torn down on stop and unmount.
+ * Dictation through the browser's own speech recognition (DictationController). Words stream
+ * into the composer after whatever was already typed; nothing is sent automatically. start()
+ * must be called from the microphone tap itself. cancel() discards a pending session (used
+ * when the message is sent, so late results can never bring the sent text back).
  */
 export function useDictation(onText: (text: string) => void) {
   const supported = useClientSupport(() => Boolean(getRecognitionCtor()));
-  const [listening, setListening] = useState(false);
-  const [starting, setStarting] = useState(false);
-  const [error, setError] = useState<VoiceError | null>(null);
-  const recRef = useRef<SpeechRecognitionLike | null>(null);
-  const busyRef = useRef(false);
-  const sessionIdRef = useRef(0);
-  const onTextRef = useRef(onText);
+  const [ctrl] = useState(() => new DictationController(browserDictationEnv(), onText));
+  const state = useSyncExternalStore(ctrl.subscribe, ctrl.getState, ctrl.getState);
   useEffect(() => {
-    onTextRef.current = onText;
-  }, [onText]);
+    ctrl.setOnText(onText);
+  }, [ctrl, onText]);
+  useEffect(() => () => ctrl.dispose(), [ctrl]);
 
-  // Cancel explicitly terminates the current session and invalidates any pending results
-  const cancel = useCallback(() => {
-    sessionIdRef.current += 1;
-    const rec = recRef.current;
-    if (rec) {
-      rec.onresult = null;
-      rec.onerror = null;
-      rec.onend = null;
-      try {
-        rec.abort();
-      } catch {
-        // ignore
-      }
-    }
-    recRef.current = null;
-    busyRef.current = false;
-    setListening(false);
-    setStarting(false);
-  }, []);
+  const start = useCallback((existing: string) => ctrl.start(existing), [ctrl]);
+  const stop = useCallback(() => ctrl.stop(), [ctrl]);
+  const cancel = useCallback(() => ctrl.cancel(), [ctrl]);
+  const clearError = useCallback(() => ctrl.clearError(), [ctrl]);
 
-  const stop = useCallback(() => {
-    const rec = recRef.current;
-    if (rec) {
-      try {
-        rec.stop();
-      } catch {
-        cancel();
-      }
-    }
-  }, [cancel]);
-
-  const start = useCallback(async (existing: string) => {
-    if (busyRef.current || recRef.current) return;
-    const Ctor = getRecognitionCtor();
-    if (!Ctor) return setError(ERR.unsupported);
-    if (!window.isSecureContext) return setError(ERR.insecure);
-
-    const session = ++sessionIdRef.current;
-    busyRef.current = true;
-    setStarting(true);
-    setError(null);
-
-    const rec = new Ctor();
-    rec.lang = document.documentElement.lang || navigator.language || "en-US";
-    rec.continuous = true;
-    rec.interimResults = true;
-    let finalText = "";
-
-    rec.onresult = (e) => {
-      if (session !== sessionIdRef.current) return;
-      let finalStr = "";
-      let interimStr = "";
-      for (let i = 0; i < e.results.length; i++) {
-        const r = e.results[i];
-        if (r.isFinal) finalStr += r[0].transcript;
-        else interimStr += r[0].transcript;
-      }
-      finalText = finalStr;
-      onTextRef.current(joinText(existing, finalStr + interimStr));
-    };
-
-    rec.onerror = (e) => {
-      if (session !== sessionIdRef.current) return;
-      const mapped = recognitionError(e.error, false);
-      if (mapped) setError(mapped);
-      busyRef.current = false;
-      setStarting(false);
-    };
-
-    rec.onend = () => {
-      if (session !== sessionIdRef.current) return;
-      setListening(false);
-      setStarting(false);
-      recRef.current = null;
-      busyRef.current = false;
-      // Settle on the final words only (drops a dangling interim fragment)
-      if (finalText) {
-        onTextRef.current(joinText(existing, finalText));
-      }
-    };
-
-    recRef.current = rec;
-    try {
-      rec.start();
-      if (session === sessionIdRef.current) {
-        setListening(true);
-      }
-    } catch {
-      if (session === sessionIdRef.current) {
-        recRef.current = null;
-        busyRef.current = false;
-        setListening(false);
-        setError(ERR.unexpected);
-      }
-    } finally {
-      if (session === sessionIdRef.current) {
-        setStarting(false);
-      }
-    }
-  }, []);
-
-  useEffect(
-    () => () => {
-      cancel();
-    },
-    [cancel]
-  );
-
-  return { supported, listening, starting, error, start, stop, cancel, clearError: () => setError(null) };
+  return {
+    supported,
+    phase: state.phase,
+    /** Waiting for the browser (permission prompt, recogniser starting) */
+    starting: state.phase === "starting",
+    /** A session is open: the microphone is (or is about to stop) listening */
+    listening: state.phase === "listening" || state.phase === "stopping",
+    error: state.error,
+    start,
+    stop,
+    cancel,
+    clearError,
+  };
 }
 
 /* ------------------------------------------------------------------ Recording fallback */
@@ -294,7 +114,7 @@ export function useRecorder(onText: (text: string) => void) {
 
   const start = useCallback(async (existing: string) => {
     if (recRef.current) return;
-    if (!window.isSecureContext) return setError(ERR.insecure);
+    if (!window.isSecureContext) return setError(VOICE_ERRORS.insecure);
     setError(null);
     cancelledRef.current = false;
     let stream: MediaStream;
@@ -330,7 +150,7 @@ export function useRecorder(onText: (text: string) => void) {
         });
         const data = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
         if (!res.ok) setError({ kind: "transcription", message: data.error || "Transcription failed. Try again or type your message." });
-        else if (!data.text) setError(ERR["no-speech"]);
+        else if (!data.text) setError(VOICE_ERRORS["no-speech"]);
         else onTextRef.current(joinText(existing, data.text));
       } catch (e) {
         if (!(e instanceof DOMException && e.name === "AbortError")) {
@@ -365,108 +185,65 @@ export function useRecorder(onText: (text: string) => void) {
 }
 
 /* ------------------------------------------------------------------ Spoken replies */
-/** Turn a Markdown reply into natural speech: no syntax, code or raw URLs read aloud. */
-export function speakable(markdown: string) {
-  return markdown
-    .replace(/```[\s\S]*?```/g, " I've included a code sample on screen. ")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
-    .replace(/https?:\/\/\S+/g, " a link on screen ")
-    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
-    .replace(/^\s*[-*+]\s+/gm, "")
-    .replace(/^\s*\d+\.\s+/gm, "")
-    .replace(/^\s*>\s?/gm, "")
-    .replace(/\|/g, ", ")
-    .replace(/[*_~]{1,3}([^*_~]+)[*_~]{1,3}/g, "$1")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{2,}/g, ". ")
-    .replace(/\n/g, " ")
-    .replace(/\s+([.,!?])/g, "$1")
-    .replace(/\.{2,}/g, ".")
-    .trim();
+const VOICE_KEY = "rawin-orbit-voice";
+
+/** The visitor's saved voice choice ("" = automatic) */
+function storedVoiceURI(): string {
+  try {
+    return localStorage.getItem(VOICE_KEY) || "";
+  } catch {
+    return "";
+  }
 }
 
-/** Short utterances avoid Chrome's long-utterance cut-off and keep cancellation snappy. */
-export function chunkSentences(text: string, max = 220): string[] {
-  const sentences = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
-  const out: string[] = [];
-  let cur = "";
-  for (const s of sentences) {
-    if ((cur + s).length > max && cur) {
-      out.push(cur.trim());
-      cur = "";
-    }
-    cur += s;
+function availableVoices(): SpeechSynthesisVoice[] {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return [];
+  try {
+    return rankVoices(window.speechSynthesis.getVoices(), browserLocale());
+  } catch {
+    return [];
   }
-  if (cur.trim()) out.push(cur.trim());
-  return out;
 }
 
 /**
- * Rank installed voices: language match first, then quality hints browsers expose in voice
- * names ("Natural"/"Neural" on Edge and Windows, "Enhanced"/"Premium" on Apple, Google's
- * network voices in Chrome). Legacy SAPI "Desktop" voices and eSpeak-style engines rank last.
+ * Spoken replies through the browser's speech synthesis (SpeechController). `speakingId` is set
+ * only once the browser reports that speech started; `pendingId` covers the moment between the
+ * tap and that report. speak() should be called from the tap when there is one; prime() unlocks
+ * later, untapped speech (a reply read aloud when it arrives) on iOS.
  */
-export function scoreVoice(v: Pick<SpeechSynthesisVoice, "lang" | "name" | "default">, lang: string): number {
-  const vl = (v.lang || "").toLowerCase().replace("_", "-");
-  const want = lang.toLowerCase();
-  let score = 0;
-  if (vl === want) score += 100;
-  else if (vl.split("-")[0] === want.split("-")[0]) score += 60;
-  else return -1000;
-  const n = v.name.toLowerCase();
-  if (/natural|neural/.test(n)) score += 50;
-  if (/enhanced|premium|siri/.test(n)) score += 35;
-  if (/google/.test(n)) score += 25;
-  if (/desktop|espeak|festival|compact|robot/.test(n)) score -= 40;
-  if (v.default) score += 5;
-  return score;
-}
-
-const VOICE_KEY = "rawin-orbit-voice";
-
 export function useSpeech() {
-  const supported = useClientSupport(() => typeof window !== "undefined" && "speechSynthesis" in window);
-  const [speakingId, setSpeakingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const supported = useClientSupport(
+    () => typeof window !== "undefined" && "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function"
+  );
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   // The selector only renders client-side once voices exist, so reading storage here is safe
-  const [voiceURI, setVoiceURIState] = useState<string>(() => {
-    if (typeof window === "undefined") return "";
-    try {
-      return localStorage.getItem(VOICE_KEY) || "";
-    } catch {
-      return "";
-    }
-  });
-  const runRef = useRef(0); // invalidates queued chunks of a cancelled reply
-  const watchdogRef = useRef<number | undefined>(undefined);
+  const [voiceURI, setVoiceURIState] = useState<string>(() => (typeof window === "undefined" ? "" : storedVoiceURI()));
 
-  const getRankedVoices = useCallback(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return [];
-    const raw = (document.documentElement.lang || navigator.language || "en-US").toLowerCase();
-    const lang = raw.includes("-") ? raw : `${raw}-us`;
-    const available = window.speechSynthesis.getVoices();
-    if (!available.length) return [];
-    return available
-      .map((v) => ({ v, s: scoreVoice(v, lang) }))
-      .filter((x) => x.s > -1000)
-      .sort((a, b) => b.s - a.s)
-      .map((x) => x.v);
-  }, []);
+  // Read at the moment of speaking (voices load late on Android): the visitor's choice when it
+  // is installed, else the best ranked voice, else none (the browser's default)
+  const [ctrl] = useState(
+    () =>
+      new SpeechController(
+        browserSpeechEnv((): VoiceLike | null => {
+          const list = availableVoices();
+          return list.find((v) => v.voiceURI === storedVoiceURI()) || list[0] || null;
+        })
+      )
+  );
+  const state = useSyncExternalStore(ctrl.subscribe, ctrl.getState, ctrl.getState);
+  useEffect(() => () => ctrl.dispose(), [ctrl]);
 
-  // Voices load asynchronously in Chrome; rank them again on voiceschanged.
+  // Voices load asynchronously (Chrome, Android); rank them again on voiceschanged.
   useEffect(() => {
     if (!("speechSynthesis" in window)) return;
     const load = () => {
-      const ranked = getRankedVoices();
-      if (ranked.length > 0) setVoices(ranked);
+      const ranked = availableVoices();
+      if (ranked.length) setVoices(ranked);
     };
     load();
     window.speechSynthesis.addEventListener("voiceschanged", load);
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
-  }, [getRankedVoices]);
+  }, []);
 
   const setVoiceURI = useCallback((uri: string) => {
     setVoiceURIState(uri);
@@ -478,142 +255,30 @@ export function useSpeech() {
     }
   }, []);
 
-  const stop = useCallback(() => {
-    runRef.current += 1;
-    window.clearTimeout(watchdogRef.current);
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        // ignore
-      }
-    }
-    setSpeakingId(null);
-  }, []);
+  const speak = useCallback((id: string, text: string) => ctrl.speak(id, text), [ctrl]);
+  const toggle = useCallback((id: string, text: string) => ctrl.toggle(id, text), [ctrl]);
+  const stop = useCallback(() => ctrl.stop(), [ctrl]);
+  const prime = useCallback(() => ctrl.prime(), [ctrl]);
+  const clearError = useCallback(() => ctrl.clearError(), [ctrl]);
 
   const activeVoice = voices.find((v) => v.voiceURI === voiceURI) || voices[0] || null;
 
-  const speak = useCallback(
-    (id: string, text: string) => {
-      if (!("speechSynthesis" in window)) {
-        setError("Spoken replies aren't available in this browser.");
-        return;
-      }
-      const content = speakable(text);
-      if (!content) return;
-      const synth = window.speechSynthesis;
-      runRef.current += 1;
-      const run = runRef.current;
-      window.clearTimeout(watchdogRef.current);
-
-      try {
-        synth.cancel();
-        if (synth.paused) {
-          synth.resume();
-        }
-      } catch {
-        // ignore
-      }
-      setError(null);
-
-      const currentVoices = voices.length ? voices : getRankedVoices();
-      if (!voices.length && currentVoices.length) {
-        setVoices(currentVoices);
-      }
-      const voiceToUse = currentVoices.find((v) => v.voiceURI === voiceURI) || currentVoices[0] || activeVoice;
-
-      const parts = chunkSentences(content);
-      let index = 0;
-
-      const next = () => {
-        if (run !== runRef.current) return;
-        if (index >= parts.length) {
-          setSpeakingId((cur) => (cur === id ? null : cur));
-          return;
-        }
-
-        const u = new SpeechSynthesisUtterance(parts[index++]);
-        if (voiceToUse) {
-          u.voice = voiceToUse;
-          u.lang = voiceToUse.lang;
-        } else {
-          u.lang = document.documentElement.lang || navigator.language || "en-US";
-        }
-        u.rate = 0.98;
-        u.pitch = 1;
-        u.volume = 1;
-
-        u.onstart = () => {
-          if (run === runRef.current) {
-            window.clearTimeout(watchdogRef.current);
-            setSpeakingId(id);
-          }
-        };
-
-        u.onend = next;
-
-        u.onerror = (e) => {
-          window.clearTimeout(watchdogRef.current);
-          const code = (e as SpeechSynthesisErrorEvent).error;
-          if (code === "interrupted" || code === "canceled" || run !== runRef.current) return;
-          setSpeakingId((cur) => (cur === id ? null : cur));
-          setError(
-            code === "not-allowed"
-              ? "The browser blocked automatic playback. Press Listen on the reply to hear it."
-              : "This reply couldn't be read aloud."
-          );
-        };
-
-        // Fallback watchdog: if onstart does not fire within 1500ms, try resuming
-        // or clear the active state to prevent false speaking indication on Android
-        window.clearTimeout(watchdogRef.current);
-        watchdogRef.current = window.setTimeout(() => {
-          if (run === runRef.current && synth.speaking) {
-            synth.resume();
-          } else if (run === runRef.current) {
-            setSpeakingId((cur) => (cur === id ? null : cur));
-          }
-        }, 1500);
-
-        try {
-          synth.speak(u);
-          if (synth.paused) {
-            synth.resume();
-          }
-        } catch {
-          window.clearTimeout(watchdogRef.current);
-          setSpeakingId((cur) => (cur === id ? null : cur));
-          setError("This reply couldn't be read aloud.");
-        }
-      };
-
-      setTimeout(next, 10);
-    },
-    [activeVoice, voices, voiceURI, getRankedVoices]
-  );
-
-  const toggle = useCallback(
-    (id: string, text: string) => {
-      if (speakingId === id) stop();
-      else speak(id, text);
-    },
-    [speakingId, speak, stop]
-  );
-
-  useEffect(
-    () => () => {
-      runRef.current += 1;
-      window.clearTimeout(watchdogRef.current);
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        try {
-          window.speechSynthesis.cancel();
-        } catch {
-          // ignore
-        }
-      }
-    },
-    []
-  );
-
-  return { supported, speakingId, error, voices, voiceURI, activeVoice, setVoiceURI, speak, toggle, stop, clearError: () => setError(null) };
+  return {
+    supported,
+    phase: state.phase,
+    /** The reply being prepared or played (Listen shows Stop for it) */
+    activeId: state.phase === "idle" ? null : state.id,
+    pendingId: state.phase === "preparing" ? state.id : null,
+    speakingId: state.phase === "playing" ? state.id : null,
+    error: state.error,
+    voices,
+    voiceURI,
+    activeVoice,
+    setVoiceURI,
+    speak,
+    toggle,
+    stop,
+    prime,
+    clearError,
+  };
 }

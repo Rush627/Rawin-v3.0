@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
   const [capsLock, setCapsLock] = useState(false);
 
   return (
-    <div className="relative min-h-screen min-h-dvh w-full bg-bg text-fg grid lg:grid-cols-2 overflow-hidden">
+    <div className="relative min-h-viewport w-full bg-bg text-fg grid lg:grid-cols-2 overflow-hidden">
       <div aria-hidden="true" className="rawin-atmosphere" />
 
       {/* Editorial panel */}
@@ -49,7 +49,7 @@ export default function AdminLoginPage() {
           spacing that tightens on short screens. Safe-area insets keep the top row clear of the
           notch and rounded corners. A screen too short for all of it (or enlarged text) scrolls
           normally instead of clipping. */}
-      <section className="relative flex flex-col min-h-screen min-h-dvh pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] sm:px-10">
+      <section className="relative flex flex-col min-h-viewport pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] sm:px-10">
         <div className="flex items-center justify-between h-12 sm:h-14 shrink-0">
           <Link href="/" className="group inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg" aria-label="Return to RAWIN public website">
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />

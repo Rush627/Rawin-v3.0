@@ -29,7 +29,7 @@ export default function GlobalError({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
-      <body className="min-h-screen min-h-dvh bg-bg text-fg antialiased flex flex-col font-sans">
+      <body className="min-h-viewport bg-bg text-fg antialiased flex flex-col font-sans">
         {staleBuild ? (
           <RawinErrorView
             code="500"

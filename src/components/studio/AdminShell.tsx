@@ -59,7 +59,7 @@ export default function AdminShell({ email, brand, signOut, children }: { email:
 
   return (
     <UnsavedChangesProvider>
-      <div data-admin-portal="true" className="admin-studio relative h-screen h-dvh max-h-dvh w-full bg-bg text-fg flex flex-col lg:flex-row overflow-hidden">
+      <div data-admin-portal="true" className="admin-studio relative h-viewport max-h-dvh w-full bg-bg text-fg flex flex-col lg:flex-row overflow-hidden">
         <a href="#studio-main" className="skip-link btn btn-primary btn-sm">
           Skip to content
         </a>

@@ -11,13 +11,11 @@ import { shortenPageLifetimeForUnavailable } from "@/lib/site-content";
 export default async function ContentUnavailable() {
   await shortenPageLifetimeForUnavailable();
   return (
-    <main className="min-h-screen min-h-dvh flex flex-col justify-center items-center w-full relative z-10">
-      <RawinErrorView
-        code="503"
-        title="Site temporarily unavailable"
-        message="RAWIN cannot load its content right now. Please try again in a moment."
-        actionLabel="Refresh"
-      />
-    </main>
+    <RawinErrorView
+      code="503"
+      title="Site temporarily unavailable"
+      message="RAWIN cannot load its content right now. Please try again in a moment."
+      actionLabel="Refresh"
+    />
   );
 }

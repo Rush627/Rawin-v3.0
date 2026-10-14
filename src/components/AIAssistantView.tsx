@@ -122,7 +122,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
   const serverVoice = allowServerTranscription && recorder.supported;
   const useRecording = serverVoice && (preferRecorder || !dictation.supported);
   const voiceAvailable = allowVoiceInput && (dictation.supported || serverVoice);
-  const voiceBusy = dictation.listening || recorder.state === "recording";
+  const voiceBusy = dictation.listening || dictation.starting || recorder.state === "recording";
   const voiceError = useRecording ? recorder.error : dictation.error;
   // Voice conversation: when on, each new Orbit reply is read aloud once it has arrived.
   const [voiceMode, setVoiceMode] = useState(false);
@@ -156,13 +156,16 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
     return () => cancelAnimationFrame(id);
   }, []);
 
+  // Not inside a tap: iOS plays it because the tap that sent the message primed synthesis
+  // (handleSend). If the browser still refuses, the error offers Listen, which is a tap.
+  const { speak: speakReply, supported: speechSupported } = speech;
   useEffect(() => {
-    if (!voiceMode || !allowPlayback || !speech.supported) return;
+    if (!voiceMode || !allowPlayback || !speechSupported) return;
     const last = messages[messages.length - 1];
     if (!last || last.role !== "assistant" || !last.id || spokenRef.current === last.id) return;
     spokenRef.current = last.id;
-    speech.speak(last.id, last.content);
-  }, [messages, voiceMode, allowPlayback, speech]);
+    speakReply(last.id, last.content);
+  }, [messages, voiceMode, allowPlayback, speechSupported, speakReply]);
 
   const handleFilesChosen = (list: FileList | null) => {
     attachments.add(list);
@@ -296,9 +299,12 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
 
     setErrorMessage(null);
     setInput("");
+    // discard the dictation outright: a late result must never bring the sent text back
     dictation.cancel();
     recorder.cancel();
     speech.stop();
+    // this tap unlocks speech on iOS for the reply that will be read aloud when it arrives
+    if (voiceMode && allowPlayback) speech.prime();
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
@@ -491,7 +497,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
     // a new empty session gets a fresh welcome message
     welcomeMessage.refresh();
     speech.stop();
-    dictation.stop();
+    dictation.cancel();
     recorder.cancel();
     setStreamingContent("");
     setErrorMessage(null);
@@ -770,14 +776,24 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                         {allowPlayback && speech.supported && m.id && (
                           <button
                             type="button"
+                            // called in the tap itself: iOS only starts speech inside the gesture
                             onClick={() => speech.toggle(m.id as string, m.content)}
-                            aria-pressed={speech.speakingId === m.id}
+                            aria-pressed={speech.activeId === m.id}
+                            aria-label={
+                              speech.pendingId === m.id ? "Starting playback, tap to cancel" : speech.speakingId === m.id ? "Stop reading this reply" : "Read this reply aloud"
+                            }
                             className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12px] border transition-colors ${
-                              speech.speakingId === m.id ? "border-accent text-accent" : "border-line text-fg-muted hover:text-fg hover:border-line-strong"
+                              speech.activeId === m.id ? "border-accent text-accent" : "border-line text-fg-muted hover:text-fg hover:border-line-strong"
                             }`}
                           >
-                            {speech.speakingId === m.id ? <Square className="w-3 h-3 fill-current" /> : <Volume2 className="w-3.5 h-3.5" />}
-                            {speech.speakingId === m.id ? "Stop" : "Listen"}
+                            {speech.pendingId === m.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : speech.speakingId === m.id ? (
+                              <Square className="w-3 h-3 fill-current" />
+                            ) : (
+                              <Volume2 className="w-3.5 h-3.5" />
+                            )}
+                            {speech.pendingId === m.id ? "Starting…" : speech.speakingId === m.id ? "Stop" : "Listen"}
                           </button>
                         )}
                       </div>
@@ -1064,7 +1080,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                         else dictation.start(input);
                       }}
                       aria-pressed={voiceBusy}
-                      disabled={isOrbitalActive || dictation.starting || recorder.state === "transcribing"}
+                      disabled={isOrbitalActive || recorder.state === "transcribing"}
                       className={`h-10 rounded-full flex items-center justify-center gap-2 transition-colors disabled:opacity-60 ${
                         voiceBusy || recorder.state === "transcribing" || dictation.starting
                           ? "px-3.5 bg-accent/12 text-accent"
@@ -1098,7 +1114,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                       ) : (
                         <Mic className="w-4 h-4" />
                       )}
-                      {voiceBusy && <span className="text-[12.5px] font-medium">Listening · Stop</span>}
+                      {voiceBusy && !dictation.starting && <span className="text-[12.5px] font-medium">Listening · Stop</span>}
                       {recorder.state === "transcribing" && <span className="text-[12.5px] font-medium">Transcribing…</span>}
                       {dictation.starting && <span className="text-[12.5px] font-medium">Allow microphone…</span>}
                     </button>
@@ -1108,6 +1124,8 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                       type="button"
                       onClick={() => {
                         if (voiceMode) speech.stop();
+                        // turning spoken replies on is a tap: unlock speech for them (iOS)
+                        else speech.prime();
                         setVoiceMode((v) => !v);
                       }}
                       aria-pressed={voiceMode}

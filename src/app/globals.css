@@ -3520,6 +3520,84 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   animation: rawin-shimmer 1.6s linear infinite;
 }
 
+/* Viewport height with a fallback, in ONE rule: browsers without dynamic viewport units keep
+   100vh, all others use 100dvh (the height actually visible, mobile toolbars included). Never
+   pair the min-h-screen and min-h-dvh utilities for this: Tailwind orders utilities itself,
+   .min-h-screen is emitted after .min-h-dvh, so 100vh won. On phones 100vh is the LARGE
+   viewport (toolbars hidden), taller than the visible screen, which made full-height screens
+   scroll on real devices while desktop emulation (where vh equals dvh) showed no problem. */
+@utility min-h-viewport {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+@utility h-viewport {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* System state screens (maintenance, errors, offline: RawinErrorView). The code numeral is drawn
+   on a canvas that resolves its size on <body>, so the size lives in root variables; on phones
+   it is bounded by the height as well as the width. */
+:root {
+  --rawin-state-code: clamp(3.25rem, min(19vw, 10dvh), 5.75rem);
+  --rawin-state-word: clamp(2.5rem, min(12vw, 7.5dvh), 4.25rem);
+}
+@media (min-width: 640px) {
+  :root {
+    --rawin-state-code: clamp(4.5rem, min(17vw, 14dvh), 9rem);
+    --rawin-state-word: clamp(3.25rem, min(11vw, 10dvh), 6.5rem);
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --rawin-state-code: clamp(5.5rem, min(27vw, 28dvh), 12.5rem);
+    --rawin-state-word: clamp(3.4rem, min(15vw, 20dvh), 8.5rem);
+  }
+}
+.rawin-state-gutter {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+@media (min-width: 640px) {
+  .rawin-state-gutter {
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+@media (min-width: 1024px) {
+  .rawin-state-gutter {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+/* Compact action row on phones: a 44px control and a matching remaining-time pill */
+.rawin-state-actions > .btn {
+  --btn-h: 2.75rem;
+  padding: 0 1.15rem;
+}
+.rawin-state-countdown {
+  height: 2.75rem;
+  padding: 0 0.9rem;
+  font-size: 0.75rem;
+}
+@media (min-width: 640px) {
+  .rawin-state-actions > .btn {
+    --btn-h: 3rem;
+    padding: 0 1.4rem;
+  }
+  .rawin-state-countdown {
+    height: 3rem;
+    padding: 0 1.25rem;
+    font-size: 0.875rem;
+  }
+}
+/* Very narrow screens: the pair stacks, centred, rather than being clipped */
+@media (max-width: 339.98px) {
+  .rawin-state-actions {
+    justify-content: center;
+  }
+}
+
 /* Universal dvh-first viewport helpers */
 .h-stage-full {
   height: 100vh;

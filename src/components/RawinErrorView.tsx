@@ -133,7 +133,8 @@ export default function RawinErrorView({
       ? "Retry"
       : "Refresh");
 
-  const countdown = endsAt ? remainingText : null;
+  // undefined: no timed window; null: not computed yet (a placeholder keeps the row steady)
+  const countdown = endsAt && !Number.isNaN(new Date(endsAt).getTime()) ? remainingText : undefined;
   const display = code === "OFFLINE" ? "Offline" : code;
   const isWord = display.length > 3;
   const stateLabel = STATE_LABEL[code] || "System state";
@@ -143,7 +144,7 @@ export default function RawinErrorView({
     <main
       role="main"
       data-error-view="true"
-      className="relative w-full h-full min-h-screen min-h-dvh flex flex-col justify-between bg-bg text-fg overflow-x-hidden overflow-y-auto overscroll-contain"
+      className="rawin-state relative w-full min-h-viewport flex flex-col bg-bg text-fg overflow-clip"
     >
       {/* Atmosphere: one soft halo behind the code, nothing else */}
       <div aria-hidden="true" className="rawin-atmosphere !absolute" />
@@ -154,12 +155,12 @@ export default function RawinErrorView({
       />
 
       {/* Running header */}
-      <header className="relative z-10 shrink-0 mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-10 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="flex items-center justify-between gap-4 pb-3 sm:pb-5 border-b border-line">
+      <header className="rawin-state-gutter relative z-10 shrink-0 mx-auto w-full max-w-[1400px] pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-[max(1.25rem,env(safe-area-inset-top))]">
+        <div className="flex items-center justify-between gap-4 min-h-10 pb-2.5 sm:pb-4 border-b border-line">
           <span className="inline-flex items-center text-fg">
             <Wordmark mode={brandMode} logos={logos} size="sm" withMark={false} />
           </span>
-          <span className="inline-flex items-center gap-2 label-mono text-fg-muted text-xs sm:text-sm">
+          <span className="inline-flex items-center gap-2 label-mono text-fg-muted">
             <span className={`w-1.5 h-1.5 rounded-full ${tone}`} />
             <span className="text-fg">{display}</span>
             <span className="text-fg-subtle hidden sm:inline">· {stateLabel}</span>
@@ -167,17 +168,13 @@ export default function RawinErrorView({
         </div>
       </header>
 
-      {/* Composition */}
-      <div className="relative z-10 flex-1 my-auto mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-10 flex items-center py-3 sm:py-8 lg:py-12">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-y-3 sm:gap-y-6 lg:gap-x-12 items-center">
-          {/* FuzzyText pads its canvas by fuzzRange + 12px; below lg that padding is pulled back
-              so the glyphs start on the content gutter like the copy beneath them */}
-          <div
-            className="lg:col-span-5 lg:justify-self-end max-lg:ml-[calc(var(--fz)*-1)]"
-            style={{ "--fz": `${(isWord ? 14 : 18) + 8}px` } as React.CSSProperties}
-          >
+      {/* Composition: centred in the height left between header and footer. Phones stack and
+          centre everything; desktop sets the code and the message side by side. */}
+      <div className="rawin-state-gutter relative z-10 flex-1 mx-auto w-full max-w-[1400px] flex items-center justify-center py-[clamp(0.75rem,3dvh,3rem)]">
+        <div className="w-full flex flex-col items-center text-center lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-center lg:text-left">
+          <div className="lg:col-span-5 lg:justify-self-end flex justify-center">
             <FuzzyText
-              fontSize={isWord ? "clamp(2.4rem, 10vw, 8.5rem)" : "clamp(3.4rem, 15vw, 12.5rem)"}
+              fontSize={isWord ? "var(--rawin-state-word)" : "var(--rawin-state-code)"}
               fontWeight={400}
               fontFamily="var(--font-display)"
               color="var(--fg)"
@@ -189,42 +186,51 @@ export default function RawinErrorView({
             </FuzzyText>
           </div>
 
-          <div className="lg:col-span-7 lg:border-l lg:border-line lg:pl-12 max-w-[36rem]">
-            <p className="label-mono text-accent text-xs sm:text-sm">{stateLabel}</p>
-            <h1 className="mt-2 sm:mt-4 font-display text-[clamp(1.75rem,5.5vw,3.6rem)] lg:text-[clamp(2.4rem,3.4vw,3.6rem)] leading-[0.98] tracking-[-0.03em] text-fg text-balance">
+          <div className="mt-[clamp(0.5rem,1.6dvh,1.5rem)] lg:mt-0 lg:col-span-7 lg:border-l lg:border-line lg:pl-12 w-full max-w-[34rem] flex flex-col items-center lg:items-start">
+            <p className="label-mono text-accent">{stateLabel}</p>
+            <h1 className="mt-[clamp(0.35rem,1.1dvh,1rem)] font-display text-[clamp(1.65rem,min(7.6vw,4.9dvh),2.6rem)] sm:text-[clamp(2.2rem,5vw,3.2rem)] lg:text-[clamp(2.6rem,3.6vw,3.6rem)] leading-[1] tracking-[-0.03em] text-fg text-balance">
               {title}
             </h1>
-            <p className="mt-2 sm:mt-4 text-[13.5px] sm:text-[16px] text-fg-muted leading-relaxed max-w-[44ch]">{message}</p>
+            <p className="mt-[clamp(0.35rem,1.2dvh,1.1rem)] text-[14px] sm:text-[16px] lg:text-[17px] text-fg-muted leading-snug sm:leading-relaxed max-w-[38ch] text-balance">{message}</p>
 
             {maintenanceMessage && (
-              <div className="mt-3.5 sm:mt-6 rounded-2xl border border-line bg-surface/80 p-3.5 sm:p-5 shadow-[var(--shadow-2)]">
-                <span className="label-mono text-fg-subtle text-[11px] sm:text-xs">Notice from the administrator</span>
-                <p className="mt-1.5 text-[13px] sm:text-[14.5px] whitespace-pre-wrap leading-relaxed text-fg">{maintenanceMessage}</p>
+              <div className="mt-[clamp(0.6rem,2dvh,1.75rem)] w-full max-w-[26rem] lg:max-w-none rounded-2xl border border-line bg-surface/80 px-4 py-3 sm:px-5 sm:py-4 shadow-[var(--shadow-2)]">
+                <span className="label-mono text-fg-subtle">Notice from the administrator</span>
+                <p className="mt-1 text-[13.5px] sm:text-[15px] whitespace-pre-wrap leading-snug sm:leading-relaxed text-fg line-clamp-6">{maintenanceMessage}</p>
               </div>
             )}
 
-            <div className="mt-3.5 sm:mt-7 flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2.5 sm:gap-y-3">
+            {/* One row: the action on the left, the remaining time on the right (phones);
+                desktop keeps them side by side from the left edge of the column */}
+            <div
+              className={`rawin-state-actions mt-[clamp(0.75rem,2.2dvh,2rem)] w-full flex flex-wrap items-center gap-x-3 gap-y-2 lg:gap-x-6 ${
+                countdown !== undefined ? "max-w-[26rem] lg:max-w-none justify-between lg:justify-start" : "justify-center lg:justify-start"
+              }`}
+            >
               {actionHref ? (
-                <Link href={actionHref} className="btn btn-primary btn-sm sm:btn-md group">
+                <Link href={actionHref} className="btn btn-primary group shrink-0">
                   <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
                   <span>{resolvedActionLabel}</span>
                 </Link>
               ) : (
-                <button type="button" onClick={handleAction} className="btn btn-primary btn-sm sm:btn-md group">
+                <button type="button" onClick={handleAction} className="btn btn-primary group shrink-0">
                   <RefreshCw className="w-4 h-4 transition-transform duration-500 group-hover:rotate-180 motion-reduce:transition-none motion-reduce:group-hover:rotate-0" />
                   <span>{resolvedActionLabel}</span>
                 </button>
               )}
               {secondaryHref && (
-                <Link href={secondaryHref} className="group inline-flex items-center gap-2 min-h-10 sm:min-h-12 text-xs sm:text-sm font-medium text-fg">
+                <Link href={secondaryHref} className="group inline-flex items-center gap-2 min-h-11 text-sm font-medium text-fg">
                   <span className="link-draw">{secondaryLabel || "Back to home"}</span>
                   <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Link>
               )}
-              {countdown && (
-                <span className="inline-flex items-center gap-2 h-9 sm:h-12 px-3.5 sm:px-5 rounded-full border border-line-strong font-mono text-xs sm:text-sm text-fg" aria-live="polite">
+              {countdown !== undefined && (
+                <span
+                  className="rawin-state-countdown inline-flex items-center gap-2 shrink-0 rounded-full border border-line-strong font-mono text-fg whitespace-nowrap"
+                  aria-live="polite"
+                >
                   <span className="status-dot text-warning" />
-                  <span className="tabular-nums">{countdown}</span>
+                  <span className="tabular-nums">{countdown ?? "--:--"}</span>
                   <span className="text-fg-subtle">remaining</span>
                 </span>
               )}
@@ -233,8 +239,8 @@ export default function RawinErrorView({
         </div>
       </div>
 
-      <footer className="relative z-10 shrink-0 mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-10 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="pt-3 sm:pt-5 border-t border-line flex items-center justify-between gap-4 label-mono text-xs sm:text-sm text-fg-subtle">
+      <footer className="rawin-state-gutter relative z-10 shrink-0 mx-auto w-full max-w-[1400px] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="pt-2.5 sm:pt-4 border-t border-line flex items-center justify-between gap-4 label-mono text-fg-subtle">
           <span>{SITE_HOST}</span>
           {reference && <span className="hidden sm:inline truncate">Ref · {reference}</span>}
           <span>{new Date().getFullYear()}</span>
@@ -243,4 +249,3 @@ export default function RawinErrorView({
     </main>
   );
 }
-
