@@ -177,6 +177,7 @@ export const SECTION_ALLOWED_KEYS: Record<EditableSection, string[]> = {
     "voicePlayback",
     "fileAttachments",
     "serverTranscription",
+    "cloudVoice",
   ],
   taxonomy: ["projectCategories", "blogCategories"],
   availability: ["state", "label", "note"],
@@ -663,7 +664,8 @@ export function buildSectionPayload(section: EditableSection, get: (key: string)
         key === "voiceInput" ||
         key === "voicePlayback" ||
         key === "fileAttachments" ||
-        key === "serverTranscription"
+        key === "serverTranscription" ||
+        key === "cloudVoice"
       ) {
         payload[key] = trimmed === "true" || trimmed === "1" || trimmed === "on";
         continue;

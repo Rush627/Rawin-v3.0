@@ -195,6 +195,7 @@ function renderEditor(slug: ContentSlug, c: SiteContent) {
             voicePlayback: ai.voicePlayback !== false,
             fileAttachments: ai.fileAttachments === true,
             serverTranscription: ai.serverTranscription === true,
+            cloudVoice: ai.cloudVoice !== false,
           }}
         />
       );

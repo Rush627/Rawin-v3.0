@@ -115,15 +115,19 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
   );
   const dictation = useDictation(applyTranscript);
   const recorder = useRecorder(applyTranscript);
-  const speech = useSpeech();
+  // Cloud voice (Workers AI MeloTTS) unless the CMS switch turns it off
+  const speech = useSpeech({ cloud: content?.cloudVoice !== false });
   // Use the recording fallback when the browser has no recogniser, or after its
-  // recognition service failed while the microphone itself worked.
+  // recognition failed for a reason the microphone itself is not to blame for (Android's
+  // recogniser often fails this way); the next microphone tap then records instead.
   const [preferRecorder, setPreferRecorder] = useState(false);
   const serverVoice = allowServerTranscription && recorder.supported;
-  const useRecording = serverVoice && (preferRecorder || !dictation.supported);
+  const dictationFailed = Boolean(dictation.error && (dictation.error.serviceProblem || dictation.error.kind === "unexpected"));
+  const useRecording = serverVoice && (preferRecorder || !dictation.supported || dictationFailed);
   const voiceAvailable = allowVoiceInput && (dictation.supported || serverVoice);
   const voiceBusy = dictation.listening || dictation.starting || recorder.state === "recording";
-  const voiceError = useRecording ? recorder.error : dictation.error;
+  // the recorder's own error, else the recogniser's (kept visible until the fallback is used)
+  const voiceError = (useRecording ? recorder.error : null) || dictation.error;
   // Voice conversation: when on, each new Orbit reply is read aloud once it has arrived.
   const [voiceMode, setVoiceMode] = useState(false);
   const spokenRef = useRef<string | null>(null);
@@ -880,10 +884,34 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                 </button>
               </div>
             )}
-            {(attachments.notice || speech.error) && (
+            {attachments.notice && (
               <p role="alert" className="px-2 text-[13px] text-danger">
-                {attachments.notice || speech.error}
+                {attachments.notice}
               </p>
+            )}
+            {speech.error && (
+              <div role="alert" className="px-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-danger">
+                <span>
+                  {speech.error}
+                  {speech.errorCode && <span className="ml-1.5 label-mono text-fg-subtle">({speech.errorCode})</span>}
+                </span>
+                {speech.deviceFallbackId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const reply = messages.find((m) => m.id === speech.deviceFallbackId);
+                      if (reply?.id) speech.speakWithDevice(reply.id, reply.content);
+                    }}
+                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-line-strong text-fg hover:border-fg"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                    Read with device voice
+                  </button>
+                )}
+                <button type="button" onClick={speech.clearError} className="label-mono text-fg-subtle hover:text-fg">
+                  Dismiss
+                </button>
+              </div>
             )}
             {voiceError && (
               <div
@@ -892,9 +920,11 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
               >
                 <span>
                   {voiceError.message}
+                  {serverVoice && dictationFailed && !preferRecorder && " Tap the microphone to record instead; RAWIN will transcribe it."}
+                  {voiceError.code && <span className="ml-1.5 label-mono text-fg-subtle">({voiceError.code})</span>}
                   {voiceError.serviceProblem && !serverVoice && " Try Chrome or Edge, or type your message."}
                 </span>
-                {voiceError.serviceProblem && serverVoice && !useRecording && (
+                {voiceError === dictation.error && dictationFailed && serverVoice && (
                   <button
                     type="button"
                     onClick={() => {
@@ -910,7 +940,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                 )}
                 <button
                   type="button"
-                  onClick={() => (useRecording ? recorder.clearError() : dictation.clearError())}
+                  onClick={() => (voiceError === dictation.error ? dictation.clearError() : recorder.clearError())}
                   className="label-mono text-fg-subtle hover:text-fg"
                 >
                   Dismiss
@@ -1075,9 +1105,13 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                           else dictation.stop();
                           return;
                         }
-                        if (allowPlayback && speech.supported) setVoiceMode(true);
-                        if (useRecording) recorder.start(input);
-                        else dictation.start(input);
+                        // replies are read aloud only when the visitor turns that on (speaker toggle)
+                        if (useRecording) {
+                          // switching to the recording fallback for the rest of the visit
+                          dictation.clearError();
+                          setPreferRecorder(true);
+                          recorder.start(input);
+                        } else dictation.start(input);
                       }}
                       aria-pressed={voiceBusy}
                       disabled={isOrbitalActive || recorder.state === "transcribing"}
@@ -1133,7 +1167,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                         voiceMode ? "px-3.5 bg-accent/12 text-accent" : "w-10 text-fg-muted hover:text-fg hover:bg-fg/5"
                       }`}
                       aria-label={voiceMode ? "Turn off spoken replies" : "Speak Orbit's replies aloud"}
-                      title="Voice conversation: read replies aloud (browser speech)"
+                      title={speech.provider === "cloud" ? "Voice conversation: read each reply aloud (Orbit's voice)" : "Voice conversation: read each reply aloud (device voice)"}
                     >
                       <AudioLines className="w-4 h-4" />
                       {voiceMode && <span className="text-[12.5px] font-medium">Speaking replies</span>}

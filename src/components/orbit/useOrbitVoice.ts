@@ -1,17 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import {
+  CloudSpeechController,
   DictationController,
+  RecorderController,
   SpeechController,
-  VOICE_ERRORS,
+  browserCloudSpeechEnv,
   browserDictationEnv,
   browserLocale,
+  browserRecorderEnv,
   browserSpeechEnv,
   getRecognitionCtor,
-  joinText,
   rankVoices,
-  type VoiceError,
   type VoiceLike,
 } from "@/components/orbit/voice-engine";
 
@@ -24,14 +25,6 @@ const noopSubscribe = () => () => {};
 /** True only on the client, after hydration, when the feature exists. */
 function useClientSupport(check: () => boolean) {
   return useSyncExternalStore(noopSubscribe, check, () => false);
-}
-
-function mediaError(e: unknown): VoiceError {
-  const name = e instanceof DOMException ? e.name : "";
-  if (name === "NotAllowedError" || name === "SecurityError") return VOICE_ERRORS.permission;
-  if (name === "NotFoundError" || name === "OverconstrainedError") return VOICE_ERRORS["no-device"];
-  if (name === "NotReadableError") return VOICE_ERRORS["device-busy"];
-  return VOICE_ERRORS.unexpected;
 }
 
 /* ------------------------------------------------------------------ Browser dictation */
@@ -71,117 +64,38 @@ export function useDictation(onText: (text: string) => void) {
 }
 
 /* ------------------------------------------------------------------ Recording fallback */
-const MAX_RECORDING_MS = 30_000;
-
 /**
- * Fallback when the browser's recogniser is unavailable: record up to 30 s with
- * MediaRecorder and transcribe it on RAWIN's server (Workers AI Whisper). Only used when
- * the CMS switch is on; the server enforces the same switch.
+ * Fallback when the browser's recogniser is unavailable or failed: record up to 30 s and
+ * transcribe it on RAWIN's server (Workers AI Whisper, RecorderController). Only used when the
+ * CMS switch is on; the server enforces the same switch.
  */
 export function useRecorder(onText: (text: string) => void) {
   const supported = useClientSupport(
     () => typeof window !== "undefined" && typeof window.MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia)
   );
-  const [state, setState] = useState<"idle" | "recording" | "transcribing">("idle");
-  const [error, setError] = useState<VoiceError | null>(null);
-  const recRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const timerRef = useRef<number | undefined>(undefined);
-  const cancelledRef = useRef(false);
-  const abortRef = useRef<AbortController | null>(null);
-  const onTextRef = useRef(onText);
+  const [ctrl] = useState(() => new RecorderController(browserRecorderEnv(), onText));
+  const st = useSyncExternalStore(ctrl.subscribe, ctrl.getState, ctrl.getState);
   useEffect(() => {
-    onTextRef.current = onText;
-  }, [onText]);
+    ctrl.setOnText(onText);
+  }, [ctrl, onText]);
+  useEffect(() => () => ctrl.dispose(), [ctrl]);
 
-  const release = () => {
-    window.clearTimeout(timerRef.current);
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    recRef.current = null;
+  const start = useCallback((existing: string) => void ctrl.start(existing), [ctrl]);
+  const stop = useCallback(() => ctrl.stop(), [ctrl]);
+  const cancel = useCallback(() => ctrl.cancel(), [ctrl]);
+  const clearError = useCallback(() => ctrl.clearError(), [ctrl]);
+
+  return {
+    supported,
+    phase: st.phase,
+    // "starting" (permission prompt) shows as recording, so the same tap can cancel it
+    state: (st.phase === "starting" ? "recording" : st.phase) as "idle" | "recording" | "transcribing",
+    error: st.error,
+    start,
+    stop,
+    cancel,
+    clearError,
   };
-
-  const stop = useCallback(() => {
-    if (recRef.current?.state === "recording") recRef.current.stop();
-  }, []);
-
-  const cancel = useCallback(() => {
-    cancelledRef.current = true;
-    abortRef.current?.abort();
-    if (recRef.current?.state === "recording") recRef.current.stop();
-    else setState("idle");
-  }, []);
-
-  const start = useCallback(async (existing: string) => {
-    if (recRef.current) return;
-    if (!window.isSecureContext) return setError(VOICE_ERRORS.insecure);
-    setError(null);
-    cancelledRef.current = false;
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (e) {
-      return setError(mediaError(e));
-    }
-    const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find((m) =>
-      MediaRecorder.isTypeSupported(m)
-    );
-    const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-    const chunks: Blob[] = [];
-    rec.ondataavailable = (e) => {
-      if (e.data.size) chunks.push(e.data);
-    };
-    rec.onstop = async () => {
-      const type = rec.mimeType || mime || "audio/webm";
-      release();
-      if (cancelledRef.current || !chunks.length) {
-        setState("idle");
-        return;
-      }
-      setState("transcribing");
-      const controller = new AbortController();
-      abortRef.current = controller;
-      try {
-        const res = await fetch("/api/ai/transcribe", {
-          method: "POST",
-          headers: { "Content-Type": type.split(";")[0] },
-          body: new Blob(chunks, { type }),
-          signal: controller.signal,
-        });
-        const data = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
-        if (!res.ok) setError({ kind: "transcription", message: data.error || "Transcription failed. Try again or type your message." });
-        else if (!data.text) setError(VOICE_ERRORS["no-speech"]);
-        else onTextRef.current(joinText(existing, data.text));
-      } catch (e) {
-        if (!(e instanceof DOMException && e.name === "AbortError")) {
-          setError({ kind: "transcription", message: "Transcription failed. Check your connection and try again." });
-        }
-      } finally {
-        abortRef.current = null;
-        setState("idle");
-      }
-    };
-    streamRef.current = stream;
-    recRef.current = rec;
-    rec.start();
-    setState("recording");
-    timerRef.current = window.setTimeout(() => {
-      if (rec.state === "recording") rec.stop();
-    }, MAX_RECORDING_MS);
-  }, []);
-
-  useEffect(
-    () => () => {
-      cancelledRef.current = true;
-      abortRef.current?.abort();
-      if (recRef.current?.state === "recording") recRef.current.stop();
-      window.clearTimeout(timerRef.current);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    },
-    []
-  );
-
-  return { supported, state, error, start, stop, cancel, clearError: () => setError(null) };
 }
 
 /* ------------------------------------------------------------------ Spoken replies */
@@ -206,22 +120,28 @@ function availableVoices(): SpeechSynthesisVoice[] {
 }
 
 /**
- * Spoken replies through the browser's speech synthesis (SpeechController). `speakingId` is set
- * only once the browser reports that speech started; `pendingId` covers the moment between the
- * tap and that report. speak() should be called from the tap when there is one; prime() unlocks
- * later, untapped speech (a reply read aloud when it arrives) on iOS.
+ * Spoken replies. With `cloud` (the CMS "Cloud voice" switch) replies are generated by Workers
+ * AI MeloTTS and played as audio (CloudSpeechController); otherwise the browser's speech
+ * synthesis reads them (SpeechController). A failed cloud request is reported with its reason
+ * and never replaced by the device voice on its own: the interface may offer
+ * `speakWithDevice` for that reply, which the visitor chooses with a tap.
+ *
+ * `speakingId` is set only once audio actually started; `pendingId` covers the moment between
+ * the tap and that report. speak() should be called from the tap when there is one; prime()
+ * unlocks later, untapped playback (a reply read aloud when it arrives) on iOS.
  */
-export function useSpeech() {
-  const supported = useClientSupport(
+export function useSpeech({ cloud = false }: { cloud?: boolean } = {}) {
+  const deviceSupported = useClientSupport(
     () => typeof window !== "undefined" && "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function"
   );
+  const audioSupported = useClientSupport(() => typeof window !== "undefined" && typeof window.Audio === "function" && typeof URL.createObjectURL === "function");
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   // The selector only renders client-side once voices exist, so reading storage here is safe
   const [voiceURI, setVoiceURIState] = useState<string>(() => (typeof window === "undefined" ? "" : storedVoiceURI()));
 
   // Read at the moment of speaking (voices load late on Android): the visitor's choice when it
   // is installed, else the best ranked voice, else none (the browser's default)
-  const [ctrl] = useState(
+  const [device] = useState(
     () =>
       new SpeechController(
         browserSpeechEnv((): VoiceLike | null => {
@@ -230,8 +150,16 @@ export function useSpeech() {
         })
       )
   );
-  const state = useSyncExternalStore(ctrl.subscribe, ctrl.getState, ctrl.getState);
-  useEffect(() => () => ctrl.dispose(), [ctrl]);
+  const [cloudCtrl] = useState(() => new CloudSpeechController(browserCloudSpeechEnv()));
+  const dState = useSyncExternalStore(device.subscribe, device.getState, device.getState);
+  const cState = useSyncExternalStore(cloudCtrl.subscribe, cloudCtrl.getState, cloudCtrl.getState);
+  useEffect(
+    () => () => {
+      device.dispose();
+      cloudCtrl.dispose();
+    },
+    [device, cloudCtrl]
+  );
 
   // Voices load asynchronously (Chrome, Android); rank them again on voiceschanged.
   useEffect(() => {
@@ -255,23 +183,67 @@ export function useSpeech() {
     }
   }, []);
 
-  const speak = useCallback((id: string, text: string) => ctrl.speak(id, text), [ctrl]);
-  const toggle = useCallback((id: string, text: string) => ctrl.toggle(id, text), [ctrl]);
-  const stop = useCallback(() => ctrl.stop(), [ctrl]);
-  const prime = useCallback(() => ctrl.prime(), [ctrl]);
-  const clearError = useCallback(() => ctrl.clearError(), [ctrl]);
+  const useCloud = cloud && audioSupported;
+  const speak = useCallback(
+    (id: string, text: string) => {
+      if (useCloud) {
+        device.stop();
+        cloudCtrl.speak(id, text);
+      } else {
+        cloudCtrl.stop();
+        device.speak(id, text);
+      }
+    },
+    [useCloud, device, cloudCtrl]
+  );
+  const stop = useCallback(() => {
+    device.stop();
+    cloudCtrl.stop();
+  }, [device, cloudCtrl]);
+  const toggle = useCallback(
+    (id: string, text: string) => {
+      const active = (cloudCtrl.getState().phase !== "idle" && cloudCtrl.getState().id === id) || (device.getState().phase !== "idle" && device.getState().id === id);
+      if (active) stop();
+      else speak(id, text);
+    },
+    [cloudCtrl, device, speak, stop]
+  );
+  /** The visitor's explicit choice after a cloud failure: read this reply with the device voice */
+  const speakWithDevice = useCallback(
+    (id: string, text: string) => {
+      cloudCtrl.stop();
+      cloudCtrl.clearError();
+      device.speak(id, text);
+    },
+    [cloudCtrl, device]
+  );
+  const prime = useCallback(() => {
+    if (useCloud) cloudCtrl.unlock();
+    else device.prime();
+  }, [useCloud, cloudCtrl, device]);
+  const clearError = useCallback(() => {
+    device.clearError();
+    cloudCtrl.clearError();
+  }, [device, cloudCtrl]);
 
   const activeVoice = voices.find((v) => v.voiceURI === voiceURI) || voices[0] || null;
+  const active = cState.phase !== "idle" ? cState : dState.phase !== "idle" ? dState : null;
 
   return {
-    supported,
-    phase: state.phase,
-    /** The reply being prepared or played (Listen shows Stop for it) */
-    activeId: state.phase === "idle" ? null : state.id,
-    pendingId: state.phase === "preparing" ? state.id : null,
-    speakingId: state.phase === "playing" ? state.id : null,
-    error: state.error,
-    voices,
+    /** Spoken replies can be offered at all */
+    supported: useCloud || deviceSupported,
+    /** Which voice Listen uses */
+    provider: (useCloud ? "cloud" : "device") as "cloud" | "device",
+    phase: active?.phase ?? "idle",
+    activeId: active ? active.id : null,
+    pendingId: active?.phase === "preparing" ? active.id : null,
+    speakingId: active?.phase === "playing" ? active.id : null,
+    error: cState.error || dState.error,
+    errorCode: cState.errorCode,
+    /** A reply whose cloud speech failed and that the device voice could read instead */
+    deviceFallbackId: deviceSupported && cState.failedId && cState.errorCode !== "empty" ? cState.failedId : null,
+    // the device voice list is only relevant when the device voice is the one in use
+    voices: useCloud ? [] : voices,
     voiceURI,
     activeVoice,
     setVoiceURI,
@@ -279,6 +251,7 @@ export function useSpeech() {
     toggle,
     stop,
     prime,
+    speakWithDevice,
     clearError,
   };
 }

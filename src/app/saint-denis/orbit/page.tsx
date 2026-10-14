@@ -38,7 +38,7 @@ export default async function OrbitPage() {
 
   const caps: [string, boolean, string][] = [
     ["Voice input", ai.voiceInput !== false, "browser dictation"],
-    ["Spoken replies", ai.voicePlayback !== false, "device voices"],
+    ["Spoken replies", ai.voicePlayback !== false, ai.cloudVoice !== false ? "Workers AI MeloTTS" : "device voices"],
     ["Server transcription", ai.serverTranscription === true, "Workers AI Whisper"],
     ["File & photo attachments", ai.fileAttachments === true, "Workers AI conversion, deleted after 60 minutes"],
   ];
