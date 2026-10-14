@@ -1,5 +1,5 @@
 import { combineReports, includeViewer, LAUNCH_OFF, recordedReport, simulateReport, type AnalyticsRange, type LaunchConfig, type Report, type Viewer } from "./model";
-import { getLaunchConfig, getVisitRows } from "./store";
+import { getLaunchConfig, getLaunchConfigShared, getVisitRows, getVisitRowsFresh } from "./store";
 
 export interface PublicAnalytics {
   range: AnalyticsRange;
@@ -24,17 +24,23 @@ export const LAUNCH_REFRESH_MS = 90_000;
  * Mode is on. Both come from the same report shape, so the overview, chart, map, ranking and
  * country count always agree. Recorded figures are never altered.
  */
-export async function getPublicAnalytics(range: AnalyticsRange, viewer: Viewer | null = null, now = Date.now()): Promise<PublicAnalytics> {
+export async function getPublicAnalytics(
+  range: AnalyticsRange,
+  viewer: Viewer | null = null,
+  now = Date.now(),
+  /** an explicit refresh: read the stored figures and settings now instead of the shared cache */
+  { fresh = false }: { fresh?: boolean } = {},
+): Promise<PublicAnalytics> {
   let config: LaunchConfig = LAUNCH_OFF;
   try {
-    config = await getLaunchConfig();
+    config = await (fresh ? getLaunchConfigShared() : getLaunchConfig());
   } catch {
     // settings unreadable: recorded figures only (never assume simulation)
   }
   let recorded: Report;
   let included = false;
   try {
-    const rows = await getVisitRows();
+    const rows = await (fresh ? getVisitRowsFresh() : getVisitRows());
     // the viewer's own visit is counted once, in the recorded figures (see includeViewer)
     ({ report: recorded, included } = includeViewer(recordedReport(rows, range, now), rows, viewer, now));
   } catch {

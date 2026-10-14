@@ -1,4 +1,4 @@
-import { normalizeCountryCode } from "./countries";
+import { displayCountry, normalizeCountryCode } from "./countries";
 import { countryFromGeoHeader, isLikelyBot, type Viewer } from "./model";
 import { visitorCode } from "./store";
 
@@ -13,8 +13,10 @@ import { visitorCode } from "./store";
 export function viewerFromRequest(headers: Headers, sessionCookie: string | undefined, now = Date.now()): Viewer | null {
   const edgeAddress = headers.get("x-nf-client-connection-ip")?.trim() || "";
   if (!edgeAddress) return devTestViewer();
-  const country = countryFromGeoHeader(headers.get("x-nf-geo"));
-  if (!country) return null;
+  const reported = countryFromGeoHeader(headers.get("x-nf-geo"));
+  if (!reported) return null;
+  // the same display code the aggregated records use, so "you" and the ranking always match
+  const country = displayCountry(reported);
   const ua = headers.get("user-agent");
   const counted = !isLikelyBot(ua) && !sessionCookie;
   return { country, code: counted ? visitorCode(edgeAddress, ua || "", now) : null };
@@ -31,5 +33,5 @@ export function viewerFromRequest(headers: Headers, sessionCookie: string | unde
 function devTestViewer(): Viewer | null {
   if (process.env.NODE_ENV !== "development") return null;
   const country = normalizeCountryCode(process.env.ANALYTICS_DEV_COUNTRY);
-  return country ? { country, code: null, test: true } : null;
+  return country ? { country: displayCountry(country), code: null, test: true } : null;
 }

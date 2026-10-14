@@ -92,6 +92,28 @@ export function getVisitRows(): Promise<VisitRow[]> {
   return cachedVisitRows();
 }
 
+/**
+ * A shared uncached read for an explicit refresh: concurrent and back-to-back refreshes within a
+ * few seconds share one query, so the button never multiplies database load. Failures are not
+ * kept (the next refresh tries again).
+ */
+function sharedFresh<T>(load: () => Promise<T>, reuseMs = 5_000): (now?: number) => Promise<T> {
+  let last: { at: number; value: Promise<T> } | null = null;
+  return (now = Date.now()) => {
+    if (last && now - last.at < reuseMs) return last.value;
+    const value = load();
+    const entry = { at: now, value };
+    last = entry;
+    value.catch(() => {
+      if (last === entry) last = null;
+    });
+    return value;
+  };
+}
+
+/** Visit rows read now (Refresh traffic), bypassing the one-minute cache. Read only. */
+export const getVisitRowsFresh = sharedFresh(fetchVisitRows);
+
 /** Collection health for Studio: total stored events, newest event, share with a known country. */
 export async function getCollectionHealth(): Promise<{ stored: number; last24h: number; newest: string | null; withCountry: number }> {
   const db = await getDatabase();
@@ -126,3 +148,6 @@ export function getLaunchConfig(): Promise<LaunchConfig> {
 export function getLaunchConfigFresh(): Promise<LaunchConfig> {
   return fetchLaunchConfig();
 }
+
+/** Launch Mode settings read now (Refresh traffic), shared like getVisitRowsFresh. */
+export const getLaunchConfigShared = sharedFresh(fetchLaunchConfig);

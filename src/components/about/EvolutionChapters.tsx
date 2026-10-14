@@ -181,16 +181,19 @@ export default function EvolutionChapters({
             </div>
 
             {/* Plate: the preview in its original colour, the quote card directly beneath it on
-                the same left and right edges, so image and quote read as one stack */}
+                the same left and right edges, so image and quote read as one stack. The screenshot
+                is fitted like a project preview (ProjectVisual): shown whole, centred, never
+                cropped, stretched or zoomed, with the theme surface filling any space its
+                proportions leave (the 2022 and 2026 captures are wider than the 16:10 frame). */}
             <figure className="relative">
-              <div data-field-surface="image" className="relative aspect-[16/10] w-full overflow-hidden rounded-[22px] sm:rounded-[28px] bg-sunken border border-line shadow-[var(--shadow-2)]">
+              <div data-field-surface="image" className="relative aspect-[16/10] w-full overflow-hidden rounded-[22px] sm:rounded-[28px] bg-surface border border-line shadow-[var(--shadow-2)]">
                 <Image
                   src={m.preview}
                   alt={m.previewAlt}
                   fill
                   unoptimized
                   sizes="(min-width: 1024px) 60vw, 100vw"
-                  className="object-cover object-top transition-transform duration-[1400ms] ease-[cubic-bezier(0.2,0.7,0.1,1)] group-hover:scale-[1.025]"
+                  className="object-contain object-center"
                 />
               </div>
               {m.progression && (

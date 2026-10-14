@@ -7,9 +7,26 @@ try {
   display = null;
 }
 
+/** Names this site sets itself, ahead of the platform's region names. */
+const NAMES: Record<string, string> = { PS: "Palestine" };
+
+/**
+ * The map has no separate Israel region (its geometry, Natural Earth's India point-of-view
+ * edition, draws that land as Palestine), so visits located there are shown under Palestine.
+ * Presentation only: stored events keep the code the platform reported.
+ */
+const DISPLAY_AS: Record<string, string> = { IL: "PS" };
+
+/** The code a country is shown, counted and highlighted under on the public pages. */
+export function displayCountry(code: string): string {
+  return DISPLAY_AS[code] ?? code;
+}
+
 /** English short name for an ISO 3166-1 alpha-2 code (stable across server and browser). */
 export function countryName(code: string): string {
   if (!/^[A-Z]{2}$/.test(code)) return "Unknown";
+  code = displayCountry(code);
+  if (NAMES[code]) return NAMES[code];
   try {
     const n = display?.of(code);
     if (n && n !== code) return n;

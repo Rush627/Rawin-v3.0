@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { youLine, type AnalyticsRange, type Report } from "@/lib/analytics/model";
 import type { PublicAnalytics } from "@/lib/analytics/report";
 import { countryName } from "@/lib/analytics/countries";
@@ -57,30 +58,61 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
   const current = data[range];
   const launch = Boolean(current?.launch ?? initial.launch);
 
-  // one request per period at a time; a period seen more than a minute ago is fetched again
-  const inflight = useRef(new Set<AnalyticsRange>());
+  // One request per period at a time. Each response replaces that period's whole report (one
+  // snapshot for the figures, map, ranking and chart), and only the newest request for a period
+  // may land: an older one still in flight is aborted, and a late answer is dropped by its number.
+  // A period seen more than a minute ago is fetched again.
+  const inflight = useRef(new Map<AnalyticsRange, { seq: number; ctrl: AbortController }>());
+  const seq = useRef(0);
   const fetchedAt = useRef<Partial<Record<AnalyticsRange, number>>>({});
   useEffect(() => {
     fetchedAt.current[initial.range] ??= clock();
   }, [initial.range]);
 
-  const load = async (r: AnalyticsRange) => {
-    if (inflight.current.has(r)) return;
-    inflight.current.add(r);
+  /** "ok", "skipped" (a request for that period is already running), "superseded" or an error. */
+  const load = async (r: AnalyticsRange, { fresh = false } = {}): Promise<"ok" | "skipped" | "superseded" | "busy" | "failed"> => {
+    const running = inflight.current.get(r);
+    if (running && !fresh) return "skipped";
+    running?.ctrl.abort();
+    const mine = { seq: ++seq.current, ctrl: new AbortController() };
+    inflight.current.set(r, mine);
     setLoading(true);
     try {
-      const res = await fetch(`/api/analytics/summary?range=${r}`, { cache: "no-store" });
+      const res = await fetch(`/api/analytics/summary?range=${r}${fresh ? "&fresh=1" : ""}`, { cache: "no-store", signal: mine.ctrl.signal });
+      if (res.status === 429) return "busy";
       const json = (await res.json()) as PublicAnalytics;
-      if (json && typeof json.available === "boolean") {
-        fetchedAt.current[r] = clock();
-        setData((d) => ({ ...d, [r]: json }));
-      }
+      if (inflight.current.get(r)?.seq !== mine.seq) return "superseded";
+      if (!json || typeof json.available !== "boolean") return "failed";
+      fetchedAt.current[r] = clock();
+      setData((d) => ({ ...d, [r]: json }));
+      return json.available ? "ok" : "failed";
     } catch {
-      // keep what is shown; the next refresh tries again
+      // aborted by a newer request, or the network failed: keep what is shown
+      return inflight.current.get(r)?.seq === mine.seq ? "failed" : "superseded";
     } finally {
-      inflight.current.delete(r);
+      if (inflight.current.get(r)?.seq === mine.seq) inflight.current.delete(r);
       setLoading(inflight.current.size > 0);
     }
+  };
+
+  // Refresh traffic: a fresh read of the selected period (recorded figures read now; in Launch
+  // Mode the simulation is recomputed for this moment from its preset and seed). A read only:
+  // it never records a visit. One refresh at a time; the result or the error is announced.
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNote, setRefreshNote] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  // a ref, not the state: clicks in the same tick all see it at once
+  const refreshBusy = useRef(false);
+  const refresh = async () => {
+    if (refreshBusy.current) return;
+    refreshBusy.current = true;
+    setRefreshing(true);
+    setRefreshNote(null);
+    const outcome = await load(range, { fresh: true });
+    refreshBusy.current = false;
+    setRefreshing(false);
+    if (outcome === "ok") setRefreshNote({ tone: "ok", text: `Updated ${new Date(clock()).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` });
+    else if (outcome === "busy") setRefreshNote({ tone: "error", text: "Refreshed a lot just now. Try again in a few seconds." });
+    else if (outcome === "failed") setRefreshNote({ tone: "error", text: "Could not refresh. Try again." });
   };
 
   const choose = (r: AnalyticsRange) => {
@@ -125,6 +157,7 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
   const viewer = current?.you ?? null;
   const you = viewer?.country ?? null;
   const youName = you ? countryName(you) : null;
+  // the country's own figure (the map's and the ranking's, unchanged); youLine counts the others
   const youCount = you ? counts.get(you) || 0 : 0;
 
   return (
@@ -218,7 +251,8 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
                   label={`World map of visitors over ${longRange}: ${ranked.length} countries. ${ranked.slice(0, 3).map((c) => `${countryName(c.code)} ${n(c.visitors)}`).join(", ")}. The country list beside it has every value.`}
                 />
               </div>
-              {/* a tapped or clicked country, stated in text under the map (works without hover) */}
+              {/* under the map: a tapped or clicked country (works without hover), and Refresh traffic */}
+              <div className="an-map-foot">
               <p className="an-pick" role="status">
                 {picked ? (
                   <>
@@ -232,6 +266,16 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
                   <span className="text-fg-subtle">Tap or click a country for its visitors.</span>
                 )}
               </p>
+              <div className="an-refresh-row">
+                <span className="an-refresh-note" role="status" data-tone={refreshNote?.tone}>
+                  {refreshNote?.text}
+                </span>
+                <button type="button" onClick={refresh} className="an-refresh" aria-busy={refreshing} aria-disabled={refreshing} data-busy={refreshing || undefined}>
+                  <RefreshCw className="an-refresh-icon" aria-hidden="true" />
+                  {refreshing ? "Refreshing" : "Refresh traffic"}
+                </button>
+              </div>
+              </div>
               <div className="mt-auto pt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-fg-subtle">
                 <span className="flex items-center gap-1.5" aria-hidden="true">
                   Fewer visitors

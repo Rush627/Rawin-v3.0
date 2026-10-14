@@ -17,7 +17,7 @@
  *    nothing is written as they move, and nothing simulated ever enters the recorded events.
  */
 
-import { normalizeCountryCode } from "./countries";
+import { displayCountry, normalizeCountryCode } from "./countries";
 
 export const ANALYTICS_RANGES = ["24h", "7d", "30d"] as const;
 export type AnalyticsRange = (typeof ANALYTICS_RANGES)[number];
@@ -146,11 +146,17 @@ function viewsPerVisitor(seed: number, hourStart: number): number {
 
 /* ------------------------------------------------------------------ simulated countries */
 
-/** Countries the illustrative mix may use besides India (Pakistan is deliberately not included). */
+/**
+ * Countries the simulation never generates. Applied to the illustrative mix only: recorded visits
+ * from anywhere are always counted and shown.
+ */
+export const SIM_EXCLUDED: readonly string[] = ["PK", "IL"];
+
+/** Countries the illustrative mix may use besides India (the excluded ones are not listed). */
 export const SIM_COUNTRY_POOL = [
   "US", "GB", "DE", "CA", "AE", "SG", "AU", "NL", "FR", "JP", "BD", "NP", "LK", "SA", "QA", "ID", "MY", "IE",
   "SE", "CH", "IT", "ES", "BR", "ZA", "KR", "NZ", "PL", "FI", "NO", "DK", "PT", "TR", "KE", "NG", "MX", "PH",
-  "VN", "TH", "EG", "IL", "BE", "AT", "CZ", "RO", "AR",
+  "VN", "TH", "EG", "BE", "AT", "CZ", "RO", "AR",
 ] as const;
 
 export interface CountryShare {
@@ -161,8 +167,8 @@ export interface CountryShare {
 /** The seed's country mix: India first (36–46 %), then 16–24 countries with a long-tail decline. */
 export function simulatedCountryMix(seed: number): CountryShare[] {
   const india = 0.36 + 0.1 * hash01(seed, 101);
-  // (defensive: neither India, placed first, nor Pakistan can enter the generated tail)
-  const pool: string[] = [...SIM_COUNTRY_POOL].filter((c: string) => c !== "PK" && c !== "IN");
+  // (defensive: neither India, placed first, nor an excluded country can enter the generated tail)
+  const pool: string[] = [...SIM_COUNTRY_POOL].filter((c: string) => c !== "IN" && !SIM_EXCLUDED.includes(c));
   // deterministic shuffle
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(hash01(seed, 103, i) * (i + 1));
@@ -315,8 +321,9 @@ export function recordedReport(rows: VisitRow[], range: AnalyticsRange, now: num
     views += r.views;
     all.add(id);
     if (r.country) {
-      if (!byCountry.has(r.country)) byCountry.set(r.country, new Set());
-      byCountry.get(r.country)!.add(id);
+      const code = displayCountry(r.country);
+      if (!byCountry.has(code)) byCountry.set(code, new Set());
+      byCountry.get(code)!.add(id);
     } else unknown.add(id);
   }
   return {
@@ -392,7 +399,7 @@ export function includeViewer(recorded: Report, rows: VisitRow[], viewer: Viewer
   if (!viewer?.code) return { report: recorded, included: false };
   const today = istDay(now);
   const mine = rows.filter((r) => r.day === today && r.visitor === viewer.code);
-  if (mine.length > 0) return { report: recorded, included: mine.some((r) => r.country === viewer.country) };
+  if (mine.length > 0) return { report: recorded, included: mine.some((r) => r.country !== null && displayCountry(r.country) === viewer.country) };
   const last = recorded.series.length - 1;
   const countries = recorded.countries.some((c) => c.code === viewer.country)
     ? recorded.countries.map((c) => (c.code === viewer.country ? { ...c, visitors: c.visitors + 1 } : c))
@@ -410,9 +417,18 @@ export function includeViewer(recorded: Report, rows: VisitRow[], viewer: Viewer
   };
 }
 
-/** The personal line beside the map: the count is the map's and the ranking's own figure. */
+/**
+ * Other visitors from the viewer's country: the country's count (the map's and the ranking's own
+ * figure) less the viewer, only when the report confirms the viewer is part of that count.
+ * Never below zero, and never applied to any total, ranking or map value.
+ */
+export function othersFrom(count: number, included: boolean): number {
+  return Math.max(0, count - (included ? 1 : 0));
+}
+
+/** The personal line beside the map. */
 export function youLine(count: number, included: boolean): string {
-  if (count <= 0) return "No visitors came from there in this period.";
-  if (included && count === 1) return "You’re the only visitor from there in this period.";
-  return `${count.toLocaleString("en-IN")} ${count === 1 ? "visitor" : "visitors"} came from there too.`;
+  const others = othersFrom(count, included);
+  if (others === 0) return included ? "No other visitors came from there in this period." : "No visitors came from there in this period.";
+  return `${others.toLocaleString("en-IN")} ${others === 1 ? "visitor" : "visitors"} came from there too.`;
 }
