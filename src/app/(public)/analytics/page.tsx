@@ -6,7 +6,7 @@ import ContributionHeatmap from "@/components/analytics/ContributionHeatmap";
 import HeroInstrument from "@/components/analytics/HeroInstrument";
 import { getPublicAnalytics } from "@/lib/analytics/report";
 import { getGithubActivity } from "@/lib/analytics/github";
-import { getSiteContent } from "@/lib/site-content";
+import { getSiteContent, publicSiteClosed } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Analytics · Visitors and Activity on RAWIN",
@@ -30,6 +30,9 @@ async function GithubSection({ profileUrl }: { profileUrl: string }) {
 }
 
 export default async function AnalyticsPage() {
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
   const [initial, content] = await Promise.all([getPublicAnalytics("7d"), getSiteContent()]);
 
   return (

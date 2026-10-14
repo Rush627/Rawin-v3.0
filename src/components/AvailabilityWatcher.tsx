@@ -30,6 +30,11 @@ export default function AvailabilityWatcher({
   useEffect(() => {
     statusRef.current = state.status;
   }, [state.status]);
+  // whether the server rendered the maintenance screen for this page (updated by each refresh)
+  const serverFallbackRef = useRef(isServerFallback);
+  useEffect(() => {
+    serverFallbackRef.current = isServerFallback;
+  }, [isServerFallback]);
 
   const checkAvailability = useCallback(
     async (_force?: boolean) => {
@@ -57,8 +62,11 @@ export default function AvailabilityWatcher({
 
           setState(data);
 
-          // 1. Recovery from maintenance:
-          if (prevStatus !== "live" && nextStatus === "live") {
+          // 1. Recovery from maintenance. The page itself is static and may still be the
+          // maintenance copy for a few seconds after the setting changes, so a page the server
+          // rendered as maintenance keeps refreshing (at the maintenance poll rate) until the
+          // server copy is live too; one refresh is not always enough.
+          if (nextStatus === "live" && (prevStatus !== "live" || serverFallbackRef.current)) {
             router.refresh();
           }
 

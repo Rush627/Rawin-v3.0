@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { limitOrbitRequest } from "@/lib/aura/durable-limit";
 import { transcribeAudio, TRANSCRIBE_LIMITS } from "@/lib/aura/transcribe";
 import { getSiteContent } from "@/lib/site-content";
+import { publicApiGate } from "@/lib/public-gate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +13,8 @@ export const dynamic = "force-dynamic";
  * Nothing is stored; audio content is never logged.
  */
 export async function POST(req: NextRequest) {
+  const closed = await publicApiGate("Orbit transcription");
+  if (closed) return closed;
   const site = await getSiteContent();
   if (site.ai?.serverTranscription !== true) {
     return NextResponse.json({ error: "Orbit transcription is not enabled." }, { status: 403 });

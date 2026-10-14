@@ -11,6 +11,9 @@ import ArticleContents from "@/components/blog/ArticleContents";
 import EditorialFigure from "@/components/blog/EditorialFigure";
 import { resolveMotif } from "@/components/blog/motifs";
 import { formatPostDate, formatReadTime } from "@/components/blog/format";
+import { publicSiteClosed } from "@/lib/site-content";
+import { CLOSED_METADATA } from "@/lib/page-metadata";
+import ContentUnavailable from "@/components/system/ContentUnavailable";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -36,8 +39,11 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
+  if (await publicSiteClosed()) return CLOSED_METADATA;
   const { slug } = await params;
-  const post = await getPostBySlug(slug, false);
+  // unreadable (not missing): described as unavailable, never as "not found"
+  const post = await getPostBySlug(slug, false).catch(() => undefined);
+  if (post === undefined) return CLOSED_METADATA;
 
   if (!post) {
     return {
@@ -70,8 +76,14 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
   const { slug } = await params;
-  const [post, posts] = await Promise.all([getPostBySlug(slug, false), getPublishedPosts()]);
+  // unreadable data: a short-lived "temporarily unavailable" screen, never a cached 404
+  const loaded = await Promise.all([getPostBySlug(slug, false), getPublishedPosts()]).catch(() => null);
+  if (!loaded) return <ContentUnavailable />;
+  const [post, posts] = loaded;
 
   if (!post || post.status !== "published") {
     notFound();

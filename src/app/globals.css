@@ -3622,6 +3622,14 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
+/* Sign-in fields on phones: iOS Safari zooms the page in when a field below 16px gets focus,
+   which crops the screen and forces scrolling. Declared after .admin-input so it wins. */
+@media (max-width: 639.98px) {
+  .admin-input-touch {
+    font-size: 16px;
+  }
+}
+
 .admin-input::placeholder {
   color: var(--fg-subtle);
 }

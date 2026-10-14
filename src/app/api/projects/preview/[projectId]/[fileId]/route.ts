@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicApiGate } from "@/lib/public-gate";
 import { Readable } from "stream";
 import { getProjectPreviewStream } from "@/lib/projects";
 import { ObjectId } from "mongodb";
@@ -10,6 +11,9 @@ export async function GET(
   context: { params: Promise<{ projectId: string; fileId: string }> }
 ) {
   const { projectId, fileId } = await context.params;
+  const closed = await publicApiGate("This image");
+  if (closed) return closed;
+
 
   if (!projectId || !ObjectId.isValid(projectId) || !fileId || !ObjectId.isValid(fileId)) {
     return NextResponse.json({ error: "Invalid project ID or file ID" }, { status: 400 });

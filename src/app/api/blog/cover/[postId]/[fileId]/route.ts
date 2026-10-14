@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicApiGate } from "@/lib/public-gate";
 import { Readable } from "stream";
 import { getBlogCoverStream } from "@/lib/blog";
 import { ObjectId } from "mongodb";
@@ -10,6 +11,9 @@ export async function GET(
   context: { params: Promise<{ postId: string; fileId: string }> }
 ) {
   const { postId, fileId } = await context.params;
+  const closed = await publicApiGate("This image");
+  if (closed) return closed;
+
 
   if (!postId || !ObjectId.isValid(postId) || !fileId || !ObjectId.isValid(fileId)) {
     return NextResponse.json({ error: "Invalid post ID or file ID" }, { status: 400 });

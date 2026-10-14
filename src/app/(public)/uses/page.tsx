@@ -1,4 +1,4 @@
-import { getSiteContent, splitLedgerDescription, type DailyStackItem, type DevStackItem, type BuildStepItem, type ExploringItem } from "@/lib/site-content";
+import { getSiteContent, splitLedgerDescription, type DailyStackItem, type DevStackItem, type BuildStepItem, type ExploringItem, publicSiteClosed } from "@/lib/site-content";
 import MaskText from "@/components/system/MaskText";
 import Reveal from "@/components/system/Reveal";
 import ActivateOnView from "@/components/uses/ActivateOnView";
@@ -315,6 +315,9 @@ function groupDevStack(items: DevStackItem[]) {
 
 
 export default async function UsesPage() {
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
   const content = await getSiteContent();
   const uses = content.uses;
 

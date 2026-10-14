@@ -10,21 +10,22 @@ export const metadata: Metadata = {
 };
 
 /**
- * Served by the proxy (as a rewrite, with HTTP 503) for every public page while maintenance or
- * offline mode is on. Only the maintenance copy is rendered; no page content is included.
+ * A standalone maintenance screen (the public layout renders the same view in place on every
+ * public page). Only the maintenance copy is rendered; no page content is included, and when the
+ * setting cannot be read the generic "temporarily unavailable" copy is shown instead of an error.
  */
 export default async function MaintenancePage() {
-  const content = await getSiteContent();
-  const m = content.maintenance;
-  const withMessage = m?.enabled && m.showMessage;
+  const content = await getSiteContent().catch(() => null);
+  const m = content?.maintenance;
+  const withMessage = Boolean(m?.enabled && m.showMessage);
   return (
     <main className="min-h-screen min-h-dvh flex flex-col justify-center items-center w-full relative z-10">
       <RawinErrorView
         code="503"
         title={withMessage ? "We'll be back soon." : "Site temporarily unavailable"}
         message={withMessage ? "The site is undergoing scheduled maintenance." : "The site is currently offline for updates."}
-        maintenanceMessage={withMessage ? m.message : undefined}
-        endsAt={withMessage ? m.endsAt || undefined : undefined}
+        maintenanceMessage={withMessage ? m?.message : undefined}
+        endsAt={withMessage ? m?.endsAt || undefined : undefined}
         actionLabel="Refresh"
       />
     </main>

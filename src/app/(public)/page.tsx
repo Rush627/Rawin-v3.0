@@ -9,14 +9,17 @@ import SectionHead from "@/components/system/SectionHead";
 import LaunchExperience from "@/components/launch/LaunchExperience";
 import OrbitInvite from "@/components/home/OrbitInvite";
 import { getFeaturedProjects } from "@/lib/projects";
-import { getSiteContent } from "@/lib/site-content";
+import { getSiteContent, publicSiteClosed } from "@/lib/site-content";
 import { AVAILABILITY_TONE, journeyForDisplay, seoFor, valuesForDisplay } from "@/lib/cms/fields";
 import { SITE_URL } from "@/lib/site-url";
 import type { Metadata } from "next";
+import { CLOSED_METADATA } from "@/lib/page-metadata";
+import ContentUnavailable from "@/components/system/ContentUnavailable";
 
 export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (await publicSiteClosed()) return CLOSED_METADATA;
   const content = await getSiteContent();
   const seo = seoFor(content.seo, "home", { title: content.global.siteTitle, description: content.global.shortBio });
   return {
@@ -41,7 +44,13 @@ function emphasiseLast(text: string) {
 }
 
 export default async function HomePage() {
-  const [featuredProjects, siteContent] = await Promise.all([getFeaturedProjects(), getSiteContent()]);
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
+  // unreadable data: a short-lived "temporarily unavailable" screen, never an empty page
+  const loaded = await Promise.all([getFeaturedProjects(), getSiteContent()]).catch(() => null);
+  if (!loaded) return <ContentUnavailable />;
+  const [featuredProjects, siteContent] = loaded;
   const home = siteContent.home;
   const projects = featuredProjects ?? [];
 

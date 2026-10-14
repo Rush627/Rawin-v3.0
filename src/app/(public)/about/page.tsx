@@ -8,7 +8,7 @@ import Chronology from "@/components/home/Chronology";
 import EvolutionChapters from "@/components/about/EvolutionChapters";
 import PrinciplesList from "@/components/about/PrinciplesList";
 import { journeyForDisplay } from "@/lib/cms/fields";
-import { getSiteContent } from "@/lib/site-content";
+import { getSiteContent, publicSiteClosed } from "@/lib/site-content";
 import { pageMetadata } from "@/lib/page-metadata";
 
 export function generateMetadata() {
@@ -57,6 +57,9 @@ function splitEmphasis(text: string, tail = 1): [string, string] {
 }
 
 export default async function AboutPage() {
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
   const siteContent = await getSiteContent();
   const about = siteContent.about;
 

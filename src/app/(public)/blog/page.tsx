@@ -7,6 +7,8 @@ import Reveal from "@/components/system/Reveal";
 import ArticleCover from "@/components/blog/ArticleCover";
 import { formatPostDate, formatReadTime } from "@/components/blog/format";
 import { pageMetadata } from "@/lib/page-metadata";
+import ContentUnavailable from "@/components/system/ContentUnavailable";
+import { publicSiteClosed } from "@/lib/site-content";
 
 export function generateMetadata() {
   return pageMetadata("blog", "/blog");
@@ -88,7 +90,12 @@ function PairStory({ post }: { post: BlogPost }) {
 }
 
 export default async function BlogPage() {
-  const posts = await getPublishedPosts();
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
+  // unreadable data: a short-lived "temporarily unavailable" screen, never an empty list
+  const posts = await getPublishedPosts().catch(() => null);
+  if (!posts) return <ContentUnavailable />;
   const lead = posts.find((p) => p.featured) ?? posts[0] ?? null;
   const rest = lead ? posts.filter((p) => (p._id || p.slug) !== (lead._id || lead.slug)) : [];
   const pair = rest.slice(0, 2);

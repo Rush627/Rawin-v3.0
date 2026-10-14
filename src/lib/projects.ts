@@ -132,13 +132,7 @@ const getCachedProjects = unstable_cache(
 );
 
 export const getProjects = cache(async (): Promise<Project[]> => {
-  try {
-    return await getCachedProjects();
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[Projects] Read fallback (in-memory only):", msg);
-    return [];
-  }
+  return getCachedProjects();
 });
 
 /**
@@ -171,13 +165,7 @@ const getCachedFeaturedProjects = unstable_cache(
 );
 
 export const getFeaturedProjects = cache(async (): Promise<Project[]> => {
-  try {
-    return await getCachedFeaturedProjects();
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[Projects] Read fallback featured (in-memory only):", msg);
-    return [];
-  }
+  return getCachedFeaturedProjects();
 });
 
 /**
@@ -197,21 +185,15 @@ async function fetchProjectBySlugFromDb(slug: string): Promise<Project | null> {
 }
 
 export const getProjectBySlug = cache(async (slug: string): Promise<Project | null> => {
-  try {
-    const fetcher = unstable_cache(
-      async () => fetchProjectBySlugFromDb(slug),
-      [`project-slug-${slug.trim().toLowerCase()}`],
-      {
-        tags: ["projects"],
-        revalidate: 3600,
-      }
-    );
-    return await fetcher();
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[Projects] Read fallback for slug (${slug}):`, msg);
-    return null;
-  }
+  const fetcher = unstable_cache(
+    async () => fetchProjectBySlugFromDb(slug),
+    [`project-slug-${slug.trim().toLowerCase()}`],
+    {
+      tags: ["projects"],
+      revalidate: 3600,
+    }
+  );
+  return fetcher();
 });
 
 /**

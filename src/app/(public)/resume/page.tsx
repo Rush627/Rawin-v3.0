@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
-import { getSiteContent } from "@/lib/site-content";
+import { getSiteContent, publicSiteClosed } from "@/lib/site-content";
 import { AVAILABILITY_RESUME_INDICATOR } from "@/lib/cms/fields";
 import MaskText from "@/components/system/MaskText";
 import Reveal from "@/components/system/Reveal";
@@ -60,6 +60,9 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * and the rail draws with the scroll where the browser supports scroll-driven animation.
  */
 export default async function ResumePage() {
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
   const content = await getSiteContent();
   const resume = content.resume;
   const global = content.global;

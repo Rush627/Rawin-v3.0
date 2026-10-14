@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicApiGate } from "@/lib/public-gate";
 import { getResumePdfFile } from "@/lib/site-content";
 import { Readable } from "stream";
 import { ObjectId } from "mongodb";
@@ -10,6 +11,9 @@ export async function GET(
   context: { params: Promise<{ fileId: string }> }
 ) {
   const { fileId } = await context.params;
+  const closed = await publicApiGate("The resume");
+  if (closed) return closed;
+
 
   if (!fileId || !ObjectId.isValid(fileId)) {
     return NextResponse.json({ error: "Invalid resume file ID" }, { status: 400 });

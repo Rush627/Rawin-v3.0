@@ -1,12 +1,23 @@
 import type { Metadata } from "next";
-import { getSiteContent } from "./site-content";
+import { getSiteContent, publicSiteClosed } from "./site-content";
 import { seoFor, type SeoPageKey } from "./cms/fields";
+
+/**
+ * Metadata for any public page while the site is closed (maintenance, offline, or content that
+ * cannot be read): the page shows the maintenance screen, so it must not be indexed, and no
+ * page data is queried to describe it.
+ */
+export const CLOSED_METADATA: Metadata = {
+  title: "Temporarily unavailable | RAWIN",
+  robots: { index: false, follow: false },
+};
 
 /**
  * Metadata for a public page: the CMS SEO override (Site Content → SEO) or the page's shipped
  * wording, a canonical URL for the page itself and matching Open Graph fields.
  */
 export async function pageMetadata(key: SeoPageKey, path: string): Promise<Metadata> {
+  if (await publicSiteClosed()) return CLOSED_METADATA;
   const content = await getSiteContent();
   const { title, description } = seoFor(content.seo, key);
   return {

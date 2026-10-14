@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { limitOrbitRequest } from "@/lib/aura/durable-limit";
 import { startUpload, UploadError } from "@/lib/aura/uploads";
 import { getSiteContent } from "@/lib/site-content";
+import { publicApiGate } from "@/lib/public-gate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many uploads from this connection. Please wait a moment." }, { status: 429, headers: { "Retry-After": String(limit.resetInSeconds) } });
   }
 
+  const closed = await publicApiGate("Orbit uploads");
+  if (closed) return closed;
   const site = await getSiteContent();
   if (site.ai?.fileAttachments !== true) {
     return NextResponse.json({ error: "File attachments are not enabled for Orbit." }, { status: 403 });

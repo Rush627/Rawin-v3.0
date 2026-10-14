@@ -1,8 +1,9 @@
 import PageIntro from "@/components/system/PageIntro";
 import ProjectsExplorer from "@/components/work/ProjectsExplorer";
 import { getProjects } from "@/lib/projects";
-import { getSiteContent } from "@/lib/site-content";
+import { getSiteContent, publicSiteClosed } from "@/lib/site-content";
 import { pageMetadata } from "@/lib/page-metadata";
+import ContentUnavailable from "@/components/system/ContentUnavailable";
 
 export function generateMetadata() {
   return pageMetadata("projects", "/projects");
@@ -11,7 +12,13 @@ export function generateMetadata() {
 export const revalidate = 3600;
 
 export default async function ProjectsPage() {
-  const [projects, siteContent] = await Promise.all([getProjects(), getSiteContent()]);
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
+  // unreadable data: a short-lived "temporarily unavailable" screen, never an empty list
+  const loaded = await Promise.all([getProjects(), getSiteContent()]).catch(() => null);
+  if (!loaded) return <ContentUnavailable />;
+  const [projects, siteContent] = loaded;
   const shipped = projects.filter((p) => p.status === "completed").length;
   const years = projects.map((p) => Number.parseInt(p.year || "", 10)).filter((n) => Number.isFinite(n));
   const span = years.length ? `${Math.min(...years)} - ${Math.max(...years)}` : "-";

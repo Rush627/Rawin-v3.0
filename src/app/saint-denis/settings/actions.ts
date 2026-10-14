@@ -107,6 +107,9 @@ export async function changePasswordAction(
   }
 }
 
+/** Public pages to refresh after an availability change (the layout revalidation covers the rest). */
+const PUBLIC_PATHS = ["/", "/about", "/projects", "/blog", "/uses", "/resume", "/contact", "/ai", "/analytics", "/saint-denis/settings"];
+
 export interface MaintenanceActionState {
   success?: boolean;
   error?: string;
@@ -123,6 +126,11 @@ export async function saveAvailabilityAction({
   durationMinutes?: number | null;
   message?: string;
 }): Promise<MaintenanceActionState> {
+  // getAdminSession() also reads the account record and returns null when it cannot, so an
+  // unreachable database is checked first instead of being reported as "Unauthorized"
+  if (!(await getDatabase())) {
+    return { error: "The database is unavailable. The site's availability was not changed." };
+  }
   const session = await getAdminSession();
   if (!session) {
     return { error: "Unauthorized. Administrator session required." };
@@ -155,48 +163,62 @@ export async function saveAvailabilityAction({
     return { error: "Maintenance message must not exceed 300 characters." };
   }
 
+  // 1. persist, and succeed only when the write reached the content document
+  let stored: boolean;
   try {
-    const success = await updateSiteSection("maintenance", {
+    stored = await updateSiteSection("maintenance", {
       enabled,
       showMessage,
       message: message || "We'll be back shortly.",
       endsAt,
     });
-
-    if (!success) {
-      return { error: "Failed to persist maintenance settings. Please try again." };
-    }
-
-    try {
-      invalidateCacheTag("site-content");
-    } catch {}
-
-    const publicPaths = ["/", "/about", "/projects", "/blog", "/uses", "/resume", "/contact", "/ai", "/analytics", "/saint-denis/settings"];
-    for (const p of publicPaths) {
-      try {
-        revalidatePath(p);
-      } catch {}
-    }
-    try {
-      revalidatePath("/", "layout");
-    } catch {}
-
-    return {
-      success: true,
-      message: enabled
-        ? (showMessage ? "Maintenance mode activated." : "Site offline mode activated.")
-        : "Website is live and fully accessible.",
-      maintenance: {
-        enabled,
-        showMessage,
-        message: message || "We'll be back shortly.",
-        endsAt,
-      },
-    };
-  } catch (err) {
-    console.error("[Settings] Maintenance update error:", err);
-    return { error: "An unexpected error occurred while updating maintenance settings." };
+  } catch {
+    // updateSiteSection logs the cause (without connection details)
+    return { error: "The database could not save the change. The site's availability was not changed." };
   }
+  if (!stored) {
+    return { error: "The change was not confirmed by the database. The site's availability was not changed." };
+  }
+
+  // 2. the change is stored: make the public pages pick it up. A failure here does not undo
+  // the change and is not reported as one: open tabs follow the stored setting through
+  // /api/availability (one-minute cache, also purged here), and pages rendered while
+  // maintenance is on live for MAINTENANCE_PAGE_TTL seconds only.
+  const failed: string[] = [];
+  try {
+    invalidateCacheTag("site-content");
+  } catch {
+    failed.push("site-content");
+  }
+  for (const p of PUBLIC_PATHS) {
+    try {
+      revalidatePath(p);
+    } catch {
+      failed.push(p);
+    }
+  }
+  try {
+    revalidatePath("/", "layout");
+  } catch {
+    failed.push("layout");
+  }
+  if (failed.length) {
+    console.error(`[Settings] Availability saved; cache refresh failed for: ${failed.join(", ")}`);
+  }
+
+  return {
+    success: true,
+    message: (enabled
+      ? (showMessage ? "Maintenance mode activated." : "Site offline mode activated.")
+      : "Website is live and fully accessible.") +
+      (failed.length ? " The public cache could not be refreshed, so some pages may take longer to follow; open pages update within a minute." : ""),
+    maintenance: {
+      enabled,
+      showMessage,
+      message: message || "We'll be back shortly.",
+      endsAt,
+    },
+  };
 }
 
 export async function updateMaintenanceAction(

@@ -4,8 +4,7 @@ import { SESSION_COOKIE_NAME } from "@/lib/auth-token";
 import { checkAuraRateLimit } from "@/lib/aura/rate-limit";
 import { getPublicAnalytics } from "@/lib/analytics/report";
 import { viewerFromRequest } from "@/lib/analytics/viewer";
-import { getSiteContent, maintenanceActiveNow } from "@/lib/site-content";
-import { getAdminSession } from "@/lib/auth";
+import { publicApiGate } from "@/lib/public-gate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,16 +21,8 @@ export const dynamic = "force-dynamic";
  * database; over the limit the request is refused with 429 and the page offers a retry.
  */
 export async function GET(req: NextRequest) {
-  const content = await getSiteContent();
-  if (maintenanceActiveNow(content.maintenance)) {
-    const admin = await getAdminSession();
-    if (!admin) {
-      return NextResponse.json(
-        { error: "Maintenance mode active." },
-        { status: 503, headers: { "Cache-Control": "no-store, no-cache" } }
-      );
-    }
-  }
+  const closed = await publicApiGate("Analytics");
+  if (closed) return closed;
 
   const raw = req.nextUrl.searchParams.get("range") || "7d";
   if (!(ANALYTICS_RANGES as readonly string[]).includes(raw)) {

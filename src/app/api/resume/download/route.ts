@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicApiGate } from "@/lib/public-gate";
 import { getResumePdfFile } from "@/lib/site-content";
 import { Readable } from "stream";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const closed = await publicApiGate("The resume");
+  if (closed) return closed;
+
   try {
     const pdf = await getResumePdfFile();
 

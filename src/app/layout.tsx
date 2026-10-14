@@ -16,8 +16,7 @@ import { GlassProvider } from "@/components/glass/GlassProvider";
 import { buildThemeBootScript, THEME_COLOR } from "@/components/theme/theme-script";
 import { seoFor } from "@/lib/cms/fields";
 import { BUNDLED } from "@/lib/brand-assets";
-import { getSiteContent, DEFAULT_SITE_CONTENT, maintenanceActiveNow } from "@/lib/site-content";
-import { getAdminSession } from "@/lib/auth";
+import { getSiteContent, DEFAULT_SITE_CONTENT, maintenanceActiveNow, type SiteContent } from "@/lib/site-content";
 import { SITE_URL } from "@/lib/site-url";
 
 const geistSans = Geist({
@@ -40,8 +39,20 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
+/**
+ * The root shell wraps Studio as well as the public pages, and uses site content only for
+ * presentation (favicons, first-visit theme, default metadata) and the availability watcher's
+ * starting state. It must render even when the content cannot be read (the Studio sign-in page
+ * reports that itself), so it falls back to the built-in presentation here. Public pages never
+ * render from that fallback: the public layout and the pages read the content themselves and
+ * stop when it is unavailable. Like the public layout, it never reads the request (see there).
+ */
+async function shellContent(): Promise<SiteContent | null> {
+  return getSiteContent().catch(() => null);
+}
+
 export async function generateMetadata(): Promise<Metadata> {
-  const content = await getSiteContent();
+  const content = (await shellContent()) ?? DEFAULT_SITE_CONTENT;
   const siteTitle = content.global?.siteTitle?.trim() || DEFAULT_SITE_CONTENT.global.siteTitle;
   const siteDescription = content.global?.shortBio?.trim() || DEFAULT_SITE_CONTENT.global.shortBio;
   const brandName = content.global?.brandName?.trim() || DEFAULT_SITE_CONTENT.global.brandName;
@@ -78,14 +89,15 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const content = await getSiteContent();
+  const stored = await shellContent();
+  const content = stored ?? DEFAULT_SITE_CONTENT;
 
-  // content may be cached for a while: the end of a timed window is checked at request time
-  const isMaintenanceActive = maintenanceActiveNow(content.maintenance);
-  const adminSession = isMaintenanceActive ? await getAdminSession() : null;
-  const showMaintenance = isMaintenanceActive && !adminSession;
+  // the same decision as the public layout (stored setting only, end of a timed window checked
+  // at render time). Unreadable content is treated as closed, as the public layout does: the
+  // watcher then polls quickly and refreshes once the site answers as live.
+  const showMaintenance = stored === null || maintenanceActiveNow(stored.maintenance);
   const initialStatus = showMaintenance
-    ? (content.maintenance?.showMessage ? "maintenance" : "offline")
+    ? (stored?.maintenance?.showMessage ? "maintenance" : "offline")
     : "live";
 
   return (

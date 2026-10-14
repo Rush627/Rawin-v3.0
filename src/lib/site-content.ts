@@ -1744,15 +1744,69 @@ const getCachedSiteContent = unstable_cache(
   }
 );
 
+/**
+ * The public site content (tag-cached). Throws when the content cannot be read and no cached
+ * copy exists: built-in defaults are never substituted, because a page rendered from them would
+ * be cached as if it were the stored content, and their maintenance setting ("off") would open
+ * a site that may be offline. A static page whose regeneration throws keeps serving its last
+ * good version; callers that can do without content (the root shell, APIs) catch explicitly.
+ */
 export const getSiteContent = cache(async (): Promise<SiteContent> => {
   try {
     return await getCachedSiteContent();
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[SiteContent] Read error fallback (in-memory only):", msg);
-    return DEFAULT_SITE_CONTENT;
+    console.error("[SiteContent] Content unavailable:", err instanceof Error ? err.name : "unknown");
+    throw new Error("Site content is temporarily unavailable.");
   }
 });
+
+/**
+ * How long a page rendered while maintenance or offline mode is on may be cached (seconds). The
+ * maintenance decision is made from the cached content when a page is rendered, so a page
+ * rendered during maintenance must not live for the usual hour: if a cache purge after a Studio
+ * change is lost, or a timed window ends with nobody saving anything, the page still converges
+ * within this window.
+ */
+export const MAINTENANCE_PAGE_TTL = 30;
+
+/** The same for a page rendered while the content could not be read at all (seconds). */
+export const UNAVAILABLE_PAGE_TTL = 10;
+
+const maintenanceWindowMarker = unstable_cache(async () => true, ["maintenance-page-ttl"], {
+  revalidate: MAINTENANCE_PAGE_TTL,
+});
+const unavailableMarker = unstable_cache(async () => true, ["unavailable-page-ttl"], {
+  revalidate: UNAVAILABLE_PAGE_TTL,
+});
+
+/**
+ * Called by the public layout while maintenance is on: a cached read with a short lifetime,
+ * which lowers the revalidation period of the page being rendered to MAINTENANCE_PAGE_TTL
+ * (Next.js uses the shortest lifetime of the cached reads a static render makes).
+ */
+export async function shortenPageLifetimeForMaintenance(): Promise<void> {
+  await maintenanceWindowMarker().catch(() => undefined);
+}
+
+/** As above, for the "temporarily unavailable" screen (UNAVAILABLE_PAGE_TTL). */
+export async function shortenPageLifetimeForUnavailable(): Promise<void> {
+  await unavailableMarker().catch(() => undefined);
+}
+
+/**
+ * Whether a public page must render nothing of its own: maintenance or offline mode is on, or
+ * the setting cannot be read (unknown is treated as closed, never as live). Next.js renders a
+ * page in parallel with its layout, so the layout showing the maintenance screen does not stop
+ * the page's own queries; each public page (and its metadata) checks this first, so a failing
+ * project, post or analytics query can never break the maintenance screen.
+ */
+export async function publicSiteClosed(): Promise<boolean> {
+  try {
+    return maintenanceActiveNow((await getSiteContent()).maintenance);
+  } catch {
+    return true;
+  }
+}
 
 /**
  * Uncached read for the admin: editors start from what is stored right now, not from the
@@ -1811,7 +1865,8 @@ export async function updateSiteSection<K extends ContentSectionKey>(
       // Ignore outside request context
     }
 
-    return result.acknowledged;
+    // stored only when the write reached the content document (updated, or created by the upsert)
+    return result.acknowledged && (result.matchedCount === 1 || result.upsertedCount === 1);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[SiteContent] Error updating section (${section}):`, msg);
@@ -2406,7 +2461,8 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
       revision,
     };
   } catch (err) {
-    console.error("[getPublicAvailability] error:", err);
+    // the category only: driver errors can carry host names and topology details
+    console.error("[getPublicAvailability] unavailable:", err instanceof Error ? err.name : "unknown");
     throw err;
   }
 }

@@ -44,9 +44,13 @@ export default function AdminLoginPage() {
         <p className="relative label-mono text-fg-subtle">Authorized Developer access only</p>
       </section>
 
-      {/* Form */}
-      <section className="relative flex flex-col px-5 sm:px-10 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <div className="flex items-center justify-between h-14">
+      {/* Form. One screen on a phone: a compact top row, then the form centred in the height
+          that remains (dynamic viewport units, so iOS Safari's toolbars are accounted for), with
+          spacing that tightens on short screens. Safe-area insets keep the top row clear of the
+          notch and rounded corners. A screen too short for all of it (or enlarged text) scrolls
+          normally instead of clipping. */}
+      <section className="relative flex flex-col min-h-screen min-h-dvh pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] sm:px-10">
+        <div className="flex items-center justify-between h-12 sm:h-14 shrink-0">
           <Link href="/" className="group inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg" aria-label="Return to RAWIN public website">
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
             <span className="lg:hidden">
@@ -54,32 +58,34 @@ export default function AdminLoginPage() {
             </span>
             <span className="hidden lg:inline">Back to site</span>
           </Link>
-          <div className="rounded-full border border-line">
+          <div className="shrink-0 rounded-full border border-line">
             <ThemeToggle />
           </div>
         </div>
 
-        <div className="flex-1 flex items-center justify-center py-10">
+        <div className="flex-1 flex items-center justify-center py-[clamp(0.75rem,4dvh,2.5rem)]">
           <div className="w-full max-w-[420px]">
             <p className="label-mono text-fg-muted">
               <span className="text-accent mr-3">00</span>Sign in
             </p>
-            <h1 className="mt-4 font-display text-[clamp(2.6rem,6vw,3.6rem)] leading-[0.95] tracking-[-0.025em] text-fg">
+            <h1 className="mt-2 sm:mt-4 font-display text-[clamp(2.25rem,min(10vw,7dvh),3.6rem)] leading-[0.95] tracking-[-0.025em] text-fg">
               Welcome <em className="italic text-accent">back.</em>
             </h1>
-            <p className="mt-3 text-[15px] text-fg-muted">Private management console for RAWIN 3.0.</p>
+            <p className="mt-2 sm:mt-3 text-[15px] text-fg-muted">Private management console for RAWIN 3.0.</p>
 
             {state?.error && (
-              <div role="alert" className="mt-8 rounded-2xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-fg flex gap-3">
+              <div role="alert" className="mt-5 sm:mt-8 rounded-2xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-fg flex gap-3">
                 <span aria-hidden="true" className="mt-[0.45em] w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
                 <span>{state.error}</span>
               </div>
             )}
 
-            <form action={formAction} className="mt-8 flex flex-col gap-5">
+            {/* inputs use 16px text on phones: iOS Safari zooms the page in on focus below 16px,
+                and the zoom crops the top row and forces scrolling */}
+            <form action={formAction} className="mt-[clamp(1.25rem,3.5dvh,2rem)] flex flex-col gap-4 sm:gap-5">
               <input type="hidden" name="redirectTo" value={redirectTo} />
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5 sm:gap-2">
                 <label htmlFor="email" className="label-mono text-fg-subtle">
                   Admin email
                 </label>
@@ -90,11 +96,11 @@ export default function AdminLoginPage() {
                   required
                   autoComplete="email"
                   inputMode="email"
-                  className="admin-input h-12"
+                  className="admin-input h-12 admin-input-touch"
                 />
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5 sm:gap-2">
                 <label htmlFor="password" className="label-mono text-fg-subtle">
                   Password
                 </label>
@@ -109,7 +115,7 @@ export default function AdminLoginPage() {
                     onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
                     onKeyDown={(e) => setCapsLock(e.getModifierState("CapsLock"))}
                     onBlur={() => setCapsLock(false)}
-                    className="admin-input h-12 pr-14"
+                    className="admin-input h-12 pr-14 admin-input-touch"
                   />
                   <button
                     type="button"
@@ -128,7 +134,7 @@ export default function AdminLoginPage() {
                 )}
               </div>
 
-              <button type="submit" disabled={isPending} className="btn btn-primary w-full mt-2">
+              <button type="submit" disabled={isPending} className="btn btn-primary w-full mt-1 sm:mt-2">
                 {isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />

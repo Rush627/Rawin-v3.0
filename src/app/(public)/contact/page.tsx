@@ -1,4 +1,4 @@
-import { getSiteContent } from "@/lib/site-content";
+import { getSiteContent, publicSiteClosed } from "@/lib/site-content";
 import ContactView from "@/components/ContactView";
 import { pageMetadata } from "@/lib/page-metadata";
 
@@ -9,6 +9,9 @@ export function generateMetadata() {
 export const revalidate = 3600;
 
 export default async function ContactPage() {
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
   const content = await getSiteContent();
 
   // Data Safety: Server conditionally provides the phone number only if showPhoneNumber is enabled

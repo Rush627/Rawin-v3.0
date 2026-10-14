@@ -9,6 +9,9 @@ import Reveal from "@/components/system/Reveal";
 import { GithubIcon } from "@/components/SocialIcons";
 import { STATUS_LABEL, STATUS_TONE } from "@/components/work/project-meta";
 import { resolveTone, TONE_SWATCH } from "@/lib/project-tone";
+import { publicSiteClosed } from "@/lib/site-content";
+import { CLOSED_METADATA } from "@/lib/page-metadata";
+import ContentUnavailable from "@/components/system/ContentUnavailable";
 
 interface ProjectPageProps {
   params: Promise<{ slug: string }>;
@@ -26,8 +29,11 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
+  if (await publicSiteClosed()) return CLOSED_METADATA;
   const { slug } = await params;
-  const project = await getProjectBySlug(slug);
+  // unreadable (not missing): described as unavailable, never as "not found"
+  const project = await getProjectBySlug(slug).catch(() => undefined);
+  if (project === undefined) return CLOSED_METADATA;
   if (!project) return { title: "Project Not Found | RAWIN 3.0" };
   return {
     title: `${project.title} | RAWIN Projects`,
@@ -50,8 +56,14 @@ const CHAPTERS = [
 ] as const;
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
+  // maintenance, offline or unreadable content: the layout shows the maintenance screen
+  if (await publicSiteClosed()) return null;
+
   const { slug } = await params;
-  const [project, all] = await Promise.all([getProjectBySlug(slug), getProjects()]);
+  // unreadable data: a short-lived "temporarily unavailable" screen, never a cached 404
+  const loaded = await Promise.all([getProjectBySlug(slug), getProjects()]).catch(() => null);
+  if (!loaded) return <ContentUnavailable />;
+  const [project, all] = loaded;
   if (!project) notFound();
 
   const idx = all.findIndex((p) => p.slug === project.slug);

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getPublicAvailability } from "@/lib/site-content";
-import { getAdminSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,13 +9,15 @@ const NO_STORE = {
   Expires: "0",
 };
 
+/**
+ * The site's public availability, the same for every requester: public pages show the
+ * maintenance screen to everyone while maintenance is on (they are static, so they cannot tell
+ * an administrator apart), and this answer has to agree with them or an open tab would keep
+ * refreshing. Administrators work in Studio, which never polls this endpoint.
+ */
 export async function GET() {
   try {
     const availability = await getPublicAvailability();
-    const admin = await getAdminSession();
-    if (admin) {
-      return NextResponse.json({ status: "live", revision: availability.revision }, { headers: NO_STORE });
-    }
     return NextResponse.json(availability, { headers: NO_STORE });
   } catch {
     // Status unknown (database unreachable): clients keep whatever state they already show
