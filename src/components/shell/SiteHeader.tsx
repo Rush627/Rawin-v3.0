@@ -13,6 +13,7 @@ import { NAV_ITEMS, getLenis, isActivePath } from "./nav-items";
 import { EASE_EDITORIAL, LAYOUT_SPRING } from "@/lib/motion";
 import { getActiveSocialLinks } from "@/components/SocialIcons";
 import type { ContactSocials } from "@/lib/site-content";
+import { haptic } from "@/lib/haptics";
 
 interface SiteHeaderProps {
   brandMode?: "wordmark" | "logo";
@@ -184,7 +185,10 @@ export default function SiteHeader({ brandMode = "wordmark", logos, email, socia
               <button
                 ref={menuButtonRef}
                 type="button"
-                onClick={() => setOpen((v) => !v)}
+                onClick={() => {
+                  haptic.impact();
+                  setOpen((v) => !v);
+                }}
                 aria-expanded={open}
                 aria-controls="rawin-menu"
                 aria-label={open ? "Close menu" : "Open menu"}
@@ -253,7 +257,10 @@ export default function SiteHeader({ brandMode = "wordmark", logos, email, socia
                     >
                       <Link
                         href={item.href}
-                        onClick={() => setOpen(false)}
+                        onClick={() => {
+                          haptic.selection();
+                          setOpen(false);
+                        }}
                         aria-current={active ? "page" : undefined}
                         className="mobile-menu-row group flex items-baseline justify-between gap-4"
                       >

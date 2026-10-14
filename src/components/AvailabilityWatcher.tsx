@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import RawinErrorView from "@/components/RawinErrorView";
 import type { PublicAvailability } from "@/lib/site-content";
 
-const LIVE_POLL_MS = 5 * 60 * 1000;
+const MAINTENANCE_POLL_MS = 2500; // 2.5s for fast maintenance recovery detection
+const LIVE_POLL_MS = 8000; // 8s for live CMS synchronization (target 5-10s)
 
 export interface AvailabilityWatcherProps {
   initialStatus?: "live" | "offline" | "maintenance";
@@ -17,86 +18,118 @@ export default function AvailabilityWatcher({
   isServerFallback = false,
 }: AvailabilityWatcherProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const isAdmin = Boolean(pathname?.startsWith("/saint-denis"));
 
   const [state, setState] = useState<PublicAvailability>({ status: initialStatus });
   const isCheckingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const hasTriggeredReloadRef = useRef(false);
+  const lastRevisionRef = useRef<number | null>(null);
 
-  // Poll briskly only while the site is down (so the 503 screen notices recovery quickly); while
-  // live, check every 5 minutes: the proxy already enforces maintenance on the next navigation,
-  // and each check is a serverless invocation.
-  const lastCheckRef = useRef(0);
   const statusRef = useRef(state.status);
   useEffect(() => {
     statusRef.current = state.status;
   }, [state.status]);
-  const checkAvailability = useCallback(async (force = false) => {
-    // Never poll on administrative routes
-    if (isAdmin) return;
-    if (isCheckingRef.current) return;
-    const live = statusRef.current === "live" && !isServerFallback;
-    if (!force && live && Date.now() - lastCheckRef.current < LIVE_POLL_MS) return;
-    lastCheckRef.current = Date.now();
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    isCheckingRef.current = true;
+  const checkAvailability = useCallback(
+    async (_force?: boolean) => {
+      // Never poll on administrative Studio routes
+      if (isAdmin) return;
+      if (isCheckingRef.current) return;
 
-    try {
-      const res = await fetch("/api/availability", {
-        cache: "no-store",
-        signal: controller.signal,
-      });
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      isCheckingRef.current = true;
 
-      if (res.ok) {
-        const data: PublicAvailability = await res.json();
-        setState(data);
+      try {
+        const res = await fetch("/api/availability", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
 
-        // If this tab was loaded on the server-rendered 503 screen,
-        // reload once the site transitions back to live so the complete website renders.
-        if (isServerFallback && data.status === "live" && !hasTriggeredReloadRef.current) {
-          hasTriggeredReloadRef.current = true;
-          window.location.reload();
+        if (res.ok) {
+          const data: PublicAvailability = await res.json();
+          const prevStatus = statusRef.current;
+          const nextStatus = data.status;
+
+          setState(data);
+
+          // 1. Recovery from maintenance:
+          if (prevStatus !== "live" && nextStatus === "live") {
+            router.refresh();
+          }
+
+          // 2. CMS Content Synchronization:
+          if (nextStatus === "live" && typeof data.revision === "number" && data.revision > 0) {
+            if (lastRevisionRef.current !== null && data.revision > lastRevisionRef.current) {
+              // A new revision was published! Refresh Server Components without losing scroll/form state
+              lastRevisionRef.current = data.revision;
+              router.refresh();
+            } else if (lastRevisionRef.current === null) {
+              lastRevisionRef.current = data.revision;
+            }
+          }
         }
+      } catch (err: unknown) {
+        if ((err as Error)?.name !== "AbortError") {
+          // Silently preserve current state during brief connection drops
+        }
+      } finally {
+        isCheckingRef.current = false;
       }
-    } catch (err: any) {
-      if (err?.name !== "AbortError") {
-        // Silently preserve current state during brief connection hiccups
-      }
-    } finally {
-      isCheckingRef.current = false;
-    }
-  }, [isAdmin, isServerFallback]);
+    },
+    [isAdmin, router]
+  );
 
   useEffect(() => {
     if (isAdmin) return;
 
-    // Check availability on initial mount
-    checkAvailability(true);
+    // Check availability asynchronously on initial mount
+    const mountTimer = setTimeout(() => {
+      void checkAvailability();
+    }, 0);
 
-    // Conservative polling (every 12 seconds), automatically paused when tab is hidden
-    const interval = setInterval(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        checkAvailability();
-      }
-    }, 12000);
+    // Adaptive interval: 2.5s when in maintenance/offline; 8s when live
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+
+    const scheduleNext = () => {
+      if (cancelled) return;
+      const intervalMs =
+        statusRef.current === "live" && !isServerFallback
+          ? LIVE_POLL_MS
+          : MAINTENANCE_POLL_MS;
+
+      timer = setTimeout(async () => {
+        if (typeof document !== "undefined" && document.visibilityState === "visible") {
+          await checkAvailability();
+        }
+        scheduleNext();
+      }, intervalMs);
+    };
+
+    scheduleNext();
 
     // Immediate re-check when the tab becomes visible again
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        checkAvailability();
+        void checkAvailability();
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
+    // Immediate re-check on window focus
+    const handleFocus = () => {
+      void checkAvailability();
+    };
+    window.addEventListener("focus", handleFocus);
+
     // Immediate re-check when network connection is restored
     const handleOnline = () => {
-      checkAvailability(true);
+      void checkAvailability();
     };
     window.addEventListener("online", handleOnline);
 
@@ -106,16 +139,22 @@ export default function AvailabilityWatcher({
       try {
         channel = new BroadcastChannel("rawin_availability_sync");
         channel.onmessage = (event) => {
-          if (event.data?.type === "AVAILABILITY_CHANGED") {
-            checkAvailability(true);
+          if (
+            event.data?.type === "AVAILABILITY_CHANGED" ||
+            event.data?.type === "CMS_UPDATED"
+          ) {
+            void checkAvailability();
           }
         };
       } catch {}
     }
 
     return () => {
-      clearInterval(interval);
+      clearTimeout(mountTimer);
+      cancelled = true;
+      if (timer) clearTimeout(timer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
       window.removeEventListener("online", handleOnline);
       if (channel) {
         channel.close();
@@ -124,12 +163,15 @@ export default function AvailabilityWatcher({
         abortControllerRef.current.abort();
       }
     };
-  }, [isAdmin, checkAvailability]);
+  }, [isAdmin, isServerFallback, checkAvailability]);
 
   // Immediate check when navigating between client-side routes
   useEffect(() => {
     if (isAdmin) return;
-    checkAvailability();
+    const navTimer = setTimeout(() => {
+      void checkAvailability();
+    }, 0);
+    return () => clearTimeout(navTimer);
   }, [pathname, isAdmin, checkAvailability]);
 
   // If on admin routes, or if the site is live, or if this is the server fallback, do not render client overlay
@@ -170,10 +212,10 @@ export default function AvailabilityWatcher({
         endsAt={isMaintenance ? state.endsAt : undefined}
         actionLabel="Refresh"
         onAction={() => {
-          checkAvailability();
+          checkAvailability(true);
         }}
         onExpire={() => {
-          checkAvailability();
+          checkAvailability(true);
         }}
       />
     </div>

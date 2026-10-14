@@ -11,6 +11,7 @@ import OrbitSignal from "@/components/shell/OrbitSignal";
 import { EASE_EDITORIAL } from "@/lib/motion";
 import { statusTone } from "@/components/shell/SiteFooter";
 import { setHeroScene } from "@/components/system/particles/scene";
+import { haptic } from "@/lib/haptics";
 
 export interface HeroPanels {
   focus?: boolean;
@@ -289,7 +290,11 @@ function HeroIntro({ bio, primaryCta, secondaryCta }: { bio: string; primaryCta:
     <>
       <p className="hero-intro text-[16px] sm:text-[17px] leading-relaxed text-fg-muted max-w-[40ch]">{bio}</p>
       <div className="hero-actions mt-6 sm:mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
-        <Link href="/projects" className="btn btn-primary hero-cta pr-2 gap-4 group">
+        <Link
+          href="/projects"
+          onClick={() => haptic.impact()}
+          className="btn btn-primary hero-cta pr-2 gap-4 group"
+        >
           <span>{primaryCta}</span>
           <span className="hero-cta-icon w-8 h-8 rounded-full bg-inverse-fg/12 flex items-center justify-center transition-transform duration-500 group-hover:rotate-45">
             <ArrowUpRight className="w-4 h-4" />

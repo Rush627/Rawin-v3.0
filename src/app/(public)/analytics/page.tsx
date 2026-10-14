@@ -57,7 +57,7 @@ export default async function AnalyticsPage() {
             stored (store.ts), the country comes only from Netlify's geo header, and a TTL index
             removes records after 90 days */}
         <p className="mt-6 mb-4 max-w-[80ch] text-[12.5px] leading-relaxed text-fg-subtle">
-          Privacy-conscious analytics: no tracking cookies and no stored IP addresses. Countries come from hosting metadata; records are kept for 90 days.
+          Privacy-conscious analytics. No tracking cookies or stored IP addresses. Country attribution uses hosting metadata.
         </p>
       </section>
     </div>

@@ -133,7 +133,13 @@ const getCachedPublishedPosts = unstable_cache(
 );
 
 export const getPublishedPosts = cache(async (): Promise<BlogPost[]> => {
-  return getCachedPublishedPosts();
+  try {
+    return await getCachedPublishedPosts();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Blog] Read fallback (in-memory only):", msg);
+    return [];
+  }
 });
 
 /**
@@ -168,7 +174,13 @@ const getCachedFeaturedPosts = unstable_cache(
 );
 
 export const getFeaturedPosts = cache(async (): Promise<BlogPost[]> => {
-  return getCachedFeaturedPosts();
+  try {
+    return await getCachedFeaturedPosts();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Blog] Read fallback featured (in-memory only):", msg);
+    return [];
+  }
 });
 
 /**
@@ -197,18 +209,24 @@ async function fetchPostBySlugFromDb(slug: string, includeUnpublished = false): 
 }
 
 export const getPostBySlug = cache(async (slug: string, includeUnpublished = false): Promise<BlogPost | null> => {
-  if (includeUnpublished) {
-    return fetchPostBySlugFromDb(slug, true);
-  }
-  const fetcher = unstable_cache(
-    async () => fetchPostBySlugFromDb(slug, false),
-    [`blog-slug-${slug.trim().toLowerCase()}`],
-    {
-      tags: ["blog"],
-      revalidate: 3600,
+  try {
+    if (includeUnpublished) {
+      return await fetchPostBySlugFromDb(slug, true);
     }
-  );
-  return fetcher();
+    const fetcher = unstable_cache(
+      async () => fetchPostBySlugFromDb(slug, false),
+      [`blog-slug-${slug.trim().toLowerCase()}`],
+      {
+        tags: ["blog"],
+        revalidate: 3600,
+      }
+    );
+    return await fetcher();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[Blog] Read fallback for slug (${slug}):`, msg);
+    return null;
+  }
 });
 
 /**

@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { youLine, type AnalyticsRange, type Report } from "@/lib/analytics/model";
 import type { PublicAnalytics } from "@/lib/analytics/report";
 import { countryName } from "@/lib/analytics/countries";
 import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
+import { decodeGrid } from "@/lib/analytics/map-geometry";
+import { WORLD_GRID } from "@/lib/analytics/world-grid";
+import { haptic } from "@/lib/haptics";
 import WorldMap, { visitorsText } from "./WorldMap";
 import TrafficChart from "./TrafficChart";
 import "./analytics.css";
@@ -49,6 +52,7 @@ function Figure({ value, digits = 0 }: { value: number; digits?: number }) {
 }
 
 export default function AnalyticsView({ initial }: { initial: PublicAnalytics }) {
+  const reduced = useReducedMotionSafe();
   const [range, setRange] = useState<AnalyticsRange>(initial.range);
   const [data, setData] = useState<Partial<Record<AnalyticsRange, PublicAnalytics>>>({ [initial.range]: initial });
   const [loading, setLoading] = useState(false);
@@ -158,10 +162,62 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
 
   // phones: the wider map opens centred on South Asia
   const mapScroll = useRef<HTMLDivElement | null>(null);
+  const mapSectionRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     const el = mapScroll.current;
-    if (el && el.scrollWidth > el.clientWidth) el.scrollLeft = el.scrollWidth * 0.71 - el.clientWidth / 2;
-  }, [report]);
+    if (el && el.scrollWidth > el.clientWidth && !picked) {
+      el.scrollLeft = el.scrollWidth * 0.71 - el.clientWidth / 2;
+    }
+  }, [report, picked]);
+
+  const focusCountryOnMap = useCallback(
+    (code: string | null) => {
+      if (!code) return;
+      const grid = decodeGrid();
+      const centre = grid.centres.get(code);
+      if (!centre) return;
+
+      // 1. Center the map horizontally if the container has scrollable overflow
+      const scrollContainer = mapScroll.current;
+      if (scrollContainer && scrollContainer.scrollWidth > scrollContainer.clientWidth) {
+        const targetX =
+          (centre.x / WORLD_GRID.cols) * scrollContainer.scrollWidth -
+          scrollContainer.clientWidth / 2;
+        const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+        const clampedX = Math.max(0, Math.min(targetX, maxScroll));
+        scrollContainer.scrollTo({
+          left: clampedX,
+          behavior: reduced ? "auto" : "smooth",
+        });
+      }
+
+      // 2. On mobile/smaller viewports, if the map is scrolled above the viewport, bring it gently into view
+      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+        const mapEl = mapSectionRef.current;
+        if (mapEl) {
+          const rect = mapEl.getBoundingClientRect();
+          if (rect.top < 60 || rect.bottom < 150) {
+            mapEl.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" });
+          }
+        }
+      }
+    },
+    [reduced]
+  );
+
+  const handleSelectCountry = useCallback(
+    (code: string | null) => {
+      if (code) {
+        setPicked(code);
+        focusCountryOnMap(code);
+        haptic.selection();
+      } else {
+        setPicked(null);
+      }
+    },
+    [focusCountryOnMap]
+  );
   // the visitor's own country, carried by the shown dataset itself (the same report as the map,
   // the ranking and the figures, Launch Mode or not), so all three always agree
   const viewer = current?.you ?? null;
@@ -235,7 +291,7 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
           </dl>
 
           {/* ---------------------------------------------------------------- map + ranking */}
-          <section aria-labelledby="an-geo" className="an-panel mt-5 grid lg:grid-cols-12">
+          <section ref={mapSectionRef} aria-labelledby="an-geo" className="an-panel mt-5 grid lg:grid-cols-12">
             <div className="lg:col-span-8 p-4 sm:p-6 lg:border-r border-line min-w-0 flex flex-col">
               <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
                 <h2 id="an-geo" className="an-h2">
@@ -258,7 +314,7 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
                   you={you}
                   focus={focus}
                   picked={picked}
-                  onPick={setPicked}
+                  onPick={handleSelectCountry}
                   label={`World map of visitors over ${longRange}: ${ranked.length} countries. ${ranked.slice(0, 3).map((c) => `${countryName(c.code)} ${n(c.visitors)}`).join(", ")}. The country list beside it has every value.`}
                 />
               </div>
@@ -269,7 +325,7 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
                   <>
                     <span className="text-fg">{countryName(picked)}</span>
                     <span className="tabular-nums">{visitorsText(counts.get(picked) || 0)}</span>
-                    <button type="button" onClick={() => setPicked(null)} className="an-pick-clear" aria-label={`Clear ${countryName(picked)}`}>
+                    <button type="button" onClick={() => handleSelectCountry(null)} className="an-pick-clear" aria-label={`Clear ${countryName(picked)}`}>
                       Clear
                     </button>
                   </>
@@ -310,17 +366,20 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
               {ranked.length === 0 ? (
                 <p className="mt-4 text-[14px] text-fg-muted">No located visits in this window.</p>
               ) : (
-                <ol className="mt-4 flex flex-col">
+                <ol role="listbox" aria-label="Country traffic rankings" className="mt-4 flex flex-col">
                   {visible.map((c, i) => (
-                    <li key={c.code}>
+                    <li key={c.code} role="presentation">
                       <button
                         type="button"
+                        role="option"
                         className="an-rank"
+                        aria-selected={picked === c.code ? "true" : "false"}
+                        data-selected={picked === c.code ? "true" : undefined}
                         onMouseEnter={() => setFocus(c.code)}
                         onMouseLeave={() => setFocus(null)}
                         onFocus={() => setFocus(c.code)}
                         onBlur={() => setFocus(null)}
-                        onClick={() => setPicked(c.code)}
+                        onClick={() => handleSelectCountry(picked === c.code ? null : c.code)}
                         aria-label={`${countryName(c.code)}: ${n(c.visitors)} visitors${c.code === you ? " (your country)" : ""}`}
                       >
                         <span className="an-rank-i">{String(i + 1).padStart(2, "0")}</span>

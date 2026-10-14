@@ -7,6 +7,7 @@ import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 import { emitFieldSignal } from "@/components/system/particles/scene";
 import { ArrowUpRight, Check, Copy } from "lucide-react";
 import { splitEmphasis } from "@/lib/cms/text";
+import { haptic } from "@/lib/haptics";
 
 /**
  * "Time to / Level up" entrance, played once when the composition first comes into view:
@@ -121,6 +122,7 @@ export function CopyEmailButton({ email, className = "" }: { email: string; clas
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(email);
+          haptic.success();
           setCopied(true);
           window.setTimeout(() => setCopied(false), 1800);
         } catch {
@@ -168,6 +170,7 @@ function ContactLockup({ email, copy, size = "lg", ctaRef }: { email: string; co
           onFocus={(e) => {
             if (e.currentTarget.matches(":focus-visible")) rimSignal(e.currentTarget, 0.8);
           }}
+          onClick={() => haptic.impact()}
           className="btn btn-primary pr-2 gap-4 group/cta closing-cta"
         >
           <span>{copy.cta}</span>

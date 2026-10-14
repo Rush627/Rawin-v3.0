@@ -28,20 +28,20 @@ export default function AdminLoginPage() {
         />
         <div className="relative flex items-center justify-between">
           <Wordmark withMark={false} />
-          <span className="label-mono text-fg-subtle">Private / Restricted</span>
+          <span className="label-mono text-fg-subtle">Studio</span>
         </div>
         <div className="relative">
           <p className="label-mono text-accent mb-6">RAWIN Studio</p>
           <p className="display-lg text-fg">
-            The room
+            The workspace
             <br />
-            <em className="italic text-accent">behind</em> the site.
+            <em className="italic text-accent">behind</em> RAWIN.
           </p>
           <p className="mt-8 text-[17px] text-fg-muted max-w-[40ch]">
-            Content, projects, the journal and Orbit&apos;s knowledge: edited here, published everywhere.
+            Content, projects, writing, and platform telemetry. Managed in one place.
           </p>
         </div>
-        <p className="relative label-mono text-fg-subtle">Authorized access only</p>
+        <p className="relative label-mono text-fg-subtle">Authorized Developer access only</p>
       </section>
 
       {/* Form */}
@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
             <h1 className="mt-4 font-display text-[clamp(2.6rem,6vw,3.6rem)] leading-[0.95] tracking-[-0.025em] text-fg">
               Welcome <em className="italic text-accent">back.</em>
             </h1>
-            <p className="mt-3 text-[15px] text-fg-muted">Private management system for RAWIN 3.0.</p>
+            <p className="mt-3 text-[15px] text-fg-muted">Private management console for RAWIN 3.0.</p>
 
             {state?.error && (
               <div role="alert" className="mt-8 rounded-2xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-fg flex gap-3">

@@ -1745,7 +1745,13 @@ const getCachedSiteContent = unstable_cache(
 );
 
 export const getSiteContent = cache(async (): Promise<SiteContent> => {
-  return await getCachedSiteContent();
+  try {
+    return await getCachedSiteContent();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[SiteContent] Read error fallback (in-memory only):", msg);
+    return DEFAULT_SITE_CONTENT;
+  }
 });
 
 /**
@@ -2348,6 +2354,7 @@ export interface PublicAvailability {
   status: "live" | "offline" | "maintenance";
   message?: string;
   endsAt?: string | null;
+  revision?: number;
 }
 
 /**
@@ -2361,9 +2368,13 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
     if (!db) throw new Error("Database connection unavailable.");
 
     const col = db.collection(COLLECTION_NAME);
-    const doc = await col.findOne({ key: "main" }, { projection: { maintenance: 1 } });
+    const doc = await col.findOne({ key: "main" }, { projection: { maintenance: 1, updatedAt: 1 } });
+    const revision = doc?.updatedAt instanceof Date
+      ? doc.updatedAt.getTime()
+      : (doc?.updatedAt ? new Date(doc.updatedAt).getTime() : 0);
+
     if (!doc?.maintenance?.enabled) {
-      return { status: "live" };
+      return { status: "live", revision };
     }
 
     const maintenance = doc.maintenance;
@@ -2374,7 +2385,7 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
       const endsTime = new Date(endsAt).getTime();
       if (!isNaN(endsTime) && endsTime <= Date.now()) {
         // Return live in-memory without performing public DB mutations
-        return { status: "live" };
+        return { status: "live", revision };
       }
     }
 
@@ -2386,11 +2397,13 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
         status: "maintenance",
         message: msg,
         endsAt: endsAt ? (endsAt instanceof Date ? endsAt.toISOString() : String(endsAt)) : null,
+        revision,
       };
     }
 
     return {
       status: "offline",
+      revision,
     };
   } catch (err) {
     console.error("[getPublicAvailability] error:", err);
@@ -2410,5 +2423,9 @@ const getCachedPublicAvailability = unstable_cache(
 export const getPublicAvailability = cache(async (): Promise<PublicAvailability> => {
   return getCachedPublicAvailability();
 });
+
+export async function getPublicAvailabilityFresh(): Promise<PublicAvailability> {
+  return fetchPublicAvailabilityFromDb();
+}
 
 

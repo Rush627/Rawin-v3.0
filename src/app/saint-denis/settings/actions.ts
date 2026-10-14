@@ -171,7 +171,7 @@ export async function saveAvailabilityAction({
       invalidateCacheTag("site-content");
     } catch {}
 
-    const publicPaths = ["/", "/about", "/projects", "/blog", "/uses", "/resume", "/contact", "/saint-denis/settings"];
+    const publicPaths = ["/", "/about", "/projects", "/blog", "/uses", "/resume", "/contact", "/ai", "/analytics", "/saint-denis/settings"];
     for (const p of publicPaths) {
       try {
         revalidatePath(p);

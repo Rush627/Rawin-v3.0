@@ -12,11 +12,11 @@ const NO_STORE = {
 
 export async function GET() {
   try {
+    const availability = await getPublicAvailability();
     const admin = await getAdminSession();
     if (admin) {
-      return NextResponse.json({ status: "live" }, { headers: NO_STORE });
+      return NextResponse.json({ status: "live", revision: availability.revision }, { headers: NO_STORE });
     }
-    const availability = await getPublicAvailability();
     return NextResponse.json(availability, { headers: NO_STORE });
   } catch {
     // Status unknown (database unreachable): clients keep whatever state they already show

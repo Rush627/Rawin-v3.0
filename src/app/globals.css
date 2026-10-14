@@ -480,10 +480,15 @@ html.theme-switching *::after {
     --closing-ring: 300deg;
   }
 }
-.btn.closing-cta:hover,
 .btn.closing-cta:focus-visible {
   box-shadow: var(--shadow-3), 0 0 0 1px color-mix(in oklab, var(--accent) 45%, transparent),
     0 16px 46px -14px color-mix(in oklab, var(--accent) 75%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn.closing-cta:hover {
+    box-shadow: var(--shadow-3), 0 0 0 1px color-mix(in oklab, var(--accent) 45%, transparent),
+      0 16px 46px -14px color-mix(in oklab, var(--accent) 75%, transparent);
+  }
 }
 
 /* Footer social links: a quiet lavender lift on hover / focus; the particle field forms a
@@ -491,9 +496,13 @@ html.theme-switching *::after {
 .footer-social {
   transition: color 0.25s ease, border-color 0.25s ease, box-shadow 0.5s var(--ease-editorial);
 }
-.footer-social:hover,
 .footer-social:focus-visible {
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent), 0 0 22px -6px color-mix(in oklab, var(--accent) 55%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .footer-social:hover {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent), 0 0 22px -6px color-mix(in oklab, var(--accent) 55%, transparent);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -925,8 +934,10 @@ html[data-intro="play"] {
   text-shadow: none;
   transition: color 0.6s var(--ease-editorial), -webkit-text-stroke-color 0.6s var(--ease-editorial), text-shadow 0.6s var(--ease-editorial);
 }
-.group:hover > .principle-index {
-  -webkit-text-stroke-color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .group:hover > .principle-index {
+    -webkit-text-stroke-color: var(--accent);
+  }
 }
 [data-active] > .principle-index {
   color: color-mix(in oklab, var(--accent) 88%, transparent);
@@ -965,8 +976,10 @@ html[data-intro="play"] {
   -webkit-text-stroke: 1px var(--line-strong);
   transition: color 0.6s var(--ease-editorial), -webkit-text-stroke-color 0.6s var(--ease-editorial), text-shadow 0.6s var(--ease-editorial);
 }
-.about-principle:hover .about-principle-num {
-  -webkit-text-stroke-color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .about-principle:hover .about-principle-num {
+    -webkit-text-stroke-color: var(--accent);
+  }
 }
 @media (max-width: 767px) {
   [data-active] > .about-principle-num {
@@ -3266,9 +3279,11 @@ html[data-intro="play"] {
   transition: border-color 0.3s var(--ease-editorial), box-shadow 0.3s var(--ease-editorial),
     transform 0.3s var(--ease-editorial);
 }
-.glass-card:hover {
-  border-color: var(--line-strong);
-  box-shadow: var(--shadow-2);
+@media (hover: hover) and (pointer: fine) {
+  .glass-card:hover {
+    border-color: var(--line-strong);
+    box-shadow: var(--shadow-2);
+  }
 }
 
 /* ==========================================================================
@@ -3307,26 +3322,32 @@ html[data-intro="play"] {
   color: var(--inverse-fg);
   box-shadow: var(--shadow-2);
 }
-.btn-primary:hover {
-  box-shadow: var(--shadow-3);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    box-shadow: var(--shadow-3);
+    transform: translateY(-1px);
+  }
 }
 .btn-accent {
   background: var(--accent);
   color: var(--accent-fg);
   box-shadow: 0 10px 30px -12px color-mix(in oklab, var(--accent) 70%, transparent);
 }
-.btn-accent:hover {
-  background: var(--accent-strong);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .btn-accent:hover {
+    background: var(--accent-strong);
+    transform: translateY(-1px);
+  }
 }
 .btn-ghost {
   background: transparent;
   color: var(--fg);
   border: 1px solid var(--line-strong);
 }
-.btn-ghost:hover {
-  border-color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .btn-ghost:hover {
+    border-color: var(--fg);
+  }
 }
 .btn-sm {
   --btn-h: 2.4rem;
@@ -3342,9 +3363,13 @@ html[data-intro="play"] {
   background-position: 0 100%;
   transition: background-size 0.5s var(--ease-editorial);
 }
-.link-draw:hover,
 .link-draw:focus-visible {
   background-size: 100% 1px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .link-draw:hover {
+    background-size: 100% 1px;
+  }
 }
 
 /* Fields */

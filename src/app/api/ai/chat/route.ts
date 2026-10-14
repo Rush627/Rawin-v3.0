@@ -11,7 +11,8 @@ import {
 } from "@/lib/orbit-security";
 import { validateAttachments } from "@/lib/aura/attachments";
 import { loadReadyAttachments, UploadError, withExtractedAttachments, type ReadyAttachment } from "@/lib/aura/uploads";
-import { getSiteContent } from "@/lib/site-content";
+import { getSiteContent, maintenanceActiveNow } from "@/lib/site-content";
+import { getAdminSession } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,6 +61,18 @@ function createDirectResponse(
 
 export async function POST(req: NextRequest) {
   try {
+    // 0. Maintenance Mode Check
+    const siteContent = await getSiteContent();
+    if (maintenanceActiveNow(siteContent.maintenance)) {
+      const admin = await getAdminSession();
+      if (!admin) {
+        return NextResponse.json(
+          { error: "Orbit is currently offline for scheduled maintenance." },
+          { status: 503, headers: { "Cache-Control": "no-store, no-cache" } }
+        );
+      }
+    }
+
     // 1. Rate Limiting by IP
     const rateLimit = await limitOrbitRequest(req.headers, "chat", 20, 60 * 1000, "degrade");
     const clientKey = rateLimit.clientKey;
