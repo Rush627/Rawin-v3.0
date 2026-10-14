@@ -17,6 +17,7 @@ import { buildThemeBootScript, THEME_COLOR } from "@/components/theme/theme-scri
 import { seoFor } from "@/lib/cms/fields";
 import { BUNDLED } from "@/lib/brand-assets";
 import { getSiteContent, DEFAULT_SITE_CONTENT, maintenanceActiveNow } from "@/lib/site-content";
+import { getAdminSession } from "@/lib/auth";
 import { SITE_URL } from "@/lib/site-url";
 
 const geistSans = Geist({
@@ -81,7 +82,9 @@ export default async function RootLayout({
 
   // content may be cached for a while: the end of a timed window is checked at request time
   const isMaintenanceActive = maintenanceActiveNow(content.maintenance);
-  const initialStatus = isMaintenanceActive
+  const adminSession = isMaintenanceActive ? await getAdminSession() : null;
+  const showMaintenance = isMaintenanceActive && !adminSession;
+  const initialStatus = showMaintenance
     ? (content.maintenance?.showMessage ? "maintenance" : "offline")
     : "live";
 
@@ -130,7 +133,7 @@ export default async function RootLayout({
                 only activates when the pre-paint script flags html[data-intro] on "/". */}
             <EntranceIntro />
             <OfflineDetector />
-            <AvailabilityWatcher initialStatus={initialStatus} isServerFallback={isMaintenanceActive} />
+            <AvailabilityWatcher initialStatus={initialStatus} isServerFallback={showMaintenance} />
             {children}
           </GlassProvider>
         </ThemeProvider>

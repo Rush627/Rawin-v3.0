@@ -6,6 +6,7 @@ import CustomCursor from "@/components/system/CustomCursor";
 import CursorField from "@/components/system/CursorField";
 import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 import { getSiteContent, DEFAULT_SITE_CONTENT, maintenanceActiveNow } from "@/lib/site-content";
+import { getAdminSession } from "@/lib/auth";
 
 export default async function PublicLayout({
   children,
@@ -16,8 +17,9 @@ export default async function PublicLayout({
 
   // content may be cached for a while: the end of a timed window is checked at request time
   const isMaintenanceActive = maintenanceActiveNow(content.maintenance);
+  const adminSession = isMaintenanceActive ? await getAdminSession() : null;
 
-  if (isMaintenanceActive) {
+  if (isMaintenanceActive && !adminSession) {
     const isMaintenanceMessage = content.maintenance?.showMessage;
     return (
       <main className="min-h-screen min-h-dvh flex flex-col justify-center items-center w-full relative z-10">

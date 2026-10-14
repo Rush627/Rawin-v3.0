@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPublicAvailability } from "@/lib/site-content";
+import { getAdminSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,10 @@ const NO_STORE = {
 
 export async function GET() {
   try {
+    const admin = await getAdminSession();
+    if (admin) {
+      return NextResponse.json({ status: "live" }, { headers: NO_STORE });
+    }
     const availability = await getPublicAvailability();
     return NextResponse.json(availability, { headers: NO_STORE });
   } catch {
