@@ -13,7 +13,7 @@ export interface PublicAnalytics {
    * The viewer's own country (from the hosting platform only) and whether their visit is part of
    * that country's count in `report`. null when the country could not be determined.
    */
-  you: { country: string; included: boolean; test?: true } | null;
+  you: { country: string; included: boolean; excluded?: "owner" | "bot"; test?: true } | null;
 }
 
 /** How often an open page refreshes while Launch Mode figures are moving (jittered client-side). */
@@ -53,7 +53,7 @@ export async function getPublicAnalytics(
     available: true,
     launch: config.enabled,
     report: combineReports(recorded, simulated),
-    you: viewer ? { country: viewer.country, included, ...(viewer.test ? { test: true as const } : {}) } : null,
+    you: viewer ? { country: viewer.country, included, ...(viewer.excluded ? { excluded: viewer.excluded } : {}), ...(viewer.test ? { test: true as const } : {}) } : null,
   };
 }
 

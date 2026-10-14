@@ -18,8 +18,9 @@ export function viewerFromRequest(headers: Headers, sessionCookie: string | unde
   // the same display code the aggregated records use, so "you" and the ranking always match
   const country = displayCountry(reported);
   const ua = headers.get("user-agent");
-  const counted = !isLikelyBot(ua) && !sessionCookie;
-  return { country, code: counted ? visitorCode(edgeAddress, ua || "", now) : null };
+  // the collector's exclusions, in its order: bots, then the owner's own browsing
+  const excluded = isLikelyBot(ua) ? "bot" : sessionCookie ? "owner" : null;
+  return excluded ? { country, code: null, excluded } : { country, code: visitorCode(edgeAddress, ua || "", now) };
 }
 
 /**

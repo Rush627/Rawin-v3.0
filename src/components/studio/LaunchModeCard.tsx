@@ -1,18 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button, Group, StatusLine, Switch } from "./fields";
 import ConfirmDialog from "./ConfirmDialog";
 import { LAUNCH_PRESETS, simulateReport, type LaunchConfig, type LaunchPreset } from "@/lib/analytics/model";
 import { countryName } from "@/lib/analytics/countries";
-import { saveLaunchModeAction } from "@/app/saint-denis/analytics/actions";
+import { readLaunchModeAction, saveLaunchModeAction, type LaunchModeResult } from "@/app/saint-denis/analytics/actions";
 
 const n = (v: number) => v.toLocaleString("en-IN");
 
 /** Launch Mode controls: on/off, the six ceilings, a preview, and an explicit save. */
 export default function LaunchModeCard({ initial, unreadable }: { initial: LaunchConfig; unreadable: boolean }) {
-  const router = useRouter();
   const [saved, setSaved] = useState(initial);
   const [enabled, setEnabled] = useState(initial.enabled);
   const [preset, setPreset] = useState<LaunchPreset>(initial.preset);
@@ -28,17 +26,37 @@ export default function LaunchModeCard({ initial, unreadable }: { initial: Launc
     return { d30: simulateReport({ preset, seed }, "30d", now), d1: simulateReport({ preset, seed }, "24h", now) };
   }, [preset, saved, now]);
 
+  const savedNote = (c: LaunchConfig) =>
+    c.enabled ? `Launch Mode is on with the ${n(c.preset)} ceiling. The public page updates within a minute.` : "Launch Mode is off. The public page shows recorded traffic only.";
+
+  // Success only on a confirmed save. When no answer arrives (a dropped connection, a platform
+  // error), the stored setting is read back instead of guessed: the card then shows what is
+  // actually saved, and a retry is always a deliberate click.
   const save = async () => {
     setConfirm(false);
     setBusy(true);
     setNote(null);
-    const res = await saveLaunchModeAction({ enabled, preset }).catch(() => ({ error: "The server could not be reached." }) as { error?: string; success?: boolean; config?: LaunchConfig });
-    setBusy(false);
-    if (res.success && res.config) {
+    const want = { enabled, preset };
+    const res: LaunchModeResult | null = await saveLaunchModeAction(want).catch(() => null);
+    if (res?.success && res.config) {
       setSaved(res.config);
-      setNote({ tone: "ok", text: res.config.enabled ? `Launch Mode is on with the ${n(res.config.preset)} ceiling. The public page updates within a minute.` : "Launch Mode is off. The public page shows recorded traffic only." });
-      router.refresh();
-    } else setNote({ tone: "error", text: res.error || "Not saved." });
+      setNote({ tone: "ok", text: savedNote(res.config) });
+    } else if (res) {
+      setNote({ tone: "error", text: res.error || "Not saved." });
+    } else {
+      const check = await readLaunchModeAction().catch(() => null);
+      const stored = check?.success ? check.config : undefined;
+      if (stored && stored.enabled === want.enabled && (!want.enabled || stored.preset === want.preset)) {
+        setSaved(stored);
+        setNote({ tone: "ok", text: `Saved (confirmed after a slow response). ${savedNote(stored)}` });
+      } else if (stored) {
+        setSaved(stored);
+        setNote({ tone: "error", text: "Not saved: the server did not answer. The saved setting is shown; try again." });
+      } else {
+        setNote({ tone: "error", text: "The server did not answer and the saved setting could not be checked. Reload before trying again." });
+      }
+    }
+    setBusy(false);
   };
 
   return (

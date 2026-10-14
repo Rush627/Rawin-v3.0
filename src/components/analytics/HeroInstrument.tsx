@@ -7,7 +7,13 @@ import "./analytics.css";
  * points). Pure SVG drawn on the server in the theme's own ink: no data, no numbers, no client
  * JavaScript beyond a visibility gate. Motion is limited to one slow glint along a trajectory and
  * one point on the ring, both CSS; both stop under prefers-reduced-motion and pause while the
- * hero is off screen (SVG animations repaint the drawing every frame). Desktop only.
+ * hero is off screen. Desktop only.
+ *
+ * Two stacked drawings with the same viewBox: the static instrument, and a motion layer holding
+ * only the glint and the moving point on its own compositor layer. An animation inside an SVG
+ * repaints that whole SVG every frame; in one drawing that meant re-rasterising the masked dot
+ * grid 60 times a second (measured: ~4 s of raster per 2 s of scrolling over the hero). Split,
+ * the instrument is rasterised once and each frame repaints two strokes and a dot.
  */
 
 const W = 600;
@@ -73,7 +79,6 @@ export default function HeroInstrument() {
       {/* trajectories */}
       <ellipse cx={CX} cy={CY} rx={B.rx} ry={B.ry} transform={`rotate(${B.tilt} ${CX} ${CY})`} className="an-hero-orbit an-hero-orbit-b" />
       <ellipse cx={CX} cy={CY} rx={A.rx} ry={A.ry} transform={`rotate(${A.tilt} ${CX} ${CY})`} className="an-hero-orbit" />
-      <ellipse cx={CX} cy={CY} rx={A.rx} ry={A.ry} transform={`rotate(${A.tilt} ${CX} ${CY})`} pathLength={100} className="an-hero-glint" />
 
       {/* measuring ring and dial */}
       <circle cx={CX} cy={CY} r={R} className="an-hero-ring" />
@@ -97,7 +102,10 @@ export default function HeroInstrument() {
       <circle cx={CX} cy={CY} r={9} className="an-hero-core-ring" />
       <circle cx={CX} cy={CY} r={2.4} className="an-hero-node" />
 
-      {/* the one moving point: a slow circuit of the measuring ring */}
+    </svg>
+    {/* motion layer: the glint and the one moving point (a slow circuit of the measuring ring) */}
+    <svg viewBox={`0 0 ${W} ${H}`} className="an-hero-art an-hero-motion-layer" aria-hidden="true" focusable="false">
+      <ellipse cx={CX} cy={CY} rx={A.rx} ry={A.ry} transform={`rotate(${A.tilt} ${CX} ${CY})`} pathLength={100} className="an-hero-glint" />
       <g className="an-hero-sweep" style={{ transformOrigin: `${CX}px ${CY}px` }}>
         <circle cx={CX + R} cy={CY} r={6} className="an-hero-halo" />
         <circle cx={CX + R} cy={CY} r={2.4} className="an-hero-node an-hero-node-bright" />

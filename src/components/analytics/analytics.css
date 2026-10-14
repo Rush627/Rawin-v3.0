@@ -545,14 +545,25 @@
 }
 
 /* --- hero instrument (desktop companion to the page title; see HeroInstrument.tsx) */
+/* the static drawing and its motion layer share one grid cell (same box, same viewBox) */
+.an-hero-stack {
+  display: grid;
+  /* the drawing's top and bottom bands are only faint grid: let them overhang so the art never
+     makes the hero taller than its title and lede */
+  margin-block: -3rem;
+}
+.an-hero-stack > .an-hero-art {
+  grid-area: 1 / 1;
+}
+/* its own compositor layer: the per-frame repaint of the glint and the point stays in it */
+.an-hero-motion-layer {
+  will-change: transform;
+}
 .an-hero-art {
   display: block;
   width: 100%;
   height: auto;
   max-height: 27rem;
-  /* the drawing's top and bottom bands are only faint grid: let them overhang so the art never
-     makes the hero taller than its title and lede */
-  margin-block: -3rem;
   color: var(--fg);
   overflow: visible;
   pointer-events: none;

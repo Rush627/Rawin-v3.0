@@ -1,14 +1,11 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { cookies, headers } from "next/headers";
 import PageIntro from "@/components/system/PageIntro";
 import AnalyticsView from "@/components/analytics/AnalyticsView";
 import ContributionHeatmap from "@/components/analytics/ContributionHeatmap";
 import HeroInstrument from "@/components/analytics/HeroInstrument";
 import { getPublicAnalytics } from "@/lib/analytics/report";
 import { getGithubActivity } from "@/lib/analytics/github";
-import { viewerFromRequest } from "@/lib/analytics/viewer";
-import { SESSION_COOKIE_NAME } from "@/lib/auth-token";
 import { getSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
@@ -17,8 +14,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/analytics" },
 };
 
-// The visitor's own country comes from this request's headers, so the page renders per request
-export const dynamic = "force-dynamic";
+// A shared, cacheable page (like every other public page, so the router prefetches it and the CDN
+// serves it): the figures every visitor sees, regenerated at most once a minute. Nothing personal
+// is rendered here. The visitor's own country and visit are added in the browser from the private
+// summary API (AnalyticsView), so no response that holds them is ever cached or shared.
+export const revalidate = 60;
 
 async function GithubSection({ profileUrl }: { profileUrl: string }) {
   const activity = await getGithubActivity(profileUrl);
@@ -30,10 +30,7 @@ async function GithubSection({ profileUrl }: { profileUrl: string }) {
 }
 
 export default async function AnalyticsPage() {
-  const [h, jar] = await Promise.all([headers(), cookies()]);
-  // the visitor's own country, from Netlify's edge headers only (none: no country is shown)
-  const viewer = viewerFromRequest(h, jar.get(SESSION_COOKIE_NAME)?.value);
-  const [initial, content] = await Promise.all([getPublicAnalytics("7d", viewer), getSiteContent()]);
+  const [initial, content] = await Promise.all([getPublicAnalytics("7d"), getSiteContent()]);
 
   return (
     <div className="flex flex-col">

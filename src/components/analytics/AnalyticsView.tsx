@@ -70,13 +70,13 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
   }, [initial.range]);
 
   /** "ok", "skipped" (a request for that period is already running), "superseded" or an error. */
-  const load = async (r: AnalyticsRange, { fresh = false } = {}): Promise<"ok" | "skipped" | "superseded" | "busy" | "failed"> => {
+  const load = async (r: AnalyticsRange, { fresh = false, quiet = false } = {}): Promise<"ok" | "skipped" | "superseded" | "busy" | "failed"> => {
     const running = inflight.current.get(r);
     if (running && !fresh) return "skipped";
     running?.ctrl.abort();
     const mine = { seq: ++seq.current, ctrl: new AbortController() };
     inflight.current.set(r, mine);
-    setLoading(true);
+    if (!quiet) setLoading(true);
     try {
       const res = await fetch(`/api/analytics/summary?range=${r}${fresh ? "&fresh=1" : ""}`, { cache: "no-store", signal: mine.ctrl.signal });
       if (res.status === 429) return "busy";
@@ -94,6 +94,16 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
       setLoading(inflight.current.size > 0);
     }
   };
+
+  // The page is shared and cached (no one's country is in it): right after it appears, one
+  // request to the private summary API brings this visitor's country and, when it counts, their
+  // visit, in the same snapshot as the figures, map and ranking. Quiet: no "Updating" label.
+  useEffect(() => {
+    // after the first paint, once per page view (a remount in development cancels the first)
+    const t = setTimeout(() => void load(initial.range, { quiet: true }), 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Refresh traffic: a fresh read of the selected period (recorded figures read now; in Launch
   // Mode the simulation is recomputed for this moment from its preset and seed). A read only:
@@ -237,6 +247,7 @@ export default function AnalyticsView({ initial }: { initial: PublicAnalytics })
                     <span>
                       You&rsquo;re in <span className="an-you-place">{youName}</span>. {youLine(youCount, Boolean(viewer?.included))}
                       {viewer?.test && <span className="an-you-test">Dev test country, not detected</span>}
+                      {viewer?.excluded === "owner" && <span className="an-you-test">Signed in to Studio: your visits are not counted</span>}
                     </span>
                   </p>
                 )}

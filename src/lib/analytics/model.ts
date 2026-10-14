@@ -380,6 +380,11 @@ export function countryFromGeoHeader(value: string | null): string | null {
 export interface Viewer {
   country: string;
   code: string | null;
+  /**
+   * Why this visit is never counted (code is null): the signed-in owner and bots are excluded by
+   * the collector, so they are excluded here too. Absent for a countable visitor.
+   */
+  excluded?: "owner" | "bot";
   /** a development-only test country (ANALYTICS_DEV_COUNTRY), not a detected location */
   test?: true;
 }
@@ -426,9 +431,16 @@ export function othersFrom(count: number, included: boolean): number {
   return Math.max(0, count - (included ? 1 : 0));
 }
 
-/** The personal line beside the map. */
+/**
+ * The personal line beside the map, from the country's figure in the shown report.
+ *  - the viewer is in that figure: it counts the others ("62 other visitors came from there."),
+ *    or says the viewer is the first;
+ *  - the viewer is not (the signed-in owner, or a visit stored under another country): it states
+ *    the figure as it is, never claiming the viewer is among them.
+ */
 export function youLine(count: number, included: boolean): string {
   const others = othersFrom(count, included);
-  if (others === 0) return included ? "No other visitors came from there in this period." : "No visitors came from there in this period.";
-  return `${others.toLocaleString("en-IN")} ${others === 1 ? "visitor" : "visitors"} came from there too.`;
+  const n = others.toLocaleString("en-IN");
+  if (included) return others === 0 ? "You’re the first visitor here." : `${n} other ${others === 1 ? "visitor" : "visitors"} came from there.`;
+  return others === 0 ? "No visitors came from there in this period." : `${n} ${others === 1 ? "visitor" : "visitors"} came from there.`;
 }
