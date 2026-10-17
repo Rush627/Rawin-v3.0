@@ -6,6 +6,7 @@ import {
   DictationController,
   RecorderController,
   SpeechController,
+  audioContextCtor,
   browserCloudSpeechEnv,
   browserDictationEnv,
   browserLocale,
@@ -141,7 +142,8 @@ export function useSpeech({ cloud = false }: { cloud?: boolean } = {}) {
   const deviceSupported = useClientSupport(
     () => typeof window !== "undefined" && "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function"
   );
-  const audioSupported = useClientSupport(() => typeof window !== "undefined" && typeof window.Audio === "function" && typeof URL.createObjectURL === "function");
+  // cloud replies are played with Web Audio (never a media element: see webAudioSpeechOutput)
+  const audioSupported = useClientSupport(() => audioContextCtor() !== null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   // The selector only renders client-side once voices exist, so reading storage here is safe
   const [voiceURI, setVoiceURIState] = useState<string>(() => (typeof window === "undefined" ? "" : storedVoiceURI()));

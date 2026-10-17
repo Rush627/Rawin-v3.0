@@ -1254,16 +1254,26 @@ export class RecorderController extends Observable<RecorderState> {
 
 /* ------------------------------------------------------------------ cloud voice (MeloTTS) */
 
-export interface AudioLike {
-  src: string;
-  preload: string;
-  play(): Promise<void> | void;
-  pause(): void;
-  load(): void;
-  removeAttribute(name: string): void;
-  onplaying: (() => void) | null;
-  onended: (() => void) | null;
-  onerror: (() => void) | null;
+/**
+ * Where generated passages are heard. The browser's is Web Audio (decoded buffers), never a media
+ * element: an <audio> element playing speech is published by the browser as a media session (the
+ * Android notification and lock-screen player, iOS Now Playing, the desktop media controls), the
+ * same reason the ambience is played as buffers (lib/audio/engine.ts).
+ */
+export interface SpeechOutputLike {
+  /** Inside a tap: allow later playback (iOS only lets audio start after one started in a gesture) */
+  unlock(): void;
+  /**
+   * Decode and start one passage, replacing any playing one. Resolves once it is audible; rejects
+   * with an "EncodingError" (undecodable), a "NotAllowedError" (the browser will not play yet) or
+   * an "AbortError" (replaced or stopped first). `ended` follows a natural end only, `interrupted`
+   * a stop by the system (an iOS call, the page frozen); neither follows stop().
+   */
+  play(audio: Blob, events: { ended(): void; interrupted(): void }): Promise<void>;
+  /** Stop the current passage at once (no event follows) */
+  stop(): void;
+  /** Stop and release the audio context */
+  close(): void;
 }
 
 export class CloudSpeechError extends Error {
@@ -1279,9 +1289,7 @@ export class CloudSpeechError extends Error {
 export interface CloudSpeechEnv extends TimerApi {
   /** Generate one passage; rejects with CloudSpeechError (or an AbortError when cancelled) */
   fetchAudio(text: string, signal: AbortSignal): Promise<Blob>;
-  createAudio(): AudioLike | null;
-  createObjectURL(b: Blob): string;
-  revokeObjectURL(url: string): void;
+  createOutput(): SpeechOutputLike | null;
 }
 
 export interface CloudPlaybackState extends PlaybackState {
@@ -1293,54 +1301,28 @@ export interface CloudPlaybackState extends PlaybackState {
 
 /** Characters per request: a sentence or two (MeloTTS takes a few seconds per request) */
 export const CLOUD_PART_CHARS = 260;
-/** No "playing" event this long after play(): the audio did not start */
+/** Not audible this long after a passage was ready: the audio did not start */
 export const CLOUD_START_MS = 8000;
 const CACHE_LIMIT = 24;
 const PLAY_FAILED = "This reply's audio couldn't be played. Tap Listen to try again.";
 
-/** 0.05 s of silence (8 kHz, 8-bit WAV): played inside the first tap to unlock the element (iOS) */
-export const SILENT_WAV = (() => {
-  const n = 400;
-  const b = new Uint8Array(44 + n);
-  const v = new DataView(b.buffer);
-  const ascii = (o: number, s: string) => [...s].forEach((c, i) => (b[o + i] = c.charCodeAt(0)));
-  ascii(0, "RIFF");
-  v.setUint32(4, 36 + n, true);
-  ascii(8, "WAVE");
-  ascii(12, "fmt ");
-  v.setUint32(16, 16, true);
-  v.setUint16(20, 1, true);
-  v.setUint16(22, 1, true);
-  v.setUint32(24, 8000, true);
-  v.setUint32(28, 8000, true);
-  v.setUint16(32, 1, true);
-  v.setUint16(34, 8, true);
-  ascii(36, "data");
-  v.setUint32(40, n, true);
-  b.fill(128, 44);
-  let bin = "";
-  b.forEach((x) => (bin += String.fromCharCode(x)));
-  return "data:audio/wav;base64," + btoa(bin);
-})();
-
 const errName = (e: unknown) => (e && typeof e === "object" && "name" in e ? String((e as { name: unknown }).name) : "");
 
 /**
- * Spoken replies with MeloTTS audio played through ONE reused <audio> element. The element is
- * unlocked inside the first tap (iOS only lets an element play later, after a network wait, once
- * it has played in a gesture), so speak() should be called from the Listen tap. A reply is split
- * into passages; the next one is generated while the current one plays, generated passages are
- * cached for replay, and object URLs are revoked as soon as they are replaced. The state is
- * truthful: "preparing" until the element reports "playing", errors end in "idle" with the
- * server's reason, and a failure never falls back to another voice on its own.
+ * Spoken replies with MeloTTS audio played through ONE reused output (Web Audio, so a reply is
+ * never presented to the system as media; see SpeechOutputLike). The output is unlocked inside
+ * the first tap (iOS only lets audio play later, after a network wait, once it has played in a
+ * gesture), so speak() should be called from the Listen tap. A reply is split into passages; the
+ * next one is generated while the current one plays and generated passages are cached for
+ * replay. The state is truthful: "preparing" until the output reports a passage audible, errors
+ * end in "idle" with the server's reason, and a failure never falls back to another voice on its
+ * own.
  */
 export class CloudSpeechController extends Observable<CloudPlaybackState> {
   private env: CloudSpeechEnv;
-  private audio: AudioLike | null = null;
-  private unlocked = false;
+  private output: SpeechOutputLike | null = null;
   private run = 0;
   private abort: AbortController | null = null;
-  private url: string | null = null;
   private timer: unknown = null;
   private cache = new Map<string, Blob>();
 
@@ -1351,16 +1333,8 @@ export class CloudSpeechController extends Observable<CloudPlaybackState> {
 
   /** Call inside a tap: makes later playback (after the network wait) allowed on iOS */
   unlock() {
-    const a = this.element();
-    if (!a || this.unlocked) return;
-    this.unlocked = true;
-    a.onplaying = null;
-    a.onended = null;
-    a.onerror = null;
     try {
-      a.src = SILENT_WAV;
-      const p = a.play();
-      if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+      this.out()?.unlock();
     } catch {
       // nothing to unlock
     }
@@ -1412,40 +1386,32 @@ export class CloudSpeechController extends Observable<CloudPlaybackState> {
         return settle(err.message, err.code);
       }
       if (!current()) return;
-      const a = this.element();
-      if (!a) return settle(SPEECH_ERRORS.unsupported, "unsupported");
-      const url = this.env.createObjectURL(blob);
-      const previous = this.url;
-      this.url = url;
-      a.onplaying = () => {
-        if (!current()) return;
-        this.disarm();
-        if (this.state.phase !== "playing") this.set({ phase: "playing" });
-        if (i + 1 < parts.length) void fetchPart(i + 1); // generate the next passage meanwhile
-      };
-      a.onended = () => {
-        if (!current()) return;
-        // the pause the structure calls for, then the next passage (a stop cancels it)
-        const pause = segments[i]?.pauseAfterMs ?? 0;
-        if (pause > 0 && i + 1 < parts.length) this.arm(pause, () => void playPart(i + 1));
-        else void playPart(i + 1);
-      };
-      a.onerror = () => settle(PLAY_FAILED, "decode");
-      a.src = url;
-      if (previous) this.env.revokeObjectURL(previous);
+      const out = this.out();
+      if (!out) return settle(SPEECH_ERRORS.unsupported, "unsupported");
       this.arm(CLOUD_START_MS, () => settle(SPEECH_ERRORS.silent, "no-start"));
       try {
-        const p = a.play();
-        if (p && typeof (p as Promise<void>).catch === "function") {
-          (p as Promise<void>).catch((e: unknown) => {
-            const name = errName(e);
-            if (name === "AbortError") return; // interrupted by a newer source
-            settle(name === "NotAllowedError" ? SPEECH_ERRORS.blocked : PLAY_FAILED, name === "NotAllowedError" ? "blocked" : "play");
-          });
-        }
-      } catch {
-        settle(PLAY_FAILED, "play");
+        await out.play(blob, {
+          ended: () => {
+            if (!current()) return;
+            // the pause the structure calls for, then the next passage (a stop cancels it)
+            const pause = segments[i]?.pauseAfterMs ?? 0;
+            if (pause > 0 && i + 1 < parts.length) this.arm(pause, () => void playPart(i + 1));
+            else void playPart(i + 1);
+          },
+          // the system took the audio away (a call, the page frozen): end quietly, like a stop
+          interrupted: () => settle(null, null),
+        });
+      } catch (e) {
+        if (!current()) return;
+        const name = errName(e);
+        if (name === "AbortError") return; // replaced by a newer passage or stopped
+        if (name === "NotAllowedError") return settle(SPEECH_ERRORS.blocked, "blocked");
+        return settle(PLAY_FAILED, name === "EncodingError" ? "decode" : "play");
       }
+      if (!current()) return;
+      this.disarm();
+      if (this.state.phase !== "playing") this.set({ phase: "playing" });
+      if (i + 1 < parts.length) void fetchPart(i + 1); // generate the next passage meanwhile
     };
     void playPart(0);
   }
@@ -1468,37 +1434,29 @@ export class CloudSpeechController extends Observable<CloudPlaybackState> {
   dispose() {
     this.stop();
     this.cache.clear();
-    this.audio = null;
-  }
-
-  private element(): AudioLike | null {
-    if (!this.audio) {
-      this.audio = this.env.createAudio();
-      if (this.audio) this.audio.preload = "auto";
+    try {
+      this.output?.close();
+    } catch {
+      // already closed
     }
-    return this.audio;
+    this.output = null;
   }
 
-  /** Abort generation, stop the element and release the current object URL */
+  private out(): SpeechOutputLike | null {
+    if (!this.output) this.output = this.env.createOutput();
+    return this.output;
+  }
+
+  /** Abort generation and stop the passage that is playing */
   private halt() {
     this.disarm();
     this.abort?.abort();
     this.abort = null;
-    const a = this.audio;
-    if (a) {
-      a.onplaying = null;
-      a.onended = null;
-      a.onerror = null;
-      try {
-        a.pause();
-        a.removeAttribute("src");
-        a.load();
-      } catch {
-        // ignore
-      }
+    try {
+      this.output?.stop();
+    } catch {
+      // ignore
     }
-    if (this.url) this.env.revokeObjectURL(this.url);
-    this.url = null;
   }
 
   private remember(text: string, blob: Blob) {
@@ -1633,8 +1591,150 @@ export function browserCloudSpeechEnv(): CloudSpeechEnv {
         signal.removeEventListener("abort", onAbort);
       }
     },
-    createAudio: () => (typeof Audio === "function" ? (new Audio() as unknown as AudioLike) : null),
-    createObjectURL: (b) => URL.createObjectURL(b),
-    revokeObjectURL: (u) => URL.revokeObjectURL(u),
+    createOutput: () => webAudioSpeechOutput(),
+  };
+}
+
+type AudioContextCtor = new (options?: AudioContextOptions) => AudioContext;
+
+export function audioContextCtor(): AudioContextCtor | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as { AudioContext?: AudioContextCtor; webkitAudioContext?: AudioContextCtor };
+  return w.AudioContext || w.webkitAudioContext || null;
+}
+
+/** How long a suspended context may take to resume before playback counts as blocked */
+export const RESUME_MS = 1500;
+
+const namedError = (name: string, message: string) => {
+  const e = new Error(message);
+  e.name = name;
+  return e;
+};
+
+/**
+ * Orbit's speech output: one AudioContext of its own (created inside the first tap, kept for the
+ * visit, closed on dispose) and one buffer source per passage, straight to the speakers. It is
+ * not the site director's context on purpose: the visitor's sound mute, the CMS sound switches
+ * and the director's suspend-while-hidden apply to the ambience and clicks, not to Orbit's voice.
+ * Nothing here touches navigator.mediaSession: no title, text, artwork or action handlers are
+ * ever published for a reply.
+ */
+export function webAudioSpeechOutput(Ctor: AudioContextCtor | null = audioContextCtor()): SpeechOutputLike | null {
+  if (!Ctor) return null;
+  let ctx: AudioContext | null = null;
+  let source: AudioBufferSourceNode | null = null;
+  let onInterrupt: (() => void) | null = null;
+  let token = 0;
+
+  const release = () => {
+    const s = source;
+    source = null;
+    onInterrupt = null;
+    if (!s) return;
+    s.onended = null;
+    try {
+      s.stop();
+    } catch {
+      // never started or already stopped
+    }
+    try {
+      s.disconnect();
+    } catch {
+      // already gone
+    }
+  };
+
+  const context = (): AudioContext | null => {
+    if (ctx && ctx.state !== "closed") return ctx;
+    try {
+      const c = new Ctor({ latencyHint: "interactive" });
+      // an iOS interruption (a call, Siri) or a frozen page: the passage cannot finish
+      c.addEventListener("statechange", () => {
+        if (c.state === "running" || !source || !onInterrupt) return;
+        const fn = onInterrupt;
+        release();
+        fn();
+      });
+      ctx = c;
+    } catch {
+      ctx = null;
+    }
+    return ctx;
+  };
+
+  const decode = (c: AudioContext, bytes: ArrayBuffer) =>
+    new Promise<AudioBuffer>((resolve, reject) => {
+      const fail = () => reject(namedError("EncodingError", "undecodable audio"));
+      try {
+        // the callback form as well: older Safari returns no promise from decodeAudioData
+        const p = c.decodeAudioData(bytes, resolve, fail);
+        if (p && typeof p.then === "function") p.then(resolve, fail);
+      } catch {
+        fail();
+      }
+    });
+
+  return {
+    unlock() {
+      const c = context();
+      if (!c || c.state === "running") return;
+      // a silent one-sample buffer started inside the gesture unlocks iOS output
+      try {
+        const s = c.createBufferSource();
+        s.buffer = c.createBuffer(1, 1, c.sampleRate);
+        s.connect(c.destination);
+        s.start();
+      } catch {
+        // ignore
+      }
+      c.resume().catch(() => {});
+    },
+    async play(audio, events) {
+      const run = ++token;
+      release();
+      const c = context();
+      if (!c) throw namedError("NotSupportedError", "no audio context");
+      const replaced = () => run !== token;
+      const buffer = await decode(c, await audio.arrayBuffer());
+      if (replaced()) throw namedError("AbortError", "replaced");
+      if (c.state !== "running") {
+        // allowed after an earlier tap on most browsers; without one, resume() never settles
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        await Promise.race([c.resume().catch(() => {}), new Promise<void>((r) => (timer = setTimeout(r, RESUME_MS)))]);
+        clearTimeout(timer);
+        if (replaced()) throw namedError("AbortError", "replaced");
+        // read again: resume() may have changed it meanwhile
+        if ((c.state as string) !== "running") throw namedError("NotAllowedError", "audio not allowed yet");
+      }
+      const s = c.createBufferSource();
+      s.buffer = buffer;
+      s.connect(c.destination);
+      s.onended = () => {
+        if (source !== s) return; // stopped or replaced: no event
+        source = null;
+        onInterrupt = null;
+        try {
+          s.disconnect();
+        } catch {
+          // already gone
+        }
+        events.ended();
+      };
+      source = s;
+      onInterrupt = events.interrupted;
+      s.start();
+    },
+    stop() {
+      token += 1;
+      release();
+    },
+    close() {
+      token += 1;
+      release();
+      const c = ctx;
+      ctx = null;
+      if (c && c.state !== "closed") c.close().catch(() => {});
+    },
   };
 }
