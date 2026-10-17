@@ -17,6 +17,8 @@
  *   are held until they finish.
  */
 
+import { LETTER_DOT, collapseLetterDots, speakInitialisms, type SpeechVoiceKind } from "@/lib/speech/pronunciation";
+
 /* ------------------------------------------------------------------ shared */
 
 export interface TimerApi {
@@ -538,6 +540,149 @@ export function speakable(markdown: string) {
     .trim();
 }
 
+/* ------------------------------------------------------------------ spoken structure */
+
+/** Which voice reads the text: the browser's own (Web Speech) or MeloTTS (cloud). */
+export type { SpeechVoiceKind };
+
+/** One utterance (device) or one generated passage (cloud), and the silence that follows it. */
+export interface SpeechSegment {
+  text: string;
+  pauseAfterMs: number;
+}
+
+/**
+ * Pauses between segments, by the structure they close. A person reading a reply aloud stops
+ * after a heading, breathes between paragraphs and list points, and only briefly where a long
+ * paragraph had to be split. Sentence ends inside a segment are left to the voice itself (with
+ * their punctuation kept, so a question still rises).
+ */
+export const SPEECH_PAUSES = {
+  heading: 520,
+  paragraph: 380,
+  item: 240,
+  split: 110,
+  /** a little longer after a question, so it can land */
+  question: 120,
+} as const;
+
+/**
+ * Abbreviations as each voice should say them (lib/speech/pronunciation.ts holds the dictionary
+ * and the evidence for each spelling). Speech only: the visible reply is never changed.
+ */
+export function speakAcronyms(text: string, voice: SpeechVoiceKind): string {
+  return speakInitialisms(text, voice);
+}
+
+type Block = { kind: "heading" | "paragraph" | "item" | "code"; text: string };
+
+/** Split a Markdown reply into the blocks a reader pauses between. */
+export function speechBlocks(markdown: string): Block[] {
+  const blocks: Block[] = [];
+  let para: string[] = [];
+  const flush = () => {
+    if (para.length) blocks.push({ kind: "paragraph", text: para.join(" ") });
+    para = [];
+  };
+  const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
+  let inFence = false;
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    if (/^\s*(```|~~~)/.test(line)) {
+      if (!inFence) {
+        flush();
+        blocks.push({ kind: "code", text: "I've included a code sample on screen." });
+      }
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    if (!line.trim()) {
+      flush();
+      continue;
+    }
+    if (/^\s{0,3}#{1,6}\s+\S/.test(line)) {
+      flush();
+      blocks.push({ kind: "heading", text: line });
+      continue;
+    }
+    // a line that is only bold text works as a heading in chat replies
+    if (/^\s*(\*\*|__)[^*_]+(\*\*|__)\s*:?\s*$/.test(line)) {
+      flush();
+      blocks.push({ kind: "heading", text: line });
+      continue;
+    }
+    if (/^\s*([-*+]|\d+[.)])\s+\S/.test(line)) {
+      flush();
+      blocks.push({ kind: "item", text: line });
+      continue;
+    }
+    if (/^\s*\|/.test(line)) {
+      // a table row: its cells as a list item (the separator row has no words)
+      if (/[A-Za-z0-9]/.test(line)) {
+        flush();
+        blocks.push({ kind: "item", text: line.replace(/^\s*\||\|\s*$/g, "") });
+      }
+      continue;
+    }
+    if (/^\s*([-*_])\1{2,}\s*$/.test(line)) {
+      flush(); // a horizontal rule
+      continue;
+    }
+    para.push(line);
+  }
+  flush();
+  return blocks;
+}
+
+/**
+ * A reply as the segments a voice should read, in order: no Markdown, code or URLs read aloud,
+ * every block closed by punctuation (questions keep their question mark), long blocks split
+ * only at sentence ends, a pause after each segment sized by what it closes, and the voice's
+ * own pronunciation fixes applied. The visible reply is never changed.
+ */
+export function speechSegments(markdown: string, voice: SpeechVoiceKind, max = voice === "cloud" ? CLOUD_PART_CHARS : 220): SpeechSegment[] {
+  const out: SpeechSegment[] = [];
+  const blocks = speechBlocks(markdown);
+  blocks.forEach((b, bi) => {
+    let text = b.kind === "code" ? b.text : speakable(b.kind === "item" ? b.text.replace(/^\s*\d+[.)]\s+/, "") : b.text);
+    text = text.replace(/[\s,;]+$/, "").trim();
+    if (!text || !/[A-Za-z0-9]/.test(text)) return;
+    // a block always ends like a sentence: a heading or list point is not run into what follows
+    if (!/[.!?:…]$/.test(text)) text += ".";
+    // device letters keep a dot that is not a sentence end until the text is split into parts
+    text = voice === "cloud" ? prepareForSpeech(speakInitialisms(text, "cloud")) : speakInitialisms(text, "device", LETTER_DOT);
+    const parts = (text.length > max ? chunkSentences(text, max).flatMap((p) => splitLong(p, max)) : [text]).map((p) => collapseLetterDots(p.split(LETTER_DOT).join(".")));
+    const nextIsItem = blocks[bi + 1]?.kind === "item";
+    const closing = b.kind === "heading" ? SPEECH_PAUSES.heading : b.kind === "item" && nextIsItem ? SPEECH_PAUSES.item : SPEECH_PAUSES.paragraph;
+    parts.forEach((part, pi) => {
+      const last = pi === parts.length - 1;
+      let pause = last ? closing : SPEECH_PAUSES.split;
+      if (/\?["')\]]*$/.test(part)) pause += SPEECH_PAUSES.question;
+      out.push({ text: part, pauseAfterMs: pause });
+    });
+  });
+  if (out.length) out[out.length - 1].pauseAfterMs = 0;
+  return out;
+}
+
+/** A "sentence" longer than `max` (no full stops): split at commas, else at spaces. */
+function splitLong(text: string, max: number): string[] {
+  if (text.length <= max) return [text];
+  const out: string[] = [];
+  let rest = text;
+  while (rest.length > max) {
+    const window = rest.slice(0, max);
+    let cut = Math.max(window.lastIndexOf(", "), window.lastIndexOf("; "));
+    cut = cut > max * 0.4 ? cut + 1 : window.lastIndexOf(" ");
+    if (cut <= 0) cut = max;
+    out.push(rest.slice(0, cut).trim());
+    rest = rest.slice(cut).trim();
+  }
+  if (rest) out.push(rest);
+  return out;
+}
+
 /** Short utterances avoid Chrome's long-utterance cut-off and keep cancellation snappy. */
 export function chunkSentences(text: string, max = 220): string[] {
   const sentences = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
@@ -696,7 +841,8 @@ export class SpeechController extends Observable<PlaybackState> {
     const synth = this.env.synth();
     const U = this.env.Utterance();
     if (!synth || !U) return this.set({ phase: "idle", id: null, error: SPEECH_ERRORS.unsupported });
-    const parts = chunkSentences(speakable(markdown)).filter((p) => p.trim());
+    const segments = speechSegments(markdown, "device");
+    const parts = segments.map((p) => p.text);
     if (!parts.length) return this.set({ phase: "idle", id: null, error: SPEECH_ERRORS.empty });
 
     const run = ++this.run;
@@ -769,7 +915,10 @@ export class SpeechController extends Observable<PlaybackState> {
       u.onend = () => {
         this.live.delete(u);
         if (!isCurrent()) return;
-        speakPart(i + 1);
+        // the pause the structure calls for, then the next segment (a stop cancels it)
+        const pause = segments[i]?.pauseAfterMs ?? 0;
+        if (pause > 0 && i + 1 < parts.length) this.arm(pause, () => speakPart(i + 1));
+        else speakPart(i + 1);
       };
       u.onerror = (e) => {
         this.live.delete(u);
@@ -855,13 +1004,6 @@ const SPOKEN_TERMS: Array<[RegExp, string]> = [
   [/\bapprox\./gi, "approximately"],
   [/\bRAWIN\b/g, "Rawin"],
   [/\b(\w+)\.js\b/gi, "$1 J S"],
-  [/\bUI\/UX\b/g, "U I and U X"],
-  [/\bUX\b/g, "U X"],
-  [/\bUI\b/g, "U I"],
-  [/\bAPIs\b/g, "A P Is"],
-  [/\bAPI\b/g, "A P I"],
-  [/\bCMS\b/g, "C M S"],
-  [/\bAI\b/g, "A I"],
 ];
 
 /**
@@ -1225,7 +1367,8 @@ export class CloudSpeechController extends Observable<CloudPlaybackState> {
   }
 
   speak(id: string, markdown: string) {
-    const parts = chunkSentences(prepareForSpeech(speakable(markdown)), CLOUD_PART_CHARS).filter((p) => p.trim());
+    const segments = speechSegments(markdown, "cloud");
+    const parts = segments.map((p) => p.text);
     if (!parts.length) return this.set({ phase: "idle", id: null, error: SPEECH_ERRORS.empty, errorCode: "empty", failedId: null });
     this.halt();
     this.unlock(); // still inside the tap when called from Listen
@@ -1281,7 +1424,11 @@ export class CloudSpeechController extends Observable<CloudPlaybackState> {
         if (i + 1 < parts.length) void fetchPart(i + 1); // generate the next passage meanwhile
       };
       a.onended = () => {
-        if (current()) void playPart(i + 1);
+        if (!current()) return;
+        // the pause the structure calls for, then the next passage (a stop cancels it)
+        const pause = segments[i]?.pauseAfterMs ?? 0;
+        if (pause > 0 && i + 1 < parts.length) this.arm(pause, () => void playPart(i + 1));
+        else void playPart(i + 1);
       };
       a.onerror = () => settle(PLAY_FAILED, "decode");
       a.src = url;

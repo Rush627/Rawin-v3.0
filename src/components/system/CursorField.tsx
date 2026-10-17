@@ -6,7 +6,7 @@ import { THEME_CHANGE_EVENT } from "@/components/theme/ThemeProvider";
 import { createFieldRenderer, type FieldRenderer } from "./particles/field-gl";
 import { sampleGlyphPoints } from "./particles/glyph-mask";
 import { createForegroundMap, fgHit, FG_PAD } from "./particles/foreground";
-import { getHeroScene, subscribeFieldSignal, subscribeHeroScene, type FieldSignal } from "./particles/scene";
+import { getHeroScene, setHeroPhase, subscribeFieldSignal, subscribeHeroScene, type FieldSignal } from "./particles/scene";
 
 /**
  * RAWIN particle layer — two independent systems sharing one canvas and one loop.
@@ -120,6 +120,8 @@ const EMERGE_BOOST = 0.9;
 const EMERGE_BOOST_MS = 1600;
 /** Share of released grains that also shed a short-lived spark at the letter edge. */
 const EMERGE_SPARK_SHARE = 0.4;
+/** The emergence starts once each name line is within this share of its height of rest. */
+const NAME_SETTLE_SHARE = 0.04;
 /** The whole layer sleeps after this long without pointer/scroll/key input (ms). */
 const LAYER_SLEEP_MS = 45000;
 
@@ -334,6 +336,45 @@ export default function CursorField() {
     const t0 = performance.now();
 
     const enabled = () => dark && !offRef.current && !standalone && !document.hidden;
+
+    // The homepage sequence (particles/scene.ts): on a fresh load of the homepage, and after a
+    // switch back to the dark theme there, the field draws nothing and follows nothing until the
+    // name has given up its grains. `followFrom` is when following may begin (Infinity = held);
+    // the pointer is only remembered meanwhile, and the cloud glides to it once released.
+    const isFreshLoad = () => {
+      const nav = performance.getEntriesByType?.("navigation")[0] as PerformanceNavigationTiming | undefined;
+      return !nav || nav.type === "navigate" || nav.type === "reload";
+    };
+    const sequenceDue = () => !emergenceClaimed && isFreshLoad() && location.pathname === "/";
+    let followFrom = sequenceDue() ? Infinity : 0;
+    let followTimer = 0;
+    let pendingX = 0;
+    let pendingY = 0;
+    let pointerIn = false;
+    if (followFrom === Infinity) setHeroPhase(dark ? "name-reveal" : "inactive");
+    const openFollow = (at: number) => {
+      followFrom = at;
+      window.clearTimeout(followTimer);
+      followTimer = window.setTimeout(() => {
+        if (!enabled()) return;
+        setHeroPhase("cursor-following");
+        if (pointerIn) {
+          // the cloud glides from where it gathered to the pointer (no jump)
+          mx = pendingX;
+          my = pendingY;
+          present = true;
+          lastMove = performance.now();
+          cloudAwake = true;
+          start();
+        }
+      }, Math.max(0, at - performance.now()));
+    };
+    /** The sequence cannot run (name off screen, nothing to sample): release the field now. */
+    const abandonSequence = () => {
+      if (followFrom !== Infinity) return;
+      setHeroPhase("particle-emergence");
+      openFollow(performance.now());
+    };
 
     // ------------------------------------------------------------- the foreground
     // One map of all visible content, shared with the GPU field; rebuilt from the loop on a
@@ -658,7 +699,7 @@ export default function CursorField() {
       const dt = Math.min(0.05, Math.max(0.001, (now - (lastFrame || now - 16.7)) / 1000));
       lastFrame = now;
 
-      const box = gl && now - lastInput < LAYER_SLEEP_MS ? heroBox() : null;
+      const box = gl && now >= followFrom && now - lastInput < LAYER_SLEEP_MS ? heroBox() : null;
       const bgOn = Boolean(box);
       // the foreground map belongs to the cursor cloud alone: one scroll read per frame and a
       // rebuild when one is due, only while the cloud is awake
@@ -723,7 +764,12 @@ export default function CursorField() {
     const onMove = (e: PointerEvent) => {
       if (e.pointerType !== "mouse") return;
       lastInput = performance.now();
+      pendingX = e.clientX;
+      pendingY = e.clientY;
+      pointerIn = true;
       if (!enabled()) return;
+      // held: the name has not given up its grains yet, so the field does not follow
+      if (lastInput < followFrom) return;
       mx = e.clientX;
       my = e.clientY;
       if (!seeded) {
@@ -745,6 +791,7 @@ export default function CursorField() {
       start();
     };
     const onLeave = () => {
+      pointerIn = false;
       present = false;
       cloudAwake = true;
       start();
@@ -785,7 +832,38 @@ export default function CursorField() {
       fg.invalidate();
     };
     const onTheme = () => {
+      const wasDark = dark;
       dark = document.documentElement.getAttribute("data-theme") === "dark";
+      if (wasDark === dark) return;
+      if (!dark) {
+        // light theme: no field at all. An emergence in progress ends at once (the name's
+        // mask is cleared) and the loop stops; nothing runs hidden.
+        cancelEmergence();
+        followFrom = Infinity;
+        window.clearTimeout(followTimer);
+        stop(true);
+        setHeroPhase("inactive");
+        return;
+      }
+      // back to dark: on the homepage with the name in view the grains emerge from it again
+      // before the field follows; anywhere else the field simply resumes
+      if (hero?.name?.isConnected) {
+        const r = hero.name.getBoundingClientRect();
+        if (r.bottom > 0 && r.top < h) {
+          lastInput = performance.now();
+          fg.invalidate();
+          lastBgDraw = 0;
+          followFrom = Infinity;
+          present = false;
+          setHeroPhase("name-reveal");
+          scheduleEmergence(true);
+          return;
+        }
+      }
+      if (followFrom === Infinity) {
+        setHeroPhase("particle-emergence");
+        openFollow(performance.now());
+      }
       if (!dark) stop(true);
       else {
         lastInput = performance.now();
@@ -827,22 +905,33 @@ export default function CursorField() {
     let disposed = false;
     let emergenceRan = false;
     let cleanupMask: (() => void) | null = null;
-    const isFreshLoad = () => {
-      const nav = performance.getEntriesByType?.("navigation")[0] as PerformanceNavigationTiming | undefined;
-      return !nav || nav.type === "navigate" || nav.type === "reload";
-    };
     // the name's lines rise into place on load; sample only once they have settled
     const nameSettled = (name: HTMLElement) =>
       Array.from(name.querySelectorAll<HTMLElement>(":scope > span > span")).every((el) => {
         const t = getComputedStyle(el).transform;
-        return t === "none" || t === "matrix(1, 0, 0, 1, 0, 0)";
+        if (t === "none") return true;
+        // close enough to rest: the rise's ease-out tail creeps over its last few percent, and
+        // the grains (sampled from the letters where they are drawn now) need not wait for it
+        const m = t.match(/^matrix\(1, 0, 0, 1, (-?[\d.e-]+), (-?[\d.e-]+)\)$/);
+        const near = Math.max(1.5, el.offsetHeight * NAME_SETTLE_SHARE);
+        return Boolean(m && Math.abs(Number(m[1])) < near && Math.abs(Number(m[2])) < near);
       });
-    const emerge = (name: HTMLElement) => {
-      if (disposed || !enabled() || !name.isConnected) return;
+    let emergeToken = 0;
+    const cancelEmergence = () => {
+      window.clearTimeout(emergeTimer);
+      if (idleHandle) window.cancelIdleCallback?.(idleHandle);
+      idleHandle = 0;
+      emergeToken++;
+      cleanupMask?.();
+      cleanupMask = null;
+    };
+    const emerge = (name: HTMLElement, token: number) => {
+      if (disposed || token !== emergeToken || !enabled()) return;
+      if (!name.isConnected) return abandonSequence();
       const rect = name.getBoundingClientRect();
-      if (rect.bottom < 0 || rect.top > h) return;
+      if (rect.bottom < 0 || rect.top > h) return abandonSequence();
       const pts = sampleGlyphPoints(name, N);
-      if (!pts) return;
+      if (!pts) return abandonSequence();
       emergenceRan = true;
       const count = pts.length / 2;
       const now = performance.now();
@@ -887,6 +976,9 @@ export default function CursorField() {
       sweep.finished.then(clearMask, clearMask);
       cleanupMask = clearMask;
       canvas.dataset.emergedAt = String(Math.round(now));
+      setHeroPhase("particle-emergence");
+      // the pointer may lead the cloud once every grain has left the letters
+      openFollow(now + EMERGE_LEAD_MS + EMERGE_SWEEP_MS + EMERGE_JITTER_MS);
 
       emergeCx = rect.left + rect.width * 0.5;
       emergeCy = rect.top + rect.height * 0.5;
@@ -905,20 +997,24 @@ export default function CursorField() {
       canvas.dataset.emerged = "true";
       start();
     };
-    const scheduleEmergence = () => {
+    /** `again`: a switch back to the dark theme replays the emergence on this document. */
+    const scheduleEmergence = (again = false) => {
       const name = hero?.name;
-      if (emergenceClaimed || !name || !isFreshLoad() || !enabled()) return;
+      if (!name || !enabled()) return;
+      if (!again && (emergenceClaimed || !isFreshLoad())) return;
       emergenceClaimed = true;
+      cancelEmergence();
+      const token = emergeToken;
       const began = performance.now();
       const tryStart = () => {
-        if (disposed) return;
+        if (disposed || token !== emergeToken) return;
         if (!nameSettled(name) && performance.now() - began < 7000) {
-          emergeTimer = window.setTimeout(tryStart, 40);
+          emergeTimer = window.setTimeout(tryStart, 30);
           return;
         }
         // sampling the letterforms is the one heavier step: do it when the main thread is idle
-        if (typeof window.requestIdleCallback === "function") idleHandle = window.requestIdleCallback(() => emerge(name), { timeout: 80 });
-        else emergeTimer = window.setTimeout(() => emerge(name), 0);
+        if (typeof window.requestIdleCallback === "function") idleHandle = window.requestIdleCallback(() => emerge(name, token), { timeout: 50 });
+        else emergeTimer = window.setTimeout(() => emerge(name, token), 0);
       };
       (document.fonts?.ready ?? Promise.resolve())
         .then(() => {
@@ -1012,12 +1108,18 @@ export default function CursorField() {
 
     const unsubscribeScene = subscribeHeroScene(() => {
       hero = getHeroScene();
+      // the hero left (client navigation away) while the field was still held: release it
+      if (!hero && followFrom === Infinity && dark) abandonSequence();
       lastBgDraw = 0;
       lastInput = performance.now();
       if (hero) scheduleEmergence();
       start();
     });
     scheduleEmergence();
+    // whatever happens to the hero, a held field is released within a few seconds
+    const safetyTimer = window.setTimeout(() => {
+      if (dark && followFrom === Infinity && !emergenceRan) abandonSequence();
+    }, 9000);
 
     window.addEventListener("pointermove", onMove, { passive: true });
     document.documentElement.addEventListener("pointerleave", onLeave);
@@ -1033,6 +1135,8 @@ export default function CursorField() {
     return () => {
       disposed = true;
       cleanupMask?.();
+      window.clearTimeout(followTimer);
+      window.clearTimeout(safetyTimer);
       closeLift();
       cancelAnimationFrame(raf);
       window.clearTimeout(resizeTimer);

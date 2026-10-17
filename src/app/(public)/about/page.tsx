@@ -97,7 +97,7 @@ export default async function AboutPage() {
           profile facts beside the portrait (desktop); on phones the facts and a smaller
           portrait share a row beneath the heading, so the whole profile reads in the first
           screen instead of the portrait starting cut off below it. */}
-      <header className="relative mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+10.25rem)] sm:pt-[11.25rem] lg:pt-[clamp(8.5rem,17vh,12.25rem)]">
+      <header className="relative mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+6.5rem)] sm:pt-[7.5rem] md:pt-[11.25rem] lg:pt-[clamp(8.5rem,17vh,12.25rem)]">
         <div className="flex items-center justify-between gap-4 label-mono text-fg-muted mb-8 sm:mb-12">
           <span className="inline-flex items-center gap-3">
             <span className="text-accent">01</span>

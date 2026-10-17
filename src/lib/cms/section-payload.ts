@@ -55,6 +55,8 @@ export const SECTION_ALLOWED_KEYS: Record<EditableSection, string[]> = {
     "headerBrand",
     "themeDefaultDesktop",
     "themeDefaultMobile",
+    "backgroundSoundEnabled",
+    "clickSoundEnabled",
   ],
   home: [
     "heroTitlePrefix",
@@ -655,6 +657,8 @@ export function buildSectionPayload(section: EditableSection, get: (key: string)
       }
 
       if (
+        key === "backgroundSoundEnabled" ||
+        key === "clickSoundEnabled" ||
         key === "showCapabilities" ||
         key === "showValues" ||
         key === "showJourney" ||

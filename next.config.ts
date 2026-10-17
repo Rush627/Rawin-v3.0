@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Ogg Opus site audio (public/audio): the static server has no type for ".opus"
+        source: "/audio/:name*.opus",
+        headers: [{ key: "Content-Type", value: "audio/ogg; codecs=opus" }],
+      },
+      {
         source: "/:path*",
         headers: [
           {

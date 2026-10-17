@@ -9,11 +9,13 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 import OfflineDetector from "@/components/OfflineDetector";
-import EntranceIntro from "@/components/launch/EntranceIntro";
+import StartupStage from "@/components/startup/StartupStage";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { GlassProvider } from "@/components/glass/GlassProvider";
 import { buildThemeBootScript, THEME_COLOR } from "@/components/theme/theme-script";
+import { buildStartupBootScript } from "@/lib/startup/boot-script";
+import { bootLaunch, launchState } from "@/lib/startup/launch";
 import { seoFor } from "@/lib/cms/fields";
 import { BUNDLED } from "@/lib/brand-assets";
 import { getSiteContent, DEFAULT_SITE_CONTENT, maintenanceActiveNow, type SiteContent } from "@/lib/site-content";
@@ -113,6 +115,10 @@ export default async function RootLayout({
   const initialStatus = showMaintenance
     ? (stored?.maintenance?.showMessage ? "maintenance" : "offline")
     : "live";
+  // the launch event as the startup boot script sees it; the window itself is compared with the
+  // visitor's clock in the browser, so a cached page still stops showing it on time
+  const launch = content.launchExperience;
+  const launchView = launchState(launch, 0);
 
   return (
     <html
@@ -140,6 +146,13 @@ export default async function RootLayout({
             }),
           }}
         />
+        {/* the startup decision (Supernova, Signal Awakening or none), before first paint;
+            nothing plays over the maintenance screen */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: buildStartupBootScript(bootLaunch(launch), launchView.duration, !showMaintenance),
+          }}
+        />
       </head>
       <body
         suppressHydrationWarning
@@ -147,9 +160,14 @@ export default async function RootLayout({
       >
         <ThemeProvider>
           <GlassProvider>
-            {/* Rendered in the root shell so it covers the first paint (incl. streaming); it
-                only activates when the pre-paint script flags html[data-intro] on "/". */}
-            <EntranceIntro />
+            {/* Rendered in the root shell so it covers the first paint (incl. streaming) and
+                survives client navigation; it only plays what the boot script chose. */}
+            <StartupStage
+              title={launchView.title}
+              subtitle={launch?.secondaryMessage ?? ""}
+              durationS={launchView.duration}
+              logo={content.global?.headerBrand === "logo" && content.assets.logoDark?.url ? { url: content.assets.logoDark.url, alt: content.assets.logoDark.alt } : null}
+            />
             <OfflineDetector />
             <AvailabilityWatcher
               initialStatus={initialStatus}

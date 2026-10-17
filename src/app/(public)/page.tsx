@@ -6,7 +6,6 @@ import Capabilities from "@/components/home/Capabilities";
 import Principles from "@/components/home/Principles";
 import Chronology from "@/components/home/Chronology";
 import SectionHead from "@/components/system/SectionHead";
-import LaunchExperience from "@/components/launch/LaunchExperience";
 import OrbitInvite from "@/components/home/OrbitInvite";
 import { getFeaturedProjects } from "@/lib/projects";
 import { getSiteContent, publicSiteClosed } from "@/lib/site-content";
@@ -56,8 +55,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <LaunchExperience launch={siteContent.launchExperience} />
-
       <Hero
         prefix={home.heroTitlePrefix}
         name={home.heroName}

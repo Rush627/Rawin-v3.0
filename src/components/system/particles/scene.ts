@@ -59,3 +59,54 @@ export function subscribeFieldSignal(fn: (signal: FieldSignal) => void) {
     signalListeners.delete(fn);
   };
 }
+
+/**
+ * The homepage field sequence, as one explicit state machine (driven by CursorField):
+ *
+ *   none                no sequence on this page: the field behaves as everywhere else
+ *   inactive            light theme (or no field on this device): no particles, no following
+ *   name-reveal         the hero name rises in; the field is held (nothing drawn, no following)
+ *   particle-emergence  the grains leave the letters; the pointer is still not followed
+ *   cursor-following    every grain has left: the field follows the pointer
+ *
+ * Within one run the phases move forward one step at a time (name-reveal → particle-emergence →
+ * cursor-following); a run starts again only through name-reveal (a fresh load, or a switch
+ * back to the dark theme) or stops through inactive. The phase is mirrored on
+ * <html data-hero-phase> for inspection and tests.
+ */
+export type HeroPhase = "none" | "inactive" | "name-reveal" | "particle-emergence" | "cursor-following";
+
+const RUN: HeroPhase[] = ["name-reveal", "particle-emergence", "cursor-following"];
+
+let phase: HeroPhase = "none";
+const phaseListeners = new Set<(p: HeroPhase) => void>();
+
+/** Whether `next` may follow `from`: a run (re)starts at name-reveal, inactive stops it, and
+ *  inside a run the phases only move forward. */
+export function canAdvance(from: HeroPhase, next: HeroPhase) {
+  if (next === "none") return false;
+  if (next === "inactive" || next === "name-reveal") return next !== from;
+  const a = RUN.indexOf(from);
+  const b = RUN.indexOf(next);
+  // one step at a time: following is only ever reached through the emergence
+  return a >= 0 && b === a + 1;
+}
+
+export function getHeroPhase() {
+  return phase;
+}
+
+export function setHeroPhase(next: HeroPhase) {
+  if (!canAdvance(phase, next)) return false;
+  phase = next;
+  if (typeof document !== "undefined") document.documentElement.dataset.heroPhase = next;
+  phaseListeners.forEach((fn) => fn(next));
+  return true;
+}
+
+export function subscribeHeroPhase(fn: (p: HeroPhase) => void) {
+  phaseListeners.add(fn);
+  return () => {
+    phaseListeners.delete(fn);
+  };
+}

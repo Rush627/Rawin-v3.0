@@ -1,0 +1,74 @@
+/* Sound toggle: five bars that move while sound is live (components/audio/SoundToggle.tsx) */
+.sound-toggle-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 16px;
+}
+.sound-toggle-bars > span {
+  display: block;
+  width: 2px;
+  height: calc(var(--h) * 15px);
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: center;
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.1, 1), opacity 0.3s;
+}
+.sound-toggle[data-state="live"] .sound-toggle-bars > span {
+  animation: sound-bar 1.15s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.27s);
+}
+.sound-toggle[data-state="armed"] .sound-toggle-bars > span {
+  transform: scaleY(0.55);
+  opacity: 0.8;
+}
+.sound-toggle[data-state="muted"] .sound-toggle-bars > span {
+  transform: scaleY(0.13);
+  opacity: 0.6;
+}
+@keyframes sound-bar {
+  0% { transform: scaleY(0.35); }
+  100% { transform: scaleY(1); }
+}
+.sound-toggle-strike {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(-38deg) scaleX(0);
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+.sound-toggle[data-state="muted"] .sound-toggle-strike {
+  transform: translate(-50%, -50%) rotate(-38deg) scaleX(1);
+}
+
+/* Touch screens: while the browser waits for a first tap before it allows sound, the switch
+   says so with three soft pulses (a scroll does not count as that tap; any tap does) */
+@media (pointer: coarse) {
+  .sound-toggle[data-state="armed"]::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    opacity: 0;
+    pointer-events: none;
+    animation: sound-armed-hint 2.2s ease-out 1.2s 3;
+  }
+}
+@keyframes sound-armed-hint {
+  0% { opacity: 0.55; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sound-toggle[data-state="live"] .sound-toggle-bars > span {
+    animation: none;
+  }
+  .sound-toggle[data-state="armed"]::after {
+    animation: none;
+  }
+}

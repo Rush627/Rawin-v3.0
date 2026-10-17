@@ -27,7 +27,7 @@ export default function PageIntro({ index, eyebrow, title, lede, meta, children,
   const lead = meta?.length ? "col-span-12 lg:col-span-9" : aside ? "col-span-12 lg:col-span-7" : "col-span-12";
   return (
     <header
-      className={`relative mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+10.25rem)] sm:pt-[11.25rem] lg:pt-[12.25rem] ${className}`}
+      className={`relative mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+6.5rem)] sm:pt-[7.5rem] md:pt-[11.25rem] lg:pt-[12.25rem] ${className}`}
     >
       <div className="flex items-center justify-between gap-4 label-mono text-fg-muted mb-8 sm:mb-12">
         <span className="inline-flex items-center gap-3">

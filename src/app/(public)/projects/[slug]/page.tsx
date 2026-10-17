@@ -94,7 +94,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         style={{ background: `radial-gradient(70% 60% at 80% 0%, ${sw.b}, transparent 70%)` }}
       />
 
-      <header className="relative mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+10.25rem)] sm:pt-[11.25rem] lg:pt-[12.25rem]">
+      <header className="relative mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+6.5rem)] sm:pt-[7.5rem] md:pt-[11.25rem] lg:pt-[12.25rem]">
         <nav aria-label="Breadcrumb" className="flex items-center justify-between gap-4 label-mono text-fg-muted mb-7 sm:mb-12">
           <Link href="/projects" className="group inline-flex items-center gap-2 hover:text-fg transition-colors">
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />

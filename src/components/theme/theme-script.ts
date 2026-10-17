@@ -68,14 +68,14 @@ export const FALLBACK_THEME_DEFAULTS: ThemeDefaults = { desktop: "dark", mobile:
  * theme), data-theme-pref ("default" while the visitor has not chosen) and the defaults
  * themselves (data-theme-defaults="desktop mobile") for the ThemeProvider to reuse. The
  * defaults never write to storage: a default is not a choice.
- * On the first homepage load of a session it also flags the entrance intro (html[data-intro])
- * so the overlay is decided before paint, and restores manual scroll restoration.
+ * It also restores manual scroll restoration. The startup animation is decided by its own boot
+ * script, which runs after this one (lib/startup/boot-script.ts), so the theme is settled first.
  */
 export function buildThemeBootScript(defaults: ThemeDefaults = FALLBACK_THEME_DEFAULTS) {
   // only the two literal values can ever reach the inline script
   const desk = defaults.desktop === "light" ? "light" : "dark";
   const mob = defaults.mobile === "dark" ? "dark" : "light";
-  return `(function(){try{var d=document.documentElement;var p=null;try{p=localStorage.getItem("${THEME_STORAGE_KEY}")}catch(e){}var mm=window.matchMedia;var def=(mm&&mm("${THEME_MOBILE_QUERY}").matches)?"${mob}":"${desk}";var m=p==="dark"||p==="light"?p:p==="system"?(mm&&mm("(prefers-color-scheme: dark)").matches?"dark":"light"):def;d.setAttribute("data-theme",m);d.setAttribute("data-theme-pref",(p==="dark"||p==="light"||p==="system")?p:"default");d.setAttribute("data-theme-defaults","${desk} ${mob}");d.style.colorScheme=m;(${SET_FAVICON_SOURCE})(document,m);var tc=document.getElementById("rawin-theme-color");if(tc){var tv=tc.getAttribute("data-"+m);if(tv)tc.setAttribute("content",tv)}}catch(e){}try{if(location.pathname==="/"&&!sessionStorage.getItem("rawin-intro-seen")&&!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)){d.setAttribute("data-intro","play");sessionStorage.setItem("rawin-intro-seen","1")}}catch(e){}try{if("scrollRestoration" in history){history.scrollRestoration="manual"}window.scrollTo(0,0)}catch(e){}})();`;
+  return `(function(){try{var d=document.documentElement;var p=null;try{p=localStorage.getItem("${THEME_STORAGE_KEY}")}catch(e){}var mm=window.matchMedia;var def=(mm&&mm("${THEME_MOBILE_QUERY}").matches)?"${mob}":"${desk}";var m=p==="dark"||p==="light"?p:p==="system"?(mm&&mm("(prefers-color-scheme: dark)").matches?"dark":"light"):def;d.setAttribute("data-theme",m);d.setAttribute("data-theme-pref",(p==="dark"||p==="light"||p==="system")?p:"default");d.setAttribute("data-theme-defaults","${desk} ${mob}");d.style.colorScheme=m;(${SET_FAVICON_SOURCE})(document,m);var tc=document.getElementById("rawin-theme-color");if(tc){var tv=tc.getAttribute("data-"+m);if(tv)tc.setAttribute("content",tv)}}catch(e){}try{if("scrollRestoration" in history){history.scrollRestoration="manual"}window.scrollTo(0,0)}catch(e){}})();`;
 }
 
 /** The boot script with the shipped defaults (screens rendered without CMS access). */

@@ -302,7 +302,8 @@ export default function SiteFooter({ content, availability, contact, footerCopyr
         {/* ---------------------------------------------------------------- Phone */}
         <div className="md:hidden border-t border-line pt-8 flex flex-col items-center gap-6 text-center">
           {socialLinks.length > 0 && (
-            <div className="flex flex-col items-center gap-3">
+            // the phone Orbit companion lines up beside this block when the footer reaches it
+            <div className="flex flex-col items-center gap-3" data-orbit-footer-anchor="">
               <span className="label-mono text-fg-subtle">Elsewhere</span>
               {socialRow("md")}
             </div>
@@ -335,7 +336,10 @@ export default function SiteFooter({ content, availability, contact, footerCopyr
           makes the page 100vw − 100% narrower than the window; half of that moves from the
           right padding to the left, so the edge-to-edge word sits mid-window at the same
           width. Overlay scrollbars (real phones) make the term 0. */}
-      <div className="mt-8 sm:mt-10 max-sm:pl-[calc(1rem_+_(100vw_-_100%)_/_2)] max-sm:pr-[calc(1rem_-_(100vw_-_100%)_/_2)] sm:px-4 lg:px-6">
+      <div
+        className="mt-8 sm:mt-10 max-sm:pl-[calc(1rem_+_(100vw_-_100%)_/_2)] max-sm:pr-[calc(1rem_-_(100vw_-_100%)_/_2)] sm:px-4 lg:px-6"
+        data-orbit-footer-floor=""
+      >
         <ClippedWordmark />
       </div>
     </footer>

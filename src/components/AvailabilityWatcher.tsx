@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import RawinErrorView, { type RawinErrorViewProps } from "@/components/RawinErrorView";
 import type { PublicAvailability } from "@/lib/site-content";
+import { LIVE_SYNC_CHANNEL } from "@/lib/cms/live-sync";
+import { publishSoundSettings } from "@/components/audio/SoundSettings";
 
 const MAINTENANCE_POLL_MS = 2500; // 2.5s for fast maintenance recovery detection
 const LIVE_POLL_MS = 8000; // 8s for live CMS synchronization (target 5-10s)
@@ -62,6 +64,7 @@ export default function AvailabilityWatcher({
 
         if (res.ok) {
           const data: PublicAvailability = await res.json();
+          if (data.sound) publishSoundSettings(data.sound);
           const prevStatus = statusRef.current;
           const nextStatus = data.status;
 
@@ -150,7 +153,7 @@ export default function AvailabilityWatcher({
     let channel: BroadcastChannel | null = null;
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       try {
-        channel = new BroadcastChannel("rawin_availability_sync");
+        channel = new BroadcastChannel(LIVE_SYNC_CHANNEL);
         channel.onmessage = (event) => {
           if (
             event.data?.type === "AVAILABILITY_CHANGED" ||

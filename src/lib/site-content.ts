@@ -54,6 +54,13 @@ export interface GlobalContent {
    */
   themeDefaultDesktop?: "light" | "dark";
   themeDefaultMobile?: "light" | "dark";
+  /**
+   * Site sound, as the administrator allows it (both default to on). The visitor's own mute
+   * is separate and only ever silences what is allowed here; with both off, the public sound
+   * control is not shown at all.
+   */
+  backgroundSoundEnabled?: boolean;
+  clickSoundEnabled?: boolean;
   // Legacy fields retained for backward compatibility:
   availabilityStatus?: string;
   availabilityBadge?: string;
@@ -512,6 +519,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     location: "Jaunpur, Uttar Pradesh, India",
     themeDefaultDesktop: "dark",
     themeDefaultMobile: "light",
+    backgroundSoundEnabled: true,
+    clickSoundEnabled: true,
   },
   home: {
     heroStatus: "Open to opportunities",
@@ -1276,6 +1285,8 @@ export function mergeWithDefaults(doc: any): SiteContent {
       headerBrand: doc.global?.headerBrand === "logo" ? "logo" : "wordmark",
       // missing or invalid values fall back to the shipped defaults (desktop dark, phones light)
       themeDefaultDesktop: doc.global?.themeDefaultDesktop === "light" ? "light" : "dark",
+      backgroundSoundEnabled: readFlag(doc.global?.backgroundSoundEnabled, true),
+      clickSoundEnabled: readFlag(doc.global?.clickSoundEnabled, true),
       themeDefaultMobile: doc.global?.themeDefaultMobile === "dark" ? "dark" : "light",
     },
     home: {
@@ -2414,6 +2425,8 @@ export interface PublicAvailability {
   message?: string;
   endsAt?: string | null;
   revision?: number;
+  /** The CMS sound switches (global settings), so open pages follow a save without a reload. */
+  sound?: { background: boolean; click: boolean };
 }
 
 /**
@@ -2427,13 +2440,20 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
     if (!db) throw new Error("Database connection unavailable.");
 
     const col = db.collection(COLLECTION_NAME);
-    const doc = await col.findOne({ key: "main" }, { projection: { maintenance: 1, updatedAt: 1 } });
+    const doc = await col.findOne(
+      { key: "main" },
+      { projection: { maintenance: 1, updatedAt: 1, "global.backgroundSoundEnabled": 1, "global.clickSoundEnabled": 1 } }
+    );
     const revision = doc?.updatedAt instanceof Date
       ? doc.updatedAt.getTime()
       : (doc?.updatedAt ? new Date(doc.updatedAt).getTime() : 0);
+    const sound = {
+      background: readFlag(doc?.global?.backgroundSoundEnabled, true),
+      click: readFlag(doc?.global?.clickSoundEnabled, true),
+    };
 
     if (!doc?.maintenance?.enabled) {
-      return { status: "live", revision };
+      return { status: "live", revision, sound };
     }
 
     const maintenance = doc.maintenance;
@@ -2444,7 +2464,7 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
       const endsTime = new Date(endsAt).getTime();
       if (!isNaN(endsTime) && endsTime <= Date.now()) {
         // Return live in-memory without performing public DB mutations
-        return { status: "live", revision };
+        return { status: "live", revision, sound };
       }
     }
 
@@ -2457,12 +2477,14 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
         message: msg,
         endsAt: endsAt ? (endsAt instanceof Date ? endsAt.toISOString() : String(endsAt)) : null,
         revision,
+        sound,
       };
     }
 
     return {
       status: "offline",
       revision,
+      sound,
     };
   } catch (err) {
     // the category only: driver errors can carry host names and topology details
@@ -2473,7 +2495,8 @@ async function fetchPublicAvailabilityFromDb(): Promise<PublicAvailability> {
 
 const getCachedPublicAvailability = unstable_cache(
   async () => fetchPublicAvailabilityFromDb(),
-  ["public-availability-cache"],
+  // v2: the answer also carries the CMS sound switches (a new key, so no older shape is served)
+  ["public-availability-cache-v2"],
   {
     tags: ["site-content"],
     revalidate: 60,

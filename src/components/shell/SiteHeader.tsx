@@ -9,6 +9,7 @@ import { ArrowUpRight } from "lucide-react";
 import Wordmark from "./Wordmark";
 import OrbitSignal from "./OrbitSignal";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import SoundToggle from "@/components/audio/SoundToggle";
 import { NAV_ITEMS, getLenis, isActivePath } from "./nav-items";
 import { EASE_EDITORIAL, LAYOUT_SPRING } from "@/lib/motion";
 import { getActiveSocialLinks } from "@/components/SocialIcons";
@@ -117,8 +118,6 @@ export default function SiteHeader({ brandMode = "wordmark", logos, email, socia
   const socialLinks = getActiveSocialLinks(socials as ContactSocials | undefined);
   const isOrbit = isActivePath(pathname, "/ai");
   const isReading = pathname.startsWith("/blog/");
-  // Contact on phones leads straight into the inquiry: no Orbit row there (tablets keep it)
-  const quietOnPhones = pathname === "/contact";
 
   return (
     <>
@@ -181,6 +180,7 @@ export default function SiteHeader({ brandMode = "wordmark", logos, email, socia
                 <span>Orbit</span>
               </Link>
               <span aria-hidden="true" className="hidden lg:block w-px h-5 bg-line" />
+              <SoundToggle />
               <ThemeToggle />
               <button
                 ref={menuButtonRef}
@@ -203,12 +203,12 @@ export default function SiteHeader({ brandMode = "wordmark", logos, email, socia
               </button>
             </div>
           </div>
-          {/* Phones: Orbit lives in its own quiet row below the bar, only while at the top.
-              Not on reading pages (blog articles): the reader goes straight to the article;
-              not on phone-width Contact, where the inquiry form comes first. */}
+          {/* Tablets: Orbit lives in its own quiet row below the bar, only while at the top. Not on
+              reading pages (blog articles): the reader goes straight to the article. Phones
+              (under md) use the floating Orbit companion instead (OrbitCompanion). */}
           {!isOrbit && !isReading && (
             <div
-              className={`lg:hidden ${quietOnPhones ? "max-md:hidden " : ""}flex justify-center transition-[opacity,transform,margin] duration-500 ${
+              className={`lg:hidden max-md:hidden flex justify-center transition-[opacity,transform,margin] duration-500 ${
                 scrolled || open ? "opacity-0 -translate-y-2 pointer-events-none mt-0 h-0" : "opacity-100 mt-6 pointer-events-auto"
               }`}
               inert={scrolled || open}

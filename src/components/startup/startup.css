@@ -1,0 +1,527 @@
+/* RAWIN FUTURE SYSTEM: the startup overlay (.rawin-startup, owned by StartupStage) and the
+   Future System compositions (.fs, FutureSystem.tsx). A composition fills its containing box and
+   measures in container units, so the Studio preview frames reuse it unchanged.
+   Brand: ink and graphite grounds, ivory #F5F7FA type, muted #A1A1AA, violet #8B7CF6 as an accent. */
+
+/* ---------------------------------------------------------------- the overlay (root layout) */
+.rawin-startup {
+  display: none;
+}
+html[data-startup] .rawin-startup {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  /* fail-safe: gone shortly after the planned end even if no script runs */
+  animation: rawin-startup-failsafe 0.4s ease var(--startup-failsafe, 4s) forwards;
+}
+html[data-startup-phase="done"] .rawin-startup {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+html[data-startup-phase="play"] {
+  overflow: hidden;
+}
+/* the first paint before the composition mounts: the same ground, nothing else */
+.rs-cover {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 50% 50%, #14141d 0%, #0d0d14 55%, #09090e 100%);
+}
+.rawin-startup[data-live] .rs-cover {
+  display: none;
+}
+@keyframes rawin-startup-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* ---------------------------------------------------------------- the composition */
+.fs {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  contain: strict;
+  background: radial-gradient(120% 90% at 50% 50%, #14141d 0%, #0d0d14 55%, #09090e 100%);
+  color: #f5f7fa;
+  font-family: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.fs[data-layout="mobile"] {
+  background: radial-gradient(110% 70% at 50% 48%, #14141d 0%, #0d0d14 58%, #09090e 100%);
+}
+.fs-lattice {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* scan band: one pass while the structure builds */
+.fs-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 14cqw;
+  margin-left: -7cqw;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(139 124 246 / 0.05) 38%, rgb(245 247 250 / 0.06) 50%, rgb(139 124 246 / 0.05) 62%, transparent);
+  will-change: transform;
+}
+.fs[data-layout="mobile"] .fs-scan {
+  left: 0;
+  right: 0;
+  width: auto;
+  height: 12cqh;
+  margin: -6cqh 0 0;
+  bottom: auto;
+  background: linear-gradient(180deg, transparent, rgb(139 124 246 / 0.05) 38%, rgb(245 247 250 / 0.06) 50%, rgb(139 124 246 / 0.05) 62%, transparent);
+}
+
+/* registration corners */
+.fs-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  border: 0 solid rgb(245 247 250 / 0.7);
+}
+.fs-corner-0 { top: 28px; left: 32px; border-top-width: 1px; border-left-width: 1px; }
+.fs-corner-1 { top: 28px; right: 32px; border-top-width: 1px; border-right-width: 1px; }
+.fs-corner-2 { bottom: 28px; left: 32px; border-bottom-width: 1px; border-left-width: 1px; }
+.fs-corner-3 { bottom: 28px; right: 32px; border-bottom-width: 1px; border-right-width: 1px; }
+.fs[data-layout="mobile"] .fs-corner {
+  width: 10px;
+  height: 10px;
+}
+.fs[data-layout="mobile"] :is(.fs-corner-0, .fs-corner-1) { top: calc(env(safe-area-inset-top) + 12px); }
+.fs[data-layout="mobile"] :is(.fs-corner-2, .fs-corner-3) { bottom: calc(env(safe-area-inset-bottom) + 12px); }
+.fs[data-layout="mobile"] :is(.fs-corner-0, .fs-corner-2) { left: 12px; }
+.fs[data-layout="mobile"] :is(.fs-corner-1, .fs-corner-3) { right: 12px; }
+/* the phone's top right belongs to the Skip control during a special launch */
+.fs[data-layout="mobile"][data-mode="launch"] .fs-corner-1 {
+  display: none;
+}
+
+/* the axis: two halves drawn out from the centre; the ruler sits just below (desktop) or to the
+   right (phone) */
+.fs-axis {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 50%;
+  height: 0;
+}
+.fs-axis-half {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 1px;
+  opacity: 0;
+}
+.fs-axis-a {
+  left: 0;
+  transform-origin: 100% 50%;
+  background: linear-gradient(90deg, transparent, rgb(245 247 250 / 0.9));
+}
+.fs-axis-b {
+  right: 0;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, rgb(245 247 250 / 0.9), transparent);
+}
+.fs-ruler {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+.fs-tick {
+  position: absolute;
+  left: calc(var(--i) * 100%);
+  top: 6px;
+  width: 1px;
+  height: 4px;
+  background: rgb(245 247 250 / 0.9);
+  opacity: 0;
+}
+.fs-tick-major {
+  height: 8px;
+}
+.fs-node {
+  position: absolute;
+  left: -1.5px;
+  top: -8px;
+  width: 4px;
+  height: 4px;
+  background: rgb(245 247 250 / 0.55);
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+.fs-node[data-lit="on"] {
+  background: #f5f7fa;
+}
+.fs-node[data-lit="accent"] {
+  background: #8b7cf6;
+  box-shadow: 0 0 6px rgb(139 124 246 / 0.55);
+}
+.fs[data-layout="mobile"] .fs-axis {
+  left: 50%;
+  right: auto;
+  width: 0;
+  top: 20%;
+  bottom: 24%;
+  height: auto;
+}
+.fs[data-layout="mobile"] .fs-axis-half {
+  left: 0;
+  right: auto;
+  width: 1px;
+  height: 50%;
+}
+.fs[data-layout="mobile"] .fs-axis-a {
+  top: 0;
+  transform-origin: 50% 100%;
+  background: linear-gradient(180deg, transparent, rgb(245 247 250 / 0.9));
+}
+.fs[data-layout="mobile"] .fs-axis-b {
+  top: auto;
+  bottom: 0;
+  transform-origin: 50% 0;
+  background: linear-gradient(180deg, rgb(245 247 250 / 0.9), transparent);
+}
+.fs[data-layout="mobile"] .fs-ruler {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: auto;
+}
+.fs[data-layout="mobile"] .fs-tick {
+  left: 6px;
+  top: calc(var(--i) * 100%);
+  width: 4px;
+  height: 1px;
+}
+.fs[data-layout="mobile"] .fs-tick-major {
+  width: 8px;
+}
+.fs[data-layout="mobile"] .fs-node {
+  left: -8px;
+  top: -1.5px;
+}
+
+/* special launch: structure guides and a centre crosshair */
+.fs-guide {
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  top: 50%;
+  height: 1px;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgb(245 247 250 / 0.7) 22%, rgb(245 247 250 / 0.7) 78%, transparent);
+}
+.fs-cross {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1px;
+  height: 16cqh;
+  margin-top: -8cqh;
+  opacity: 0;
+  background: linear-gradient(180deg, transparent, rgb(245 247 250 / 0.75), transparent);
+}
+.fs[data-layout="mobile"] .fs-guide {
+  left: 50%;
+  right: auto;
+  top: 27%;
+  bottom: 31%;
+  width: 1px;
+  height: auto;
+  background: linear-gradient(180deg, transparent, rgb(245 247 250 / 0.7) 22%, rgb(245 247 250 / 0.7) 78%, transparent);
+}
+.fs[data-layout="mobile"] .fs-cross {
+  left: 50%;
+  top: 48%;
+  width: 34cqw;
+  height: 1px;
+  margin: 0 0 0 -17cqw;
+  background: linear-gradient(90deg, transparent, rgb(245 247 250 / 0.75), transparent);
+}
+
+/* the single activation pulse */
+.fs-pulse {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 62cqmin;
+  height: 62cqmin;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.25);
+  background: radial-gradient(circle, rgb(245 247 250 / 0.5) 0%, rgb(214 206 255 / 0.2) 20%, rgb(139 124 246 / 0.08) 44%, transparent 70%);
+}
+.fs[data-layout="mobile"] .fs-pulse {
+  top: 48%;
+  width: 92cqw;
+  height: 92cqw;
+}
+
+/* identity */
+/* the mark itself is centred on the axis; the line under it hangs below */
+.fs-identity {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.fs-mark {
+  display: block;
+  font-weight: 600;
+  font-size: clamp(26px, 2.6cqw, 40px);
+  line-height: 1;
+  letter-spacing: 0.28em;
+  /* trailing tracking would push the word off centre */
+  padding-left: 0.28em;
+  white-space: nowrap;
+  opacity: 0;
+}
+.fs-logo {
+  display: block;
+  height: 1.05em;
+  width: auto;
+}
+.fs-sub {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 16px);
+  transform: translateX(-50%);
+  display: block;
+  max-width: 60cqw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  padding-left: 0.32em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+  opacity: 0;
+}
+.fs[data-layout="mobile"] .fs-identity {
+  top: 48%;
+}
+.fs[data-layout="mobile"] .fs-sub {
+  top: calc(100% + 12px);
+}
+.fs[data-layout="mobile"] .fs-mark {
+  font-size: 24px;
+}
+.fs[data-layout="mobile"] .fs-sub {
+  font-size: 9.5px;
+  letter-spacing: 0.26em;
+  padding-left: 0.26em;
+  max-width: calc(100cqw - 64px);
+}
+
+/* the information frame: label and counter on top, state and progress below */
+.fs-frame {
+  position: absolute;
+  inset: 44px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  pointer-events: none;
+  opacity: 0;
+}
+.fs-head,
+.fs-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+.fs-head {
+  align-items: flex-start;
+}
+.fs-foot {
+  align-items: flex-end;
+}
+.fs-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: #a1a1aa;
+  white-space: nowrap;
+}
+.fs-label-strong {
+  color: #f5f7fa;
+}
+.fs-label-title {
+  display: block;
+  margin-top: 10px;
+  max-width: 40cqw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: #f5f7fa;
+}
+.fs-counter {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: #a1a1aa;
+  white-space: nowrap;
+}
+.fs-state {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.fs-status {
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  color: #f5f7fa;
+  white-space: nowrap;
+}
+.fs-track {
+  display: block;
+  width: 168px;
+  height: 1px;
+  background: rgb(245 247 250 / 0.14);
+  overflow: hidden;
+}
+.fs-bar {
+  display: block;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, rgb(245 247 250 / 0.8), #8b7cf6);
+}
+/* dot-matrix numerals: the only dot-matrix type in the sequence */
+.fs-digits {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: transparent;
+  background-image: radial-gradient(circle, rgb(245 247 250 / 0.92) 0.7px, transparent 1px);
+  background-size: 2.5px 2.5px;
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-variant-numeric: tabular-nums;
+}
+.fs-channels {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.fs-channel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: #a1a1aa;
+  opacity: 0;
+}
+.fs-channel-track {
+  display: block;
+  width: 96px;
+  height: 1px;
+  background: rgb(245 247 250 / 0.14);
+  overflow: hidden;
+}
+.fs-channel-fill {
+  display: block;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: rgb(245 247 250 / 0.75);
+}
+.fs[data-layout="mobile"] .fs-frame {
+  inset: calc(env(safe-area-inset-top) + 26px) 24px calc(env(safe-area-inset-bottom) + 28px);
+}
+.fs[data-layout="mobile"] :is(.fs-label, .fs-counter) {
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+}
+.fs[data-layout="mobile"] .fs-label-title {
+  margin-top: 8px;
+  max-width: calc(100cqw - 48px);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+.fs[data-layout="mobile"] .fs-status {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+}
+.fs[data-layout="mobile"] .fs-track {
+  width: 116px;
+}
+.fs[data-layout="mobile"] .fs-digits {
+  font-size: 22px;
+  background-size: 2px 2px;
+  background-image: radial-gradient(circle, rgb(245 247 250 / 0.92) 0.6px, transparent 0.85px);
+}
+.fs[data-layout="mobile"] .fs-channel {
+  font-size: 9px;
+  gap: 10px;
+}
+.fs[data-layout="mobile"] .fs-channel-track {
+  width: 64px;
+}
+.fs[data-layout="mobile"][data-mode="launch"] .fs-counter {
+  visibility: hidden;
+}
+
+/* special launch: Skip */
+.fs-skip {
+  position: absolute;
+  top: 72px;
+  right: 50px;
+  z-index: 2;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgb(245 247 250 / 0.18);
+  background: transparent;
+  color: rgb(245 247 250 / 0.72);
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.fs-skip:hover,
+.fs-skip:focus-visible {
+  color: #f5f7fa;
+  border-color: rgb(245 247 250 / 0.45);
+}
+.fs-skip:focus-visible {
+  outline: 2px solid rgb(139 124 246 / 0.9);
+  outline-offset: 3px;
+}
+.fs[data-layout="mobile"] .fs-skip {
+  top: calc(env(safe-area-inset-top) + 10px);
+  right: 12px;
+  min-width: 64px;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  font-size: 10px;
+}
+
+/* reduced motion: the structure is simply there, nothing sweeps, pulses or counts */
+.fs[data-reduced="true"] :is(.fs-scan, .fs-pulse, .fs-guide, .fs-cross, .fs-channels, .fs-ruler, .fs-digits, .fs-counter, .fs-track) {
+  display: none;
+}

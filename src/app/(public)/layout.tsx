@@ -5,6 +5,10 @@ import RawinErrorView from "@/components/RawinErrorView";
 import CustomCursor from "@/components/system/CustomCursor";
 import CursorField from "@/components/system/CursorField";
 import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
+import InterfaceSounds from "@/components/audio/InterfaceSounds";
+import OrbitCompanion from "@/components/orbit-companion/OrbitCompanion";
+import { SoundSettingsProvider } from "@/components/audio/SoundSettings";
+import { buildAudioBootScript } from "@/lib/audio/boot-script";
 import {
   getSiteContent,
   DEFAULT_SITE_CONTENT,
@@ -75,7 +79,16 @@ export default async function PublicLayout({
     DEFAULT_SITE_CONTENT.global.footerCopyright;
   const currentYear = new Date().getFullYear();
 
+  // the CMS sound settings (default on) for the sound control and the audio wiring
+  const sound = {
+    background: content.global?.backgroundSoundEnabled !== false,
+    click: content.global?.clickSoundEnabled !== false,
+  };
+
   return (
+    <SoundSettingsProvider value={sound}>
+    {/* runs while the page is parsed, before hydration: the first tap unlocks audio even then */}
+    <script dangerouslySetInnerHTML={{ __html: buildAudioBootScript(sound) }} />
     <SmoothScroll>
       <div aria-hidden="true" className="rawin-atmosphere" />
       <CursorField />
@@ -98,6 +111,9 @@ export default async function PublicLayout({
         {children}
       </main>
       <AnalyticsTracker />
+      <InterfaceSounds />
+      {/* phones only: the persistent way into Orbit (replaces the phone row under the header) */}
+      <OrbitCompanion />
       <SiteFooter
         content={content.global}
         availability={content.availability}
@@ -109,5 +125,6 @@ export default async function PublicLayout({
         currentYear={currentYear}
       />
     </SmoothScroll>
+    </SoundSettingsProvider>
   );
 }

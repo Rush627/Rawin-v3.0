@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { MODEL_IDENTITY_REPLY, isOwnModelQuestion } from "@/lib/aura/model-identity";
 import { limitOrbitRequest } from "@/lib/aura/durable-limit";
 import { queryAura } from "@/lib/aura/provider";
 import type { AuraMessage } from "@/lib/aura/types";
@@ -246,6 +247,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Questions about Orbit's own underlying model get Orbit's fixed answer (model-identity.ts):
+    // it never names, confirms or invents the model, typed or spoken
+    if (isOwnModelQuestion(userText)) {
+      return createDirectResponse(MODEL_IDENTITY_REPLY, rawToken || (await signOrbitIdentityToken(currentIdentity)), isStreamRequested);
+    }
+
     // 4. Query Aura Provider (attachments ride only on the latest user turn)
     const modelMessages: AuraMessage[] = attachedFiles.length
       ? sanitizedMessages.map((m, i) =>
@@ -270,7 +277,6 @@ export async function POST(req: NextRequest) {
       {
         role: "assistant",
         content: result.content,
-        model: result.model,
       },
       {
         headers: {

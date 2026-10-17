@@ -2,17 +2,16 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, LogOut, Play } from "lucide-react";
-import { Button, FieldGrid, Group, Segmented, SelectField, Slider, StatusLine, Switch, TextField } from "./fields";
+import { Eye, EyeOff, LogOut } from "lucide-react";
+import { Button, FieldGrid, Group, Segmented, Slider, StatusLine, Switch, TextField } from "./fields";
 import CardSave from "./CardSave";
 import ConfirmDialog from "./ConfirmDialog";
 import { useSectionEditor } from "./useSectionEditor";
 import { useUnsavedChanges } from "./UnsavedChanges";
 import { AVAILABILITY_TONE, type AvailabilityContent } from "@/lib/cms/availability";
-import type { LaunchExperienceContent, MaintenanceContent } from "@/lib/site-content";
-import { changePasswordAction, saveAvailabilityAction, saveLaunchExperienceAction, type PasswordChangeState } from "@/app/saint-denis/settings/actions";
+import type { MaintenanceContent } from "@/lib/site-content";
+import { changePasswordAction, saveAvailabilityAction, type PasswordChangeState } from "@/app/saint-denis/settings/actions";
 import { signOutEverywhereAction } from "@/app/saint-denis/actions";
-import LaunchExperience from "@/components/launch/LaunchExperience";
 
 const TONE_CLASS = { green: "text-success", orange: "text-warning", red: "text-danger" } as const;
 
@@ -56,6 +55,29 @@ export function ThemeDefaultsCard({ initial }: { initial: { themeDefaultDesktop:
         <Segmented label="Desktop and tablet" value={ed.values.themeDefaultDesktop} onChange={(x) => ed.set("themeDefaultDesktop", x)} options={options} />
         <Segmented label="Smartphone (under 768 px)" value={ed.values.themeDefaultMobile} onChange={(x) => ed.set("themeDefaultMobile", x)} options={options} />
       </FieldGrid>
+      <CardSave state={ed.state} message={ed.message} onSave={ed.save} onDiscard={ed.discard} />
+    </Group>
+  );
+}
+
+/* ------------------------------------------------------------------ site sound */
+
+export function SoundSettingsCard({ initial }: { initial: { backgroundSoundEnabled: boolean; clickSoundEnabled: boolean } }) {
+  const ed = useSectionEditor("global", { ...initial });
+  const v = ed.values;
+  return (
+    <Group
+      title="Site sound"
+      description="What the public site may play. Visitors can still mute it themselves; with both off, the sound button is not shown."
+      defaultOpen={false}
+    >
+      <Switch
+        label="Background sound"
+        checked={v.backgroundSoundEnabled}
+        onChange={(x) => ed.set("backgroundSoundEnabled", x)}
+        hint="The ambient track: fuller on the homepage hero, quieter everywhere else."
+      />
+      <Switch label="Interface click sound" checked={v.clickSoundEnabled} onChange={(x) => ed.set("clickSoundEnabled", x)} hint="A short click on buttons, links and other controls." />
       <CardSave state={ed.state} message={ed.message} onSave={ed.save} onDiscard={ed.discard} />
     </Group>
   );
@@ -149,87 +171,9 @@ export function SiteModeCard({ initial }: { initial: MaintenanceContent & { acti
   );
 }
 
-/* ------------------------------------------------------------------ launch experience */
+/* ------------------------------------------------------------------ launch (Supernova) */
 
-export function LaunchCard({ initial }: { initial: LaunchExperienceContent }) {
-  const [v, setV] = useState(initial);
-  const [base, setBase] = useState(initial);
-  const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
-  const [preview, setPreview] = useState(false);
-  const { setDirty } = useUnsavedChanges();
-  const dirty = JSON.stringify(v) !== JSON.stringify(base);
-  useEffect(() => {
-    setDirty("launch", dirty);
-    return () => setDirty("launch", false);
-  }, [dirty, setDirty]);
-  const set = <K extends keyof LaunchExperienceContent>(k: K, x: LaunchExperienceContent[K]) => setV((o) => ({ ...o, [k]: x }));
-
-  const save = async () => {
-    setBusy(true);
-    setNote(null);
-    const res = await saveLaunchExperienceAction(v).catch(() => ({ error: "The server could not be reached." }) as { error?: string; success?: boolean; launchExperience?: LaunchExperienceContent });
-    setBusy(false);
-    if (res.success) {
-      const saved = res.launchExperience ?? v;
-      setV(saved);
-      setBase(saved);
-      setNote({ tone: "ok", text: "Saved." });
-    } else setNote({ tone: "error", text: res.error || "Not saved." });
-  };
-
-  return (
-    <Group title="Launch experience" description="A one-time intro animation on the homepage for a release." defaultOpen={false}>
-      <Switch label="Show the launch intro" checked={v.enabled} onChange={(x) => set("enabled", x)} />
-      <FieldGrid>
-        <TextField label="Headline" value={v.primaryMessage} onChange={(x) => set("primaryMessage", x)} maxLength={100} />
-        <TextField label="Second line" value={v.secondaryMessage} onChange={(x) => set("secondaryMessage", x)} maxLength={200} />
-      </FieldGrid>
-      <FieldGrid>
-        <Slider label="Length" min={5} max={20} step={0.5} value={v.duration} onChange={(x) => set("duration", x)} format={(x) => `${x.toFixed(1)} s`} />
-        <SelectField
-          label="Show it"
-          value={v.showFrequency}
-          onChange={(x) => set("showFrequency", x)}
-          options={[
-            { value: "once", label: "Once per visitor" },
-            { value: "session", label: "Once per browser session" },
-            { value: "visit", label: "On every visit" },
-          ]}
-        />
-      </FieldGrid>
-      <FieldGrid cols={3}>
-        <TextField label="From" type="date" value={v.startDate ?? ""} onChange={(x) => set("startDate", x || null)} />
-        <TextField label="Until" type="date" value={v.endDate ?? ""} onChange={(x) => set("endDate", x || null)} />
-        <TextField label="Release id" value={v.launchVersion} onChange={(x) => set("launchVersion", x)} maxLength={60} hint="Change it to show the intro again to returning visitors." />
-      </FieldGrid>
-      {note && (
-        <p role={note.tone === "error" ? "alert" : "status"} className={`text-[13px] ${note.tone === "error" ? "text-danger" : "text-success"}`}>
-          {note.text}
-        </p>
-      )}
-      <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-line">
-        <Button tone="ghost" onClick={() => setPreview(true)}>
-          <Play aria-hidden="true" className="w-4 h-4" />
-          Preview
-        </Button>
-        {dirty && (
-          <Button tone="ghost" onClick={() => setV(base)}>
-            Discard
-          </Button>
-        )}
-        <Button tone="primary" disabled={!dirty} busy={busy} onClick={save}>
-          Save
-        </Button>
-      </div>
-      {preview && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-surface">
-          <LaunchExperience launch={v} isPreview onComplete={() => setPreview(false)} />
-        </div>
-      )}
-    </Group>
-  );
-}
+export { default as LaunchCard } from "./LaunchCard";
 
 /* ------------------------------------------------------------------ account */
 

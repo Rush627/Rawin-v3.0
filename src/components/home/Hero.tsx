@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { introIsPlaying } from "@/components/launch/EntranceIntro";
+import { STARTUP_REVEAL_EVENT, startupHolding } from "@/lib/startup/boot-script";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import RoleCycler from "./RoleCycler";
 import TonalPortrait from "./TonalPortrait";
@@ -69,8 +69,17 @@ export default function Hero(props: HeroProps) {
   const [first, last] = splitName(name);
   const reduced = useReducedMotion();
   const place = shortLocation(location);
-  // When the entrance intro plays, the hero choreography starts as its iris opens.
-  const [base] = useState(() => (introIsPlaying() ? 1.75 : 0));
+  // While a startup animation covers the page the hero waits, and its choreography begins as
+  // the startup reveals the site (at the planned moment, or at once on a skip).
+  const [held, setHeld] = useState(() => startupHolding());
+  useEffect(() => {
+    if (!held) return;
+    const release = () => setHeld(false);
+    window.addEventListener(STARTUP_REVEAL_EVENT, release);
+    // the reveal may already have happened between the first render and this effect
+    if (!startupHolding()) requestAnimationFrame(release);
+    return () => window.removeEventListener(STARTUP_REVEAL_EVENT, release);
+  }, [held]);
   const sectionRef = useRef<HTMLElement | null>(null);
   const nameRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -88,19 +97,19 @@ export default function Hero(props: HeroProps) {
   const settle = { duration: 0 };
   const enter = (delay: number, y = 22) => ({
     initial: { opacity: 0, y },
-    animate: { opacity: 1, y: 0 },
-    transition: reduced ? settle : { duration: 0.9, ease: EASE_EDITORIAL, delay: base + delay },
+    animate: held ? undefined : { opacity: 1, y: 0 },
+    transition: reduced ? settle : { duration: 0.9, ease: EASE_EDITORIAL, delay },
   });
 
   const line = (delay: number) => ({
     initial: { y: "105%" },
-    animate: { y: "0%" },
-    transition: reduced ? settle : { duration: 1.15, ease: EASE_EDITORIAL, delay: base + delay },
+    animate: held ? undefined : { y: "0%" },
+    transition: reduced ? settle : { duration: 1.15, ease: EASE_EDITORIAL, delay },
   });
 
   return (
     <section ref={sectionRef} id="rawin-hero" aria-labelledby="hero-name" className="relative w-full overflow-x-clip">
-      <div className="relative mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+11rem)] sm:pt-[11.25rem] lg:pt-[clamp(7.5rem,16vh,10.25rem)] pb-10 lg:pb-12 lg:min-h-[max(100svh,780px)] flex flex-col">
+      <div className="relative mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+7.25rem)] sm:pt-[7.5rem] md:pt-[11.25rem] lg:pt-[clamp(7.5rem,16vh,10.25rem)] pb-10 lg:pb-12 lg:min-h-[max(100svh,780px)] flex flex-col">
         {/* Meta row */}
         <motion.div {...enter(0.1, 10)} className="hidden sm:flex items-center justify-between gap-4 label-mono text-fg-subtle">
           <span>Portfolio · Index {new Date().getFullYear()}</span>
@@ -180,8 +189,8 @@ export default function Hero(props: HeroProps) {
                 <motion.figure
                   className="hero-portrait relative z-[1] ml-auto mr-0 sm:mx-auto lg:ml-[12%] lg:mr-0 w-[64%] min-[400px]:w-[62%] sm:w-[74%] lg:w-[72%]"
                   initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={reduced ? settle : { duration: 1.2, ease: EASE_EDITORIAL, delay: base + 0.3 }}
+                  animate={held ? undefined : { opacity: 1, y: 0 }}
+                  transition={reduced ? settle : { duration: 1.2, ease: EASE_EDITORIAL, delay: 0.3 }}
                 >
                   <div data-field-surface="image" className="relative aspect-[4/5] w-full overflow-hidden rounded-t-[999px] rounded-b-[30px] bg-[#0e0e0f] shadow-[var(--shadow-3)] ring-1 ring-black/5 dark:ring-white/10">
                     <TonalPortrait src={portrait.url} alt={portrait.alt} focusX={0.55} focusY={0.28} />

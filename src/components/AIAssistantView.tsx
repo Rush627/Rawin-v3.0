@@ -17,6 +17,8 @@ import { ACCEPT_ATTRIBUTE, UPLOAD_LIMITS, formatBytes, type UploadFamily } from 
 import { greetingClock, useLocalGreeting } from "@/components/orbit/greetingClock";
 import { useWelcomeMessage, welcomeMessage } from "@/components/orbit/welcomeMessage";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import SoundToggle from "@/components/audio/SoundToggle";
+import { orbitActivityFrom, setOrbitActivity } from "@/lib/orbit/presence";
 import type { OrbitState } from "@/components/OrbitMark";
 import type { AIContent } from "@/lib/site-content";
 import type { OrbitMessage } from "@/lib/aura/types";
@@ -126,6 +128,12 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
   const useRecording = serverVoice && (preferRecorder || !dictation.supported || dictationFailed);
   const voiceAvailable = allowVoiceInput && (dictation.supported || serverVoice);
   const voiceBusy = dictation.listening || dictation.starting || recorder.state === "recording";
+  // Orbit's real state for the mobile companion (thinking, listening, speaking); idle on leave
+  const generating = orbitState === "user_sent" || orbitState === "generating" || orbitState === "streaming";
+  useEffect(() => {
+    setOrbitActivity(orbitActivityFrom({ listening: voiceBusy, speaking: speech.phase !== "idle", generating }));
+  }, [voiceBusy, speech.phase, generating]);
+  useEffect(() => () => setOrbitActivity("idle"), []);
   // the recorder's own error, else the recogniser's (kept visible until the fallback is used)
   const voiceError = (useRecording ? recorder.error : null) || dictation.error;
   // Voice conversation: when on, each new Orbit reply is read aloud once it has arrived.
@@ -577,7 +585,10 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
             RAWIN
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center">
+            <SoundToggle />
+            <ThemeToggle />
+          </div>
         </div>
 
         {/* Three groups: navigation (above), identity (centred in the free height), then the reply
@@ -655,6 +666,7 @@ export default function AIAssistantView({ content }: AIAssistantViewProps) {
                   <RotateCcw className="w-4 h-4" />
                 </button>
               )}
+              <SoundToggle />
               <ThemeToggle />
             </div>
           </div>

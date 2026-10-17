@@ -737,47 +737,6 @@ html.custom-cursor-active :is(:disabled, [aria-disabled="true"]) {
   cursor: not-allowed !important;
 }
 
-/* Entrance intro — shown only when the pre-paint script sets html[data-intro]. A CSS
-   fail-safe hides it after 3.4s even if JavaScript never runs. */
-.rawin-intro {
-  display: none;
-}
-html[data-intro="play"] .rawin-intro,
-html[data-intro="reveal"] .rawin-intro,
-html[data-intro="done"] .rawin-intro {
-  display: block;
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  background: #0a0a0c;
-  transition: opacity 0.6s var(--ease-editorial);
-  animation: rawin-intro-failsafe 0.4s ease 3.4s forwards;
-}
-html[data-intro="reveal"] .rawin-intro,
-html[data-intro="done"] .rawin-intro {
-  opacity: 0;
-  pointer-events: none;
-}
-html[data-intro="play"] {
-  overflow: hidden;
-}
-.rawin-intro-mark {
-  position: absolute;
-  left: 50%;
-  bottom: max(2rem, env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  color: rgb(222 224 230 / 0.5);
-  letter-spacing: 0.4em;
-  animation: rawin-intro-mark 1.6s var(--ease-editorial) 0.2s both;
-}
-@keyframes rawin-intro-mark {
-  from { opacity: 0; letter-spacing: 0.9em; }
-  to { opacity: 1; letter-spacing: 0.4em; }
-}
-@keyframes rawin-intro-failsafe {
-  to { opacity: 0; visibility: hidden; }
-}
-
 /* Orbit invitation title: single line on phones, sized to the available width */
 @media (max-width: 767px) {
   .orbit-invite-title {
@@ -1286,10 +1245,17 @@ html[data-intro="play"] {
   padding-inline: var(--blog-gutter);
 }
 .blog-hero {
-  /* phones: room below the Orbit pill, then the label, title and context */
-  padding-top: calc(env(safe-area-inset-top) + 11rem);
+  /* phones: just below the navbar (the Orbit row under it is tablet-only), then the label,
+     title and context */
+  padding-top: calc(env(safe-area-inset-top) + 7.25rem);
 }
 @media (min-width: 640px) {
+  .blog-hero {
+    padding-top: 7.75rem;
+  }
+}
+@media (min-width: 768px) {
+  /* tablets: room below the Orbit row */
   .blog-hero {
     padding-top: 11.5rem;
   }
@@ -2142,17 +2108,24 @@ html[data-intro="play"] {
 
 /* hero */
 .uses-hero {
-  padding-top: calc(env(safe-area-inset-top) + 10.5rem);
+  /* phones: just below the navbar (the Orbit row under it is tablet-only) */
+  padding-top: calc(env(safe-area-inset-top) + 6.75rem);
 }
 .uses-hero .uses-head-rule {
   margin-bottom: 1.5rem;
 }
 @media (min-width: 640px) {
   .uses-hero {
-    padding-top: 11.25rem;
+    padding-top: 7.5rem;
   }
   .uses-hero .uses-head-rule {
     margin-bottom: 2.25rem;
+  }
+}
+@media (min-width: 768px) {
+  /* tablets: room below the Orbit row */
+  .uses-hero {
+    padding-top: 11.25rem;
   }
 }
 @media (min-width: 1024px) {

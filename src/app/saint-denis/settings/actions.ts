@@ -10,6 +10,8 @@ import {
   type MaintenanceContent,
   type LaunchExperienceContent,
 } from "@/lib/site-content";
+import { parseKolkataDateTimeInput } from "@/lib/dateUtils";
+import { newLaunchEventId, validateLaunchInput } from "@/lib/startup/launch";
 
 export interface PasswordChangeState {
   success?: boolean;
@@ -246,6 +248,34 @@ export interface LaunchExperienceActionState {
   launchExperience?: LaunchExperienceContent;
 }
 
+/** Studio datetime-local values are IST wall time; legacy date-only values are kept as written. */
+function launchInstantInput(v: unknown): string | null {
+  if (typeof v !== "string" || !v.trim()) return null;
+  const t = v.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(t)) return parseKolkataDateTimeInput(t) ?? "invalid";
+  return t;
+}
+
+async function persistLaunch(payload: Partial<LaunchExperienceContent>): Promise<boolean> {
+  const success = await updateSiteSection("launchExperience", payload);
+  if (!success) return false;
+  try {
+    invalidateCacheTag("site-content");
+  } catch {}
+  // every page embeds the launch event in its startup boot script (root layout)
+  revalidatePath("/", "layout");
+  revalidatePath("/saint-denis/settings");
+  return true;
+}
+
+/**
+ * Saves the Supernova launch settings (Studio → Settings → Launch). Validation is shared with
+ * the Studio's status panel (lib/startup/launch.ts): a trimmed title, a preset length, schedule
+ * instants (IST input converted to UTC), an end after the start, a plain event id. The effective
+ * status (armed / active / expired) is never stored: it is derived from these and the clock.
+ * The legacy `animation` and `showFrequency` fields are kept as they are.
+ */
 export async function saveLaunchExperienceAction(
   data: Partial<LaunchExperienceContent>
 ): Promise<LaunchExperienceActionState> {
@@ -254,73 +284,54 @@ export async function saveLaunchExperienceAction(
     return { error: "Unauthorized. Administrator session required." };
   }
 
-  const enabled = Boolean(data.enabled);
-  const primaryMessage = typeof data.primaryMessage === "string" && data.primaryMessage.trim()
-    ? data.primaryMessage.trim().slice(0, 100)
-    : "RAWIN v3.0";
-  const secondaryMessage = typeof data.secondaryMessage === "string"
-    ? data.secondaryMessage.trim().slice(0, 200)
-    : "A new iteration is live.";
-  const animation = "signal-wake" as const;
-
-  const rawDuration = typeof data.duration === "number" ? data.duration : parseFloat(String(data.duration));
-  const duration = Number.isFinite(rawDuration)
-    ? Math.min(Math.max(5.0, Math.round(rawDuration * 10) / 10), 20.0)
-    : 12.0;
-
-  const showFrequency = ["once", "session", "visit"].includes(String(data.showFrequency))
-    ? (data.showFrequency as "once" | "session" | "visit")
-    : "once";
-
-  const startDate = typeof data.startDate === "string" && data.startDate.trim()
-    ? data.startDate.trim()
-    : null;
-  const endDate = typeof data.endDate === "string" && data.endDate.trim()
-    ? data.endDate.trim()
-    : null;
-
-  if (startDate && endDate && new Date(endDate).getTime() < new Date(startDate).getTime()) {
-    return { error: "End date cannot precede start date." };
-  }
-
-  const launchVersion = typeof data.launchVersion === "string" && data.launchVersion.trim()
-    ? data.launchVersion.trim().replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 50) || "2026-v3-launch"
-    : "2026-v3-launch";
+  const checked = validateLaunchInput({
+    ...data,
+    startDate: launchInstantInput(data.startDate),
+    endDate: launchInstantInput(data.endDate),
+  });
+  if (!checked.ok) return { error: checked.error };
 
   const payload: LaunchExperienceContent = {
-    enabled,
-    primaryMessage,
-    secondaryMessage,
-    animation,
-    duration,
-    showFrequency,
-    startDate,
-    endDate,
-    launchVersion,
+    ...checked.value,
+    animation: "signal-wake",
+    showFrequency: ["once", "session", "visit"].includes(String(data.showFrequency))
+      ? (data.showFrequency as "once" | "session" | "visit")
+      : "once",
   };
 
   try {
-    const success = await updateSiteSection("launchExperience", payload);
-    if (!success) {
+    if (!(await persistLaunch(payload))) {
       return { error: "Failed to persist launch experience settings. Please try again." };
     }
-
-    try {
-      invalidateCacheTag("site-content");
-    } catch {}
-    revalidatePath("/", "layout");
-    revalidatePath("/saint-denis/settings");
-
     return {
       success: true,
-      message: enabled
-        ? "Launch Experience enabled and updated."
-        : "Launch Experience settings saved (currently disabled).",
+      message: payload.enabled ? "Supernova launch saved and switched on." : "Supernova launch saved (switched off).",
       launchExperience: payload,
     };
   } catch (err) {
     console.error("[Settings] Launch Experience update error:", err);
     return { error: "An unexpected error occurred while saving Launch Experience settings." };
+  }
+}
+
+/**
+ * Starts a new launch event: a fresh event id, so every visitor (including those who already
+ * watched the previous launch) becomes eligible again. Only the id changes.
+ */
+export async function startNewLaunchEventAction(): Promise<LaunchExperienceActionState> {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Administrator session required." };
+  }
+  const launchVersion = newLaunchEventId(Date.now());
+  try {
+    if (!(await persistLaunch({ launchVersion }))) {
+      return { error: "The new launch event could not be saved. Please try again." };
+    }
+    return { success: true, message: `New launch event ${launchVersion} issued.`, launchExperience: { launchVersion } as LaunchExperienceContent };
+  } catch (err) {
+    console.error("[Settings] New launch event error:", err);
+    return { error: "An unexpected error occurred while issuing a new launch event." };
   }
 }
 

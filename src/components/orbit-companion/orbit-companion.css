@@ -1,0 +1,382 @@
+/* The mobile Orbit companion (OrbitCompanion.tsx). Motion is CSS only; it pauses while hidden. */
+
+.orbit-companion {
+  position: fixed;
+  left: -200px;
+  top: 0;
+  width: 60px;
+  height: 60px;
+  /* above the page's content, below the header (60) and the menu (55) */
+  z-index: 50;
+  pointer-events: none;
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 0.17s ease,
+    transform 0.22s ease,
+    width 0.22s ease,
+    height 0.22s ease,
+    left 0.22s ease,
+    top 0.22s ease,
+    visibility 0s;
+}
+.orbit-companion[data-visible="false"] {
+  opacity: 0;
+  transform: scale(0.86);
+  visibility: hidden;
+  transition:
+    opacity 0.17s ease,
+    transform 0.17s ease,
+    visibility 0s linear 0.17s;
+}
+.orbit-companion[data-visible="false"] * {
+  animation-play-state: paused !important;
+}
+
+.orbit-companion-button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  /* a finger gliding over the robot pets it rather than scrolling the page (only here: the
+     rest of the page scrolls as usual) */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* following the footer: the top moves with the page, without easing lag */
+.orbit-companion[data-tracking="true"] {
+  transition:
+    opacity 0.17s ease,
+    transform 0.22s ease,
+    width 0.22s ease,
+    height 0.22s ease,
+    left 0.22s ease,
+    visibility 0s;
+}
+.orbit-companion-button:focus-visible {
+  outline: 2px solid var(--color-accent, #6d5cff);
+  outline-offset: 3px;
+}
+.orbit-companion-button:active .oc-svg {
+  transform: scale(0.94);
+}
+
+.oc-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transition: transform 0.15s ease;
+  filter: drop-shadow(0 6px 10px rgba(12, 10, 24, 0.22));
+}
+html[data-theme="dark"] .oc-svg {
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 1px rgba(255, 255, 255, 0.25));
+}
+
+.oc-shadow {
+  fill: rgba(10, 8, 20, 0.22);
+  transform-origin: 32px 60.5px;
+  animation: oc-shadow 4.8s ease-in-out infinite alternate;
+}
+html[data-theme="dark"] .oc-shadow {
+  fill: rgba(0, 0, 0, 0.45);
+}
+.oc-antenna {
+  stroke: #23222b;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+html[data-theme="dark"] .oc-antenna {
+  stroke: #8f8a9c;
+}
+.oc-tip,
+.oc-led {
+  fill: #a48bff;
+}
+.oc-eye {
+  fill: #c3b4ff;
+}
+.oc-glow {
+  opacity: 0.85;
+}
+
+/* idle: a slow float, natural blinks, an occasional glance */
+.oc-float {
+  animation: oc-float 4.8s ease-in-out infinite alternate;
+}
+.oc-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: oc-blink 6.2s infinite;
+}
+.oc-look {
+  animation: oc-glance 13s ease-in-out infinite;
+}
+.oc-head {
+  transform-box: fill-box;
+  transform-origin: 50% 80%;
+  transition: transform 0.4s ease;
+}
+
+
+/* thinking: the eyes dim and breathe */
+.orbit-companion[data-activity="thinking"] .oc-eye {
+  animation: oc-think 1.3s ease-in-out infinite;
+}
+/* listening: the eyes open a little wider and their glow lifts */
+.orbit-companion[data-activity="listening"] .oc-eyes {
+  animation: none;
+  transform: scale(1.12);
+}
+.orbit-companion[data-activity="listening"] .oc-glow {
+  animation: oc-listen 1.4s ease-in-out infinite;
+}
+/* speaking: the eyes pulse with the voice */
+.orbit-companion[data-activity="speaking"] .oc-eyes {
+  animation: oc-speak 0.36s ease-in-out infinite alternate;
+}
+.orbit-companion[data-activity="speaking"] .oc-glow {
+  animation: oc-glowpulse 0.36s ease-in-out infinite alternate;
+}
+
+/* the invitation */
+.orbit-companion-bubble {
+  position: absolute;
+  top: 50%;
+  white-space: nowrap;
+  padding: 0.36rem 0.68rem;
+  border-radius: 999px;
+  font-size: 11.5px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--color-fg, #111);
+  /* the site's glass: the raised surface, translucent over a blur */
+  background: color-mix(in oklab, var(--color-bg-raised, #fff) 80%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid var(--color-line, rgba(0, 0, 0, 0.1));
+  box-shadow: 0 6px 18px rgba(12, 10, 24, 0.14);
+  opacity: 0;
+  transform: translate(4px, -50%) scale(0.96);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+  pointer-events: none;
+}
+.orbit-companion-bubble {
+  right: calc(100% + 8px);
+}
+.orbit-companion-bubble[data-show="true"] {
+  opacity: 1;
+  transform: translate(0, -50%) scale(1);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.orbit-companion-bubble[data-show="false"] {
+  visibility: hidden;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0s linear 0.2s;
+}
+
+@keyframes oc-float {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-2.6px); }
+}
+@keyframes oc-shadow {
+  0% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(0.86); opacity: 0.75; }
+}
+@keyframes oc-blink {
+  0%, 46%, 50%, 92%, 95.5%, 100% { transform: scaleY(1); }
+  48%, 93.8% { transform: scaleY(0.12); }
+}
+@keyframes oc-glance {
+  0%, 38%, 100% { transform: translateX(0); }
+  44%, 52% { transform: translateX(-1.8px); }
+  60%, 68% { transform: translateX(1.5px); }
+  74% { transform: translateX(0); }
+}
+@keyframes oc-think {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@keyframes oc-listen {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+@keyframes oc-speak {
+  from { transform: scaleY(0.72); }
+  to { transform: scaleY(1.08); }
+}
+@keyframes oc-glowpulse {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+/* ---------------------------------------------------------------- expressions (data-expression) */
+.oc-eye-l,
+.oc-eye-r {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    transform 0.22s ease,
+    opacity 0.18s ease;
+}
+.oc-eye-shine {
+  fill: #fff;
+  fill-opacity: 0.85;
+}
+.oc-eye-smile,
+.oc-brow {
+  fill: none;
+  stroke: #c3b4ff;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.oc-eye-smile {
+  stroke-width: 1.9;
+}
+.oc-brow {
+  stroke-width: 1.5;
+}
+.oc-sparkle {
+  fill: #c9bcff;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* any expression holds the idle blink and glance */
+.orbit-companion:not([data-expression="idle"]) .oc-eyes,
+.orbit-companion:not([data-expression="idle"]) .oc-look {
+  animation: none;
+}
+
+/* curious: one eye a little wider, a small tilt */
+.orbit-companion[data-expression="curious"] .oc-head {
+  transform: rotate(-7deg);
+}
+.orbit-companion[data-expression="curious"] .oc-eye-l {
+  transform: translate(-0.6px, -0.6px) scale(1.14);
+}
+.orbit-companion[data-expression="curious"] .oc-eye-r {
+  transform: translate(-0.6px, -0.2px) scale(0.9);
+}
+/* happy: smiling eyes, a little lift, a sparkle */
+.orbit-companion[data-expression="happy"] .oc-eye-l,
+.orbit-companion[data-expression="happy"] .oc-eye-r {
+  opacity: 0;
+}
+.orbit-companion[data-expression="happy"] .oc-eye-smile {
+  opacity: 1;
+}
+.orbit-companion[data-expression="happy"] .oc-head {
+  transform: translateY(-1.2px);
+}
+.orbit-companion[data-expression="happy"] .oc-sparkle {
+  animation: oc-sparkle 1.1s ease-out infinite;
+}
+/* annoyed: slanted brows, narrowed eyes, a brighter glow and a small shake (playful, not fierce) */
+.orbit-companion[data-expression="angry"] .oc-brow-angry {
+  opacity: 1;
+}
+.orbit-companion[data-expression="angry"] .oc-eye-l,
+.orbit-companion[data-expression="angry"] .oc-eye-r {
+  transform: translateY(0.8px) scaleY(0.6);
+}
+.orbit-companion[data-expression="angry"] .oc-glow {
+  opacity: 1;
+}
+.orbit-companion[data-expression="angry"] .oc-head {
+  animation: oc-shake 0.3s ease-in-out 2;
+}
+/* sad: drooping brows, lowered eyes, a dimmer glow */
+.orbit-companion[data-expression="sad"] .oc-brow-sad {
+  opacity: 1;
+}
+.orbit-companion[data-expression="sad"] .oc-eye-l,
+.orbit-companion[data-expression="sad"] .oc-eye-r {
+  transform: translateY(1.6px) scaleY(0.78);
+}
+.orbit-companion[data-expression="sad"] .oc-head {
+  transform: translateY(1px);
+}
+.orbit-companion[data-expression="sad"] .oc-glow {
+  opacity: 0.45;
+}
+/* Orbit's real state (thinking, listening, speaking) always wins over an interaction's face */
+.orbit-companion:not([data-activity="idle"]) .oc-brow,
+.orbit-companion:not([data-activity="idle"]) .oc-eye-smile,
+.orbit-companion:not([data-activity="idle"]) .oc-sparkle {
+  opacity: 0;
+  animation: none;
+}
+.orbit-companion:not([data-activity="idle"]) .oc-eye-l,
+.orbit-companion:not([data-activity="idle"]) .oc-eye-r {
+  opacity: 1;
+  transform: none;
+}
+.orbit-companion:not([data-activity="idle"]) .oc-head {
+  transform: none;
+  animation: none;
+}
+
+@keyframes oc-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1.2px) rotate(-2deg); }
+  75% { transform: translateX(1.2px) rotate(2deg); }
+}
+@keyframes oc-sparkle {
+  0% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  35% { opacity: 1; transform: scale(1) rotate(30deg); }
+  100% { opacity: 0; transform: scale(0.6) rotate(70deg); }
+}
+
+/* reduced motion: no floating, glancing, blinking or travelling light; states stay readable */
+@media (prefers-reduced-motion: reduce) {
+  .orbit-companion,
+  .orbit-companion[data-visible="false"],
+  .orbit-companion-bubble {
+    transition: opacity 0.12s linear, visibility 0s;
+  }
+  .orbit-companion[data-visible="false"] {
+    transform: none;
+  }
+  .oc-float,
+  .oc-shadow,
+  .oc-eyes,
+  .oc-look,
+  .oc-eye,
+  .oc-glow {
+    animation: none !important;
+  }
+  .orbit-companion[data-activity="thinking"] .oc-eye {
+    opacity: 0.6;
+  }
+  /* faces change without motion: no shake, tilt, lift, travelling sparkle or slide-in */
+  .oc-head,
+  .oc-sparkle {
+    animation: none !important;
+  }
+  .orbit-companion[data-expression] .oc-head {
+    transform: none;
+  }
+  .orbit-companion[data-expression="happy"] .oc-sparkle {
+    opacity: 1;
+  }
+  .oc-eye-l,
+  .oc-eye-r,
+  .oc-head {
+    transition: opacity 0.12s linear;
+  }
+  .orbit-companion-bubble,
+  .orbit-companion-bubble[data-show="true"] {
+    transform: translate(0, -50%);
+  }
+}

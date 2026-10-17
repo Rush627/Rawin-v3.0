@@ -15,6 +15,9 @@ import {
   rankVoices,
   type VoiceLike,
 } from "@/components/orbit/voice-engine";
+import { useBackgroundHold } from "@/components/audio/useBackgroundHold";
+// Orbit's voice takes priority over the site ambience (lib/audio/hold.ts)
+import { dictationActive, recorderActive, speechActive } from "@/lib/audio/hold";
 
 // The lifecycles live in voice-engine.ts (framework-free, unit-tested); these hooks bind them
 // to React. Re-exported for existing importers.
@@ -38,6 +41,8 @@ export function useDictation(onText: (text: string) => void) {
   const supported = useClientSupport(() => Boolean(getRecognitionCtor()));
   const [ctrl] = useState(() => new DictationController(browserDictationEnv(), onText));
   const state = useSyncExternalStore(ctrl.subscribe, ctrl.getState, ctrl.getState);
+  // the site ambience stays silent while the microphone is opening, open or closing
+  useBackgroundHold(ctrl, dictationActive);
   useEffect(() => {
     ctrl.setOnText(onText);
   }, [ctrl, onText]);
@@ -75,6 +80,8 @@ export function useRecorder(onText: (text: string) => void) {
   );
   const [ctrl] = useState(() => new RecorderController(browserRecorderEnv(), onText));
   const st = useSyncExternalStore(ctrl.subscribe, ctrl.getState, ctrl.getState);
+  // silent while recording (the upload and transcription afterwards no longer need the quiet)
+  useBackgroundHold(ctrl, recorderActive);
   useEffect(() => {
     ctrl.setOnText(onText);
   }, [ctrl, onText]);
@@ -153,6 +160,9 @@ export function useSpeech({ cloud = false }: { cloud?: boolean } = {}) {
   const [cloudCtrl] = useState(() => new CloudSpeechController(browserCloudSpeechEnv()));
   const dState = useSyncExternalStore(device.subscribe, device.getState, device.getState);
   const cState = useSyncExternalStore(cloudCtrl.subscribe, cloudCtrl.getState, cloudCtrl.getState);
+  // silent from the moment a reply is requested until it has ended, been stopped or failed
+  useBackgroundHold(device, speechActive);
+  useBackgroundHold(cloudCtrl, speechActive);
   useEffect(
     () => () => {
       device.dispose();

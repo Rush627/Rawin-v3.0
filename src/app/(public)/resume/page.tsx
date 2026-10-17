@@ -127,7 +127,7 @@ export default async function ResumePage() {
     ) : null;
 
   return (
-    <div className="cv mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+9.75rem)] sm:pt-[10.5rem] lg:pt-[10.75rem]">
+    <div className="cv mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10 pt-[calc(env(safe-area-inset-top)+6rem)] sm:pt-[6.75rem] md:pt-[10.5rem] lg:pt-[10.75rem]">
       {/* ------------------------------------------------------------------ hero */}
       <header>
         <p className="flex items-center gap-3 label-mono text-fg-muted">

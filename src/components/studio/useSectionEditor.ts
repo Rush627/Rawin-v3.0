@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { updateSectionAction } from "@/app/saint-denis/content/actions";
 import type { EditableSection } from "@/lib/cms/section-payload";
 import { changedEntries, changedKeys, type EditorValues } from "@/lib/cms/serialize";
+import { announceCmsUpdate } from "@/lib/cms/live-sync";
 import { useUnsavedChanges } from "./UnsavedChanges";
 
 export type SaveState = "clean" | "dirty" | "saving" | "saved" | "invalid" | "failed";
@@ -58,6 +59,7 @@ export function useSectionEditor<T extends EditorValues>(section: EditableSectio
     try {
       const res = await updateSectionAction(section, null, fd);
       if (res?.success) {
+        announceCmsUpdate(section);
         setBase(values);
         setErrors({});
         setPhase("saved");
