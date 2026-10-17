@@ -4,7 +4,7 @@ import { jwtVerify } from "jose";
 import { getSecretKey, SESSION_COOKIE_NAME } from "@/lib/auth-token";
 
 /**
- * Runs before every non-static request.
+ * Runs before admin requests only (see the matcher).
  *  - /saint-denis: coarse sign-in gate (signature + expiry only). Real authorization — including
  *    the session-version check — happens in getAdminSession() on every admin page and action.
  */
@@ -49,11 +49,11 @@ export async function proxy(request: NextRequest) {
 export { proxy as middleware };
 
 export const config = {
-  matcher: [
-    /*
-     * Pages only: framework files, API routes, bundled asset folders and static files never
-     * need this gate (each excluded request is one less proxy invocation).
-     */
-    "/((?!_next/static|_next/image|api/|brand/|defaults/|icons/|images/|favicon.ico|icon.png|manifest.webmanifest|.*\\.(?:png|jpe?g|webp|gif|svg|ico|pdf|txt|xml|json|webmanifest|woff2?|mp4|webm)$).*)",
-  ],
+  /*
+   * The admin area only. Public pages need nothing from the proxy (nothing reads the
+   * x-pathname header it sets), and on Netlify each matched request runs an edge function in
+   * front of the cached page: matching every public page added that hop to every page load.
+   * ":path*" also matches /saint-denis itself.
+   */
+  matcher: ["/saint-denis/:path*"],
 };

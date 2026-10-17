@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AWAKENING_DONE_KEY, recordDoneEvent } from "@/lib/startup/launch";
-import { STARTUP_REVEAL_EVENT } from "@/lib/startup/boot-script";
+import { AWAKENING_DONE_KEY, recordDoneEvent, startupPlan } from "@/lib/startup/launch";
+import { STARTUP_REVEAL_EVENT, takeOverStartupGuard } from "@/lib/startup/boot-script";
 import { SYSTEM_SCREEN_ATTR, subscribeSystemScreen, systemScreenActive } from "@/lib/system-screen";
 import FutureSystem from "./FutureSystem";
 import type { StartupEnd, StartupLayout } from "./clock";
@@ -28,7 +28,9 @@ interface Live {
  * covered: if one is present when this mounts, or appears while a startup plays, the startup
  * stands down at once and records nothing, so both startups stay owed for a normal page.
  * The server markup is a plain cover (the Future System ground) shown by CSS only when the boot script set html[data-startup]; a CSS fail-safe
- * and the boot script's own timer remove it even if this component never runs.
+ * and the boot script's own timer remove it even if this component never runs. When this runs it
+ * takes the fail-safe over (html[data-startup-live]): the boot guard is cancelled and a new one is
+ * timed from now, so a late hydration on a first visit never skips or cuts the startup.
  */
 export default function StartupStage({ title, subtitle, durationS, logo }: { title: string; subtitle: string; durationS: number; logo?: { url: string; alt?: string } | null }) {
   const [live, setLive] = useState<Live | null>(null);
@@ -56,23 +58,24 @@ export default function StartupStage({ title, subtitle, durationS, logo }: { tit
     const offScreen = subscribeSystemScreen(() => {
       if (systemScreenActive()) standDown();
     });
-    requestAnimationFrame(() =>
-      setLive({
-        choice,
-        layout: d.getAttribute("data-startup-layout") === "mobile" ? "mobile" : "desktop",
-        reduced: d.getAttribute("data-startup-reduced") === "true",
-        eventId: d.getAttribute("data-startup-event"),
-      }),
-    );
+    const layout: StartupLayout = d.getAttribute("data-startup-layout") === "mobile" ? "mobile" : "desktop";
+    const reduced = d.getAttribute("data-startup-reduced") === "true";
+    // the app is running: the boot guard (timed from <head>) gives way to one timed from the
+    // animation's start, so hydration time is never taken out of the startup
+    const releaseGuard = takeOverStartupGuard(d, window, startupPlan(choice, durationS, layout === "mobile", reduced).totalMs);
+    requestAnimationFrame(() => setLive({ choice, layout, reduced, eventId: d.getAttribute("data-startup-event") }));
     // the boot script's fail-safe ended the phase (e.g. this tab was frozen): stand down
     const mo = new MutationObserver(() => {
       if (d.getAttribute("data-startup-phase") === "done") setGone(true);
     });
     mo.observe(d, { attributes: true, attributeFilter: ["data-startup-phase"] });
     return () => {
+      releaseGuard();
       mo.disconnect();
       offScreen();
     };
+    // the startup is decided once per page load; durationS is the server's, fixed for it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gone) return null;

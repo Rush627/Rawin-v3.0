@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { optimizableImage } from "@/lib/image-source";
 import type { BlogPost } from "@/lib/blog";
 import { PROJECT_TONES, TONE_SWATCH } from "@/lib/project-tone";
 
@@ -31,7 +32,7 @@ export default function ArticleCover({ post, className = "", sizes = "100vw", pr
           alt=""
           fill
           priority={priority}
-          unoptimized
+          unoptimized={!optimizableImage(post.coverImage)}
           sizes={sizes}
           className="object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.7,0.1,1)] group-hover:scale-[1.03]"
         />

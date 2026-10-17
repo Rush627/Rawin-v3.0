@@ -5,7 +5,7 @@ import { getActiveSocialLinks } from "@/components/SocialIcons";
 import type { ContactContent } from "@/lib/site-content";
 import type { AvailabilityContent } from "@/lib/cms/availability";
 import ContactStage from "@/components/contact/ContactStage";
-import { submitEnquiry, type EnquiryForm } from "@/lib/contact/submit";
+import { MESSAGES, submitEnquiry, validateEnquiry, type EnquiryForm } from "@/lib/contact/submit";
 
 // _gotcha is the honeypot spam trap
 type FormDataState = EnquiryForm;
@@ -87,10 +87,24 @@ export default function ContactView({ content, availability }: ContactViewProps)
     e.preventDefault();
     if (sendingRef.current) return;
 
+    // an invalid form is answered at once: no loading state, nothing loaded or sent
+    const invalid = formData._gotcha ? null : validateEnquiry(formData);
+    if (invalid) {
+      setStatus("error");
+      setErrorMessage(MESSAGES[invalid]);
+      setNotice("");
+      return;
+    }
+
     setStatus("loading");
     setErrorMessage("");
     setNotice("");
     sendingRef.current = true;
+
+    // Load the EmailJS SDK while Formspree is answering, not after it: the confirmation is still
+    // sent only once Formspree has taken the enquiry, but no longer waits for a chunk download
+    const sdk = import("@emailjs/browser");
+    sdk.catch(() => {}); // a failed load is reported by sendEmail below, if it is reached
 
     try {
       // Formspree takes the enquiry, then EmailJS sends the visitor's confirmation (lib/contact/submit.ts)
@@ -100,7 +114,7 @@ export default function ContactView({ content, availability }: ContactViewProps)
           return { ok: res.ok, status: res.status };
         },
         sendEmail: async (serviceId, templateId, params, publicKey) => {
-          const { default: emailjs } = await import("@emailjs/browser");
+          const { default: emailjs } = await sdk;
           return emailjs.send(serviceId, templateId, params, { publicKey });
         },
         warn: (message) => console.warn(message),

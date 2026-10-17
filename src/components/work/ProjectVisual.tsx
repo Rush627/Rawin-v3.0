@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { Project } from "@/lib/projects";
 import { resolveTone, TONE_SWATCH } from "@/lib/project-tone";
+import { SCREENSHOT_QUALITY, optimizableImage } from "@/lib/image-source";
 
 interface ProjectVisualProps {
   project: Pick<Project, "title" | "shortName" | "slug" | "previewImage" | "category" | "year"> & { tone?: string };
@@ -31,7 +32,8 @@ export default function ProjectVisual({ project, className = "", sizes = "100vw"
           fill
           sizes={sizes}
           priority={priority}
-          unoptimized
+          unoptimized={!optimizableImage(project.previewImage)}
+          quality={SCREENSHOT_QUALITY}
           className={`object-contain object-center transition-[filter] duration-[1200ms] ease-[cubic-bezier(0.2,0.7,0.1,1)] ${
             monochrome ? "grayscale group-hover:grayscale-0" : ""
           }`}

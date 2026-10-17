@@ -15,6 +15,10 @@ html[data-startup] .rawin-startup {
   /* fail-safe: gone shortly after the planned end even if no script runs */
   animation: rawin-startup-failsafe 0.4s ease var(--startup-failsafe, 4s) forwards;
 }
+/* the app is running the startup: its own guard (timed from the animation's start) replaces the CSS one */
+html[data-startup-live] .rawin-startup {
+  animation: none;
+}
 html[data-startup-phase="done"] .rawin-startup {
   opacity: 0;
   visibility: hidden;

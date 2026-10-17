@@ -25,10 +25,13 @@ export default function Wordmark({ className = "", mode = "wordmark", logos, siz
     const alt = logos.light.alt || logos.dark.alt || "RAWIN";
     return (
       <span className={`relative inline-flex items-center w-[5.2em] h-[1.15em] ${text} ${className}`}>
+        {/* Low priority: React otherwise preloads both theme variants in <head> at high priority
+            (only one is ever shown), ahead of the scripts and fonts the page waits for. Both still
+            load, so a theme switch shows the other at once. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logos.light.url} alt={alt} className="w-full h-full object-contain object-left dark:hidden" decoding="async" />
+        <img src={logos.light.url} alt={alt} className="w-full h-full object-contain object-left dark:hidden" decoding="async" fetchPriority="low" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logos.dark.url} alt={alt} className="w-full h-full object-contain object-left hidden dark:block" decoding="async" />
+        <img src={logos.dark.url} alt={alt} className="w-full h-full object-contain object-left hidden dark:block" decoding="async" fetchPriority="low" />
       </span>
     );
   }

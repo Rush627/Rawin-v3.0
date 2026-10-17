@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { SCREENSHOT_QUALITY, optimizableImage } from "@/lib/image-source";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 import { ArrowUpRight } from "lucide-react";
@@ -191,7 +192,8 @@ export default function EvolutionChapters({
                   src={m.preview}
                   alt={m.previewAlt}
                   fill
-                  unoptimized
+                  unoptimized={!optimizableImage(m.preview)}
+                  quality={SCREENSHOT_QUALITY}
                   sizes="(min-width: 1024px) 60vw, 100vw"
                   className="object-contain object-center"
                 />

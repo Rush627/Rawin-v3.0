@@ -8,7 +8,11 @@ try {
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["mongodb"],
-  images: {},
+  images: {
+    // 75 is the default; 85 keeps the UI text in project and milestone screenshots crisp
+    // (lib/image-source.ts). Next 16 only serves qualities listed here.
+    qualities: [75, 85],
+  },
   experimental: {
     cpus: 1,
     serverActions: {

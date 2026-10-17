@@ -465,14 +465,14 @@ export class AudioDirector {
   }
 
   /** Fetch and decode the first format this browser plays; the next only if that one fails. */
-  private async fetchDecode(base: string, ctx: BaseAudioContext): Promise<{ buffer: AudioBuffer; ext: string } | null> {
+  private async fetchDecode(base: string, ctx: BaseAudioContext, priority: RequestPriority = "auto"): Promise<{ buffer: AudioBuffer; ext: string } | null> {
     const probe = typeof Audio !== "undefined" ? new Audio() : null;
     const order = FORMATS.filter((f) => f.ext === "mp3" || (probe?.canPlayType(f.type) ?? "") !== "");
     for (const f of order) {
       const url = `${base}.${f.ext}`;
       this.formatsTried.push(url);
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { priority });
         if (!res.ok) continue;
         const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
         return { buffer, ext: f.ext };
@@ -546,7 +546,8 @@ export class AudioDirector {
     if (this.bgLoad) return this.bgLoad;
     const ctx = this.ensureContext();
     if (!ctx) return Promise.resolve(null);
-    this.bgLoad = this.earlyBed(ctx).then((r) => r ?? this.fetchDecode(AMBIENCE.base, ctx)).then((r) => {
+    // the 1.7 MB ambience yields to the page's own images and scripts
+    this.bgLoad = this.earlyBed(ctx).then((r) => r ?? this.fetchDecode(AMBIENCE.base, ctx, "low")).then((r) => {
       if (!r) {
         this.bgError = true;
         this.note("ambience: no playable format");
