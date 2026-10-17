@@ -5,18 +5,10 @@ import { getActiveSocialLinks } from "@/components/SocialIcons";
 import type { ContactContent } from "@/lib/site-content";
 import type { AvailabilityContent } from "@/lib/cms/availability";
 import ContactStage from "@/components/contact/ContactStage";
+import { submitEnquiry, type EnquiryForm } from "@/lib/contact/submit";
 
-// Verified credentials preserved from production
-const FORMSPREE_ENDPOINT = "https://formspree.io/f/mblkyvyw";
-
-interface FormDataState {
-  user_name: string;
-  user_email: string;
-  mobile_number: string;
-  subject: string;
-  message: string;
-  _gotcha: string; // Honeypot spam trap
-}
+// _gotcha is the honeypot spam trap
+type FormDataState = EnquiryForm;
 
 interface ContactViewProps {
   content: ContactContent;
@@ -35,6 +27,8 @@ export default function ContactView({ content, availability }: ContactViewProps)
 
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  // shown with the success state when the visitor's confirmation email could not be sent
+  const [notice, setNotice] = useState<string>("");
 
   // email and location are the canonical contact identity (resolved server-side)
   const emailAddress = content.email;
@@ -83,6 +77,7 @@ export default function ContactView({ content, availability }: ContactViewProps)
   const handleResetStatus = () => {
     setStatus("idle");
     setErrorMessage("");
+    setNotice("");
   };
 
   // A second submit before React re-renders (double Enter, double tap) must not send twice
@@ -92,40 +87,28 @@ export default function ContactView({ content, availability }: ContactViewProps)
     e.preventDefault();
     if (sendingRef.current) return;
 
-    // Honeypot spam trap
-    if (formData._gotcha) {
-      setStatus("success");
-      return;
-    }
-
-    if (!formData.user_name || !formData.user_email || !formData.message) {
-      setStatus("error");
-      setErrorMessage("Please fill in all required fields.");
-      return;
-    }
-
     setStatus("loading");
     setErrorMessage("");
+    setNotice("");
     sendingRef.current = true;
 
     try {
-      // Formspree is the single delivery path (one enquiry = one message). EmailJS used to
-      // send a second copy of every enquiry; it is no longer called.
-      const formspreePayload = new FormData();
-      formspreePayload.append("user_name", formData.user_name);
-      formspreePayload.append("user_email", formData.user_email);
-      formspreePayload.append("mobile_number", formData.mobile_number || "N/A");
-      formspreePayload.append("subject", formData.subject || "RAWIN 3.0 Portfolio Inquiry");
-      formspreePayload.append("message", formData.message);
-
-      const formspreeRes = await fetch(FORMSPREE_ENDPOINT, {
-        method: "POST",
-        body: formspreePayload,
-        headers: { Accept: "application/json" },
+      // Formspree takes the enquiry, then EmailJS sends the visitor's confirmation (lib/contact/submit.ts)
+      const result = await submitEnquiry(formData, {
+        postForm: async (endpoint, body) => {
+          const res = await fetch(endpoint, { method: "POST", body, headers: { Accept: "application/json" } });
+          return { ok: res.ok, status: res.status };
+        },
+        sendEmail: async (serviceId, templateId, params, publicKey) => {
+          const { default: emailjs } = await import("@emailjs/browser");
+          return emailjs.send(serviceId, templateId, params, { publicKey });
+        },
+        warn: (message) => console.warn(message),
       });
 
-      if (formspreeRes.ok) {
+      if (result.status === "success") {
         setStatus("success");
+        setNotice(result.notice);
         setFormData({
           user_name: "",
           user_email: "",
@@ -136,11 +119,8 @@ export default function ContactView({ content, availability }: ContactViewProps)
         });
       } else {
         setStatus("error");
-        setErrorMessage("Submission failed. Please try again or reach out directly via email.");
+        setErrorMessage(result.message);
       }
-    } catch {
-      setStatus("error");
-      setErrorMessage("Network error. Please check your connection or email directly.");
     } finally {
       sendingRef.current = false;
     }
@@ -152,6 +132,7 @@ export default function ContactView({ content, availability }: ContactViewProps)
     formData,
     status,
     errorMessage,
+    notice,
     placeholders,
     emailAddress,
     locationString,

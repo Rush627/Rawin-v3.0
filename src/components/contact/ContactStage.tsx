@@ -15,6 +15,8 @@ export interface ContactStageProps {
   formData: { user_name: string; user_email: string; mobile_number: string; subject: string; message: string; _gotcha: string };
   status: "idle" | "loading" | "success" | "error";
   errorMessage: string;
+  /** shown under the success message (the visitor's confirmation email could not be sent) */
+  notice?: string;
   placeholders: { name: string; email: string; phone: string; subject: string; message: string };
   emailAddress: string;
   locationString: string;
@@ -71,6 +73,7 @@ export default function ContactStage(props: ContactStageProps) {
     formData,
     status,
     errorMessage,
+    notice,
     placeholders,
     emailAddress,
     locationString,
@@ -221,6 +224,7 @@ export default function ContactStage(props: ContactStageProps) {
                   <p className="mt-4 text-fg-muted max-w-[42ch]">
                     {content.successMessage || "Thank you for reaching out. I'll get back to you as soon as possible."}
                   </p>
+                  {notice && <p className="mt-3 text-sm text-fg-subtle max-w-[42ch]">{notice}</p>}
                   <button type="button" onClick={handleResetStatus} className="mt-10 btn btn-ghost w-fit">
                     <RotateCcw className="w-4 h-4" />
                     <span>Send another message</span>
