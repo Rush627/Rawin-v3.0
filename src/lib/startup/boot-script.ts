@@ -20,7 +20,11 @@ export const STARTUP_FAILSAFE_SLACK_MS = 4000;
  *   - the launch event as rendered by the server (enabled, valid, window, event id);
  *   - the visitor's clock (Date.now(), UTC ms: the window ends on time on a cached page);
  *   - this browser's records: completed launch events (localStorage) and whether Signal
- *     Awakening has finished this session (sessionStorage).
+ *     Awakening has finished this session (sessionStorage);
+ *   - the HTTP status the page was served with, where the browser reports it: an error status
+ *     (404, 500, 503) is a system screen and gets no startup. Where it is not reported, the
+ *     system screen's own inline script withdraws the startup while the page is parsed
+ *     (lib/system-screen.ts), and StartupStage stands down if one appears later.
  * It only READS storage; completion is written by the overlay when an animation finishes.
  * It sets html[data-startup] (supernova | awakening), html[data-startup-phase="play"], the
  * event being shown, when the site is revealed (ms) and a CSS fail-safe. A plain timer of its
@@ -31,7 +35,7 @@ export function buildStartupBootScript(launch: BootLaunch | null, durationS: num
   if (!enabled) return "";
   const data = JSON.stringify(launch).replace(/</g, "\\u003c");
   const dur = Number.isFinite(durationS) ? Number(durationS) : 12;
-  return `(function(){try{var d=document.documentElement;var L=${data};var done=[];try{var r=localStorage.getItem(${JSON.stringify(SUPERNOVA_DONE_KEY)});var a=r?JSON.parse(r):[];if(Array.isArray(a))done=a}catch(e){}var sd=false;try{sd=sessionStorage.getItem(${JSON.stringify(AWAKENING_DONE_KEY)})==="1"}catch(e){}var c=(${DECIDE_SOURCE})({path:location.pathname,now:Date.now(),launch:L,done:done,sessionDone:sd});if(c==="none")return;var mm=window.matchMedia;var mob=!!(mm&&mm("(max-width: 767px)").matches);var red=!!(mm&&mm("(prefers-reduced-motion: reduce)").matches);var p=(${PLAN_SOURCE})(c,${dur},mob,red);d.setAttribute("data-startup",c);d.setAttribute("data-startup-phase","play");d.setAttribute("data-startup-layout",mob?"mobile":"desktop");d.setAttribute("data-startup-reveal",String(p.revealMs));if(c==="supernova"&&L)d.setAttribute("data-startup-event",L.eventId);if(red)d.setAttribute("data-startup-reduced","true");d.style.setProperty("--startup-failsafe",(p.totalMs+${STARTUP_FAILSAFE_SLACK_MS})+"ms");setTimeout(function(){if(d.getAttribute("data-startup-phase")!=="done"){d.setAttribute("data-startup-phase","done");try{window.dispatchEvent(new Event("rawin:startup-reveal"))}catch(e){}}},p.totalMs+${STARTUP_FAILSAFE_SLACK_MS})}catch(e){}})();`;
+  return `(function(){try{var d=document.documentElement;var L=${data};var done=[];try{var r=localStorage.getItem(${JSON.stringify(SUPERNOVA_DONE_KEY)});var a=r?JSON.parse(r):[];if(Array.isArray(a))done=a}catch(e){}var sd=false;try{sd=sessionStorage.getItem(${JSON.stringify(AWAKENING_DONE_KEY)})==="1"}catch(e){}var ns=0;try{var nv=performance.getEntriesByType("navigation")[0];ns=nv&&nv.responseStatus||0}catch(e){}var c=(${DECIDE_SOURCE})({path:location.pathname,now:Date.now(),launch:L,done:done,sessionDone:sd,status:ns});if(c==="none")return;var mm=window.matchMedia;var mob=!!(mm&&mm("(max-width: 767px)").matches);var red=!!(mm&&mm("(prefers-reduced-motion: reduce)").matches);var p=(${PLAN_SOURCE})(c,${dur},mob,red);d.setAttribute("data-startup",c);d.setAttribute("data-startup-phase","play");d.setAttribute("data-startup-layout",mob?"mobile":"desktop");d.setAttribute("data-startup-reveal",String(p.revealMs));if(c==="supernova"&&L)d.setAttribute("data-startup-event",L.eventId);if(red)d.setAttribute("data-startup-reduced","true");d.style.setProperty("--startup-failsafe",(p.totalMs+${STARTUP_FAILSAFE_SLACK_MS})+"ms");setTimeout(function(){if(d.getAttribute("data-startup-phase")!=="done"){d.setAttribute("data-startup-phase","done");try{window.dispatchEvent(new Event("rawin:startup-reveal"))}catch(e){}}},p.totalMs+${STARTUP_FAILSAFE_SLACK_MS})}catch(e){}})();`;
 }
 
 /** Fired when the site behind the startup becomes visible (reveal, skip, finish or fail-safe). */

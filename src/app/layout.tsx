@@ -11,6 +11,7 @@ export const viewport: Viewport = {
 import OfflineDetector from "@/components/OfflineDetector";
 import StartupStage from "@/components/startup/StartupStage";
 import AvailabilityWatcher from "@/components/AvailabilityWatcher";
+import { SoundSettingsProvider } from "@/components/audio/SoundSettings";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { GlassProvider } from "@/components/glass/GlassProvider";
 import { buildThemeBootScript, THEME_COLOR } from "@/components/theme/theme-script";
@@ -119,6 +120,12 @@ export default async function RootLayout({
   // visitor's clock in the browser, so a cached page still stops showing it on time
   const launch = content.launchExperience;
   const launchView = launchState(launch, 0);
+  // the CMS sound settings for the system screens (maintenance, offline, not found, errors),
+  // which keep interface clicks; the public layout provides the same values to the site itself
+  const sound = {
+    background: content.global?.backgroundSoundEnabled !== false,
+    click: content.global?.clickSoundEnabled !== false,
+  };
 
   return (
     <html
@@ -147,7 +154,8 @@ export default async function RootLayout({
           }}
         />
         {/* the startup decision (Supernova, Signal Awakening or none), before first paint;
-            nothing plays over the maintenance screen */}
+            nothing plays over the maintenance screen, and the script itself skips a page
+            served as an error (404, 500, 503) where the browser reports the status */}
         <script
           dangerouslySetInnerHTML={{
             __html: buildStartupBootScript(bootLaunch(launch), launchView.duration, !showMaintenance),
@@ -159,6 +167,7 @@ export default async function RootLayout({
         className="min-h-viewport text-fg antialiased flex flex-col font-sans relative"
       >
         <ThemeProvider>
+          <SoundSettingsProvider value={sound}>
           <GlassProvider>
             {/* Rendered in the root shell so it covers the first paint (incl. streaming) and
                 survives client navigation; it only plays what the boot script chose. */}
@@ -177,6 +186,7 @@ export default async function RootLayout({
             />
             {children}
           </GlassProvider>
+          </SoundSettingsProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -2,6 +2,7 @@ import SmoothScroll from "@/components/SmoothScroll";
 import SiteHeader from "@/components/shell/SiteHeader";
 import SiteFooter from "@/components/shell/SiteFooter";
 import RawinErrorView from "@/components/RawinErrorView";
+import SystemScreenBoot from "@/components/system/SystemScreenBoot";
 import CustomCursor from "@/components/system/CustomCursor";
 import CursorField from "@/components/system/CursorField";
 import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
@@ -53,24 +54,27 @@ export default async function PublicLayout({
     await shortenPageLifetimeForMaintenance();
     const isMaintenanceMessage = content.maintenance?.showMessage;
     return (
-      <RawinErrorView
-        code="503"
-        title={isMaintenanceMessage ? "We'll be back soon." : "Site temporarily unavailable"}
-        message={
-          isMaintenanceMessage
-            ? "The site is undergoing scheduled maintenance."
-            : "The site is currently offline for updates."
-        }
-        maintenanceMessage={
-          isMaintenanceMessage ? content.maintenance?.message : undefined
-        }
-        endsAt={
-          isMaintenanceMessage ? content.maintenance?.endsAt || undefined : undefined
-        }
-        actionLabel="Refresh"
-        brandMode={content.global?.headerBrand === "logo" ? "logo" : "wordmark"}
-        logos={{ light: content.assets.logoLight, dark: content.assets.logoDark }}
-      />
+      <>
+        <SystemScreenBoot />
+        <RawinErrorView
+          code="503"
+          title={isMaintenanceMessage ? "We'll be back soon." : "Site temporarily unavailable"}
+          message={
+            isMaintenanceMessage
+              ? "The site is undergoing scheduled maintenance."
+              : "The site is currently offline for updates."
+          }
+          maintenanceMessage={
+            isMaintenanceMessage ? content.maintenance?.message : undefined
+          }
+          endsAt={
+            isMaintenanceMessage ? content.maintenance?.endsAt || undefined : undefined
+          }
+          actionLabel="Refresh"
+          brandMode={content.global?.headerBrand === "logo" ? "logo" : "wordmark"}
+          logos={{ light: content.assets.logoLight, dark: content.assets.logoDark }}
+        />
+      </>
     );
   }
 

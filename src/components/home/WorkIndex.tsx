@@ -13,7 +13,8 @@ import { EASE_EDITORIAL } from "@/lib/motion";
 /**
  * Selected work — a curated split.
  * Desktop: a large exhibition plate shows the active project beside an editorial index;
- *          hovering or focusing an entry swaps the plate (no pointer-chasing previews).
+ *          hovering or focusing an entry swaps the plate (no pointer-chasing previews). The
+ *          plate's label, title and action sit below its screenshot frame, never on it.
  * Tablet:  the lead project as a wide feature, the rest as a two-up grid.
  * Phone:   stacked previews at a landscape crop with the copy beneath.
  */
@@ -37,35 +38,45 @@ export default function WorkIndex({ projects }: { projects: Project[] }) {
       {/* ------------------------------------------------------------ Desktop */}
       <div className="hidden lg:grid grid-cols-12 gap-x-10 xl:gap-x-14 items-start">
         <div className="col-span-7">
+          {/* Two independent regions: the screenshot frame (the whole image, fitted by
+              ProjectVisual on the theme surface), then the copy beneath it. Nothing is laid
+              over the image, so any screenshot proportion or title length keeps them apart. */}
           <Link
             href={`/projects/${current.slug}`}
-            className="group relative block aspect-[5/4] xl:aspect-[4/3] overflow-hidden rounded-[28px] bg-sunken shadow-[var(--shadow-3)]"
+            className="group block"
             aria-label={`Open ${current.title} case study`}
+            data-work-plate
           >
-            <AnimatePresence initial={false}>
-              <motion.div
-                key={current.slug}
-                className="absolute inset-0"
-                initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.04 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: reduced ? 0.2 : 0.8, ease: EASE_EDITORIAL }}
-              >
-                <ProjectVisual project={current} className="w-full h-full" sizes="(min-width: 1280px) 52vw, 58vw" />
-              </motion.div>
-            </AnimatePresence>
-            <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/60 to-transparent" />
-            <div className="absolute left-6 right-6 bottom-6 flex items-end justify-between gap-6 text-white">
-              <div>
-                <span className="label-mono text-white/70">
+            <div
+              data-work-frame
+              className="relative aspect-[16/10] overflow-hidden rounded-[28px] bg-surface shadow-[var(--shadow-3)]"
+            >
+              <AnimatePresence initial={false}>
+                <motion.div
+                  key={current.slug}
+                  className="absolute inset-0"
+                  initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.04 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: reduced ? 0.2 : 0.8, ease: EASE_EDITORIAL }}
+                >
+                  <ProjectVisual project={current} className="w-full h-full" sizes="(min-width: 1280px) 52vw, 58vw" />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            <div data-work-meta className="mt-6 flex items-end justify-between gap-6">
+              <div className="min-w-0">
+                <span className="block label-mono text-fg-subtle break-words">
                   {current.category}
                   {current.year ? ` · ${current.year}` : ""}
                 </span>
-                <p className="mt-2 font-display text-[clamp(2rem,3vw,2.9rem)] leading-[0.95] tracking-[-0.02em]">{current.title}</p>
+                <p className="mt-2 font-display text-[clamp(2rem,3vw,2.9rem)] leading-[0.95] tracking-[-0.02em] text-fg break-words">
+                  {current.title}
+                </p>
               </div>
-              <span className="inline-flex items-center gap-2 h-11 pl-4 pr-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-[13px] font-medium shrink-0">
+              <span className="inline-flex items-center gap-2 h-11 pl-4 pr-1.5 rounded-full border border-line-strong text-fg text-[13px] font-medium shrink-0">
                 Case study
-                <span className="w-8 h-8 rounded-full bg-white text-[#141318] flex items-center justify-center transition-transform duration-500 group-hover:rotate-45">
+                <span className="w-8 h-8 rounded-full bg-fg text-bg flex items-center justify-center transition-transform duration-500 group-hover:rotate-45">
                   <ArrowUpRight className="w-4 h-4" />
                 </span>
               </span>
@@ -138,11 +149,11 @@ export default function WorkIndex({ projects }: { projects: Project[] }) {
               />
               <div className="mt-4 sm:mt-5 flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <span className="label-mono text-fg-subtle">
+                  <span className="block label-mono text-fg-subtle break-words">
                     {String(i + 1).padStart(2, "0")} · {p.category}
                     {p.year ? ` · ${p.year}` : ""}
                   </span>
-                  <h3 className="mt-2 font-display text-[clamp(1.9rem,7vw,2.75rem)] leading-[0.98] tracking-[-0.02em] text-fg">{p.title}</h3>
+                  <h3 className="mt-2 font-display text-[clamp(1.9rem,7vw,2.75rem)] leading-[0.98] tracking-[-0.02em] text-fg break-words">{p.title}</h3>
                   {p.tagline && <p className="mt-2 text-[15px] text-fg-muted max-w-[42ch]">{p.tagline}</p>}
                 </div>
                 <span className="mt-1 inline-flex items-center justify-center w-11 h-11 shrink-0 rounded-full border border-line-strong transition-colors group-active:bg-fg group-active:text-bg">

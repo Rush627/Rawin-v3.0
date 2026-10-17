@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import RawinErrorView from "@/components/RawinErrorView";
+import SystemScreenBoot from "@/components/system/SystemScreenBoot";
 
 export const metadata: Metadata = {
   title: "404 - Page Not Found | RAWIN",
@@ -8,12 +9,15 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <RawinErrorView
-      code="404"
-      title="Page not found"
-      message="The page you're looking for doesn't exist."
-      actionLabel="Back to home"
-      actionHref="/"
-    />
+    <>
+      <SystemScreenBoot />
+      <RawinErrorView
+        code="404"
+        title="Page not found"
+        message="The page you're looking for doesn't exist."
+        actionLabel="Back to home"
+        actionHref="/"
+      />
+    </>
   );
 }

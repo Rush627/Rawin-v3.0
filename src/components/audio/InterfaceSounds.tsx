@@ -4,15 +4,8 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { getAudio } from "@/lib/audio/engine";
 import { heroPresence } from "@/lib/audio/policy";
+import { attachInterfaceClicks } from "@/lib/audio/clicks";
 import { useSoundSettings } from "./SoundSettings";
-
-/**
- * Controls that give click feedback. Text fields, sliders, plain containers and decorative
- * elements do not; a <label> is left out because activating it re-dispatches the click on its
- * control (which is in the list), so one activation stays one sound.
- */
-const INTERACTIVE =
-  "a[href], button, [role='button'], [role='tab'], [role='menuitem'], [role='menuitemradio'], [role='switch'], [role='option'], [role='link'], summary, select, input[type='checkbox'], input[type='radio'], input[type='submit'], input[type='button'], input[type='reset']";
 
 /** The homepage hero (Hero.tsx) the ambience level follows. */
 const HERO_SELECTOR = "#rawin-hero";
@@ -25,9 +18,10 @@ const STEPS = Array.from({ length: 41 }, (_, i) => i / 40);
  *   tries to start the ambience straight away (the browser may make it wait for a gesture);
  * - on the homepage, the share of the viewport the hero covers sets the ambience level (hero
  *   level at the top, the quieter ambient level below it); every other page is ambient;
- * - every applicable control clicks once per activation (one delegated "click" listener, so
- *   pointer + click never double, and keyboard and touch activation are covered); an element
- *   that makes its own sound opts out with data-sound="none".
+ * - every applicable control clicks once per activation (one delegated "click" listener, shared
+ *   with the system screens in lib/audio/clicks.ts, so pointer + click never double, and
+ *   keyboard and touch activation are covered); an element that makes its own sound opts out
+ *   with data-sound="none".
  * Nothing is created per element; nothing plays on hover, scroll, selection or render.
  */
 export default function InterfaceSounds() {
@@ -38,24 +32,9 @@ export default function InterfaceSounds() {
     const audio = getAudio();
     if (!audio) return;
     audio.install();
-    const onClick = (e: MouseEvent) => {
-      const el = (e.target as Element | null)?.closest?.(INTERACTIVE);
-      if (!el || (el as HTMLButtonElement).disabled || el.getAttribute("aria-disabled") === "true") return;
-      if (el.closest("[data-sound='none']")) return;
-      // an activation that opens another tab or window takes the visitor away from this page at
-      // once: no click (on phones it would start as the page is hidden and be cut mid-sound)
-      if (el instanceof HTMLAnchorElement && (el.target === "_blank" || e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1)) {
-        audio.unlock();
-        return;
-      }
-      // inside the gesture: also completes a start the browser held back
-      audio.unlock();
-      const r = el.getBoundingClientRect();
-      audio.click(((r.left + r.width / 2) / Math.max(1, window.innerWidth) - 0.5) * 0.4);
-    };
-    document.addEventListener("click", onClick, { capture: true });
+    const detachClicks = attachInterfaceClicks(audio);
     return () => {
-      document.removeEventListener("click", onClick, { capture: true });
+      detachClicks();
       // leaving the public site (e.g. a client navigation into the Studio): the ambience fades out
       audio.setRoute(null);
     };

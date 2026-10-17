@@ -32,7 +32,8 @@ const subscribe = (fn: () => void) => {
 const getLive = () => live;
 const getServerLive = () => null;
 
-const SoundSettingsContext = createContext<SoundAvailability>({ background: true, click: true });
+const ALL_ON: SoundAvailability = { background: true, click: true };
+const SoundSettingsContext = createContext<SoundAvailability | null>(null);
 
 /**
  * Carries the CMS sound settings to the sound control and the audio wiring: the values the page
@@ -44,5 +45,10 @@ export function SoundSettingsProvider({ value, children }: { value: SoundAvailab
 }
 
 export function useSoundSettings(): SoundAvailability {
+  return useContext(SoundSettingsContext) ?? ALL_ON;
+}
+
+/** The CMS sound settings where a provider carries them, else null (unknown: e.g. the global error screen). */
+export function useOptionalSoundSettings(): SoundAvailability | null {
   return useContext(SoundSettingsContext);
 }

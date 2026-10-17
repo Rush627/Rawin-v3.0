@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AWAKENING_DONE_KEY, recordDoneEvent } from "@/lib/startup/launch";
 import { STARTUP_REVEAL_EVENT } from "@/lib/startup/boot-script";
+import { SYSTEM_SCREEN_ATTR, subscribeSystemScreen, systemScreenActive } from "@/lib/system-screen";
 import FutureSystem from "./FutureSystem";
 import type { StartupEnd, StartupLayout } from "./clock";
 import "./startup.css";
@@ -23,6 +24,9 @@ interface Live {
  *     crash or a reload mid-way stores nothing, so the launch shows again next time;
  *   - any Supernova end, or Signal Awakening finished or skipped: Signal Awakening is marked
  *     done for this session, so the two never play back to back.
+ * A system screen (maintenance, offline, not found, an error; lib/system-screen.ts) is never
+ * covered: if one is present when this mounts, or appears while a startup plays, the startup
+ * stands down at once and records nothing, so both startups stay owed for a normal page.
  * The server markup is a plain cover (the Future System ground) shown by CSS only when the boot script set html[data-startup]; a CSS fail-safe
  * and the boot script's own timer remove it even if this component never runs.
  */
@@ -33,10 +37,25 @@ export default function StartupStage({ title, subtitle, durationS, logo }: { tit
   useEffect(() => {
     const d = document.documentElement;
     const choice = d.getAttribute("data-startup");
+    // withdrawn for a system screen: reveal the page and leave the records untouched
+    const standDown = () => {
+      if (d.getAttribute("data-startup-phase") === "play") {
+        d.setAttribute("data-startup-phase", "done");
+        window.dispatchEvent(new Event(STARTUP_REVEAL_EVENT));
+      }
+      requestAnimationFrame(() => setGone(true));
+    };
     if ((choice !== "supernova" && choice !== "awakening") || d.getAttribute("data-startup-phase") === "done") {
       requestAnimationFrame(() => setGone(true));
       return;
     }
+    if (systemScreenActive() || d.hasAttribute(SYSTEM_SCREEN_ATTR)) {
+      standDown();
+      return;
+    }
+    const offScreen = subscribeSystemScreen(() => {
+      if (systemScreenActive()) standDown();
+    });
     requestAnimationFrame(() =>
       setLive({
         choice,
@@ -50,7 +69,10 @@ export default function StartupStage({ title, subtitle, durationS, logo }: { tit
       if (d.getAttribute("data-startup-phase") === "done") setGone(true);
     });
     mo.observe(d, { attributes: true, attributeFilter: ["data-startup-phase"] });
-    return () => mo.disconnect();
+    return () => {
+      mo.disconnect();
+      offScreen();
+    };
   }, []);
 
   if (gone) return null;

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import RawinErrorView from "@/components/RawinErrorView";
+import SystemScreenBoot from "@/components/system/SystemScreenBoot";
 import { getSiteContent } from "@/lib/site-content";
 
 export const dynamic = "force-dynamic";
@@ -19,19 +20,22 @@ export default async function MaintenancePage() {
   const m = content?.maintenance;
   const withMessage = Boolean(m?.enabled && m.showMessage);
   return (
-    <RawinErrorView
-      code="503"
-      title={withMessage ? "We'll be back soon." : "Site temporarily unavailable"}
-      message={withMessage ? "The site is undergoing scheduled maintenance." : "The site is currently offline for updates."}
-      maintenanceMessage={withMessage ? m?.message : undefined}
-      endsAt={withMessage ? m?.endsAt || undefined : undefined}
-      actionLabel="Refresh"
-      brandMode={content?.global?.headerBrand === "logo" ? "logo" : "wordmark"}
-      logos={
-        content?.assets
-          ? { light: content.assets.logoLight, dark: content.assets.logoDark }
-          : undefined
-      }
-    />
+    <>
+      <SystemScreenBoot />
+      <RawinErrorView
+        code="503"
+        title={withMessage ? "We'll be back soon." : "Site temporarily unavailable"}
+        message={withMessage ? "The site is undergoing scheduled maintenance." : "The site is currently offline for updates."}
+        maintenanceMessage={withMessage ? m?.message : undefined}
+        endsAt={withMessage ? m?.endsAt || undefined : undefined}
+        actionLabel="Refresh"
+        brandMode={content?.global?.headerBrand === "logo" ? "logo" : "wordmark"}
+        logos={
+          content?.assets
+            ? { light: content.assets.logoLight, dark: content.assets.logoDark }
+            : undefined
+        }
+      />
+    </>
   );
 }

@@ -6,6 +6,7 @@ import { RefreshCw, ArrowLeft, ArrowUpRight } from "lucide-react";
 import FuzzyText from "@/components/system/FuzzyText";
 import Wordmark, { type WordmarkProps } from "@/components/shell/Wordmark";
 import { SITE_HOST } from "@/lib/site-url";
+import { useSystemScreen } from "@/components/audio/useSystemScreen";
 
 export interface RawinErrorViewProps {
   code: string;
@@ -107,6 +108,9 @@ export default function RawinErrorView({
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [endsAt]);
+
+  // no background ambience and no startup while this screen is shown; clicks stay available
+  useSystemScreen();
 
   useEffect(() => {
     if (typeof document !== "undefined") {

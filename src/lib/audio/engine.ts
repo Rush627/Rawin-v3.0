@@ -3,7 +3,8 @@
 import { AMBIENCE, CLICK, FORMATS } from "./catalog";
 import { bakeLoop } from "./loop";
 import type { EarlyAudio } from "./boot-script";
-import { ambienceSilent, effectiveAmbienceLevel, readSoundPreference, writeSoundPreference, type SoundPreference } from "./policy";
+import { ambienceWanted, effectiveAmbienceLevel, readSoundPreference, writeSoundPreference, type SoundPreference } from "./policy";
+import { subscribeSystemScreen, systemScreenActive } from "../system-screen";
 
 /**
  * RAWIN's one audio director: a single AudioContext for the whole site, kept on window so client
@@ -25,8 +26,10 @@ import { ambienceSilent, effectiveAmbienceLevel, readSoundPreference, writeSound
  * is pending and happens on the first click, tap or key press anywhere. The control shows
  * "waiting" in that state, never "playing".
  *
- * Order of precedence for the ambience: the CMS switch, then the visitor's mute, then Orbit's
- * microphone or voice (held at silence), then the route and scroll level.
+ * Order of precedence for the ambience: the CMS switch, then the visitor's mute, then a system
+ * screen (maintenance, offline, not found, an error: the ambience is stopped and cannot start
+ * until it is gone; clicks still play), then Orbit's microphone or voice (held at silence), then
+ * the route and scroll level.
  *
  * A hidden page fades the master out and suspends the context (a click in flight is cut first, so
  * nothing is left to resume as a stray beep); on return it resumes and fades back in, where the
@@ -51,6 +54,8 @@ export interface AudioSnapshot {
   route: string | null;
   presence: number;
   holds: string[];
+  /** a system screen (maintenance, offline, not found, error) has the ambience off */
+  systemScreen: boolean;
   ambience: {
     format: string | null;
     loaded: boolean;
@@ -129,6 +134,11 @@ export class AudioDirector {
     if (typeof window !== "undefined") {
       this.pref = readSoundPreference(window.localStorage ?? null);
       this.hidden = document.hidden;
+      // a system screen appearing or going: stop the ambience, or let it resume where allowed
+      subscribeSystemScreen(() => {
+        this.note(systemScreenActive() ? "system screen: ambience off" : "system screen: gone");
+        this.sync();
+      });
     }
   }
 
@@ -170,6 +180,7 @@ export class AudioDirector {
       route: this.route,
       presence: Math.round(this.presence * 100) / 100,
       holds: [...this.holds],
+      systemScreen: systemScreenActive(),
       ambience: {
         format: this.bgFormat,
         loaded: Boolean(this.bgBuffer),
@@ -289,9 +300,9 @@ export class AudioDirector {
     this.applyLevel();
     const want = this.wantsAmbience();
     if (!want) {
-      // CMS off, muted, or a silent route: fade out and release the source (hidden pages are
-      // suspended instead, so the loop keeps its place)
-      if (this.source && !this.hidden) this.stopBed(this.pref === "off" ? 0.25 : AMBIENCE.glideS * 3);
+      // CMS off, muted, a silent route or a system screen: fade out and release the source
+      // (hidden pages are suspended instead, so the loop keeps its place)
+      if (this.source && !this.hidden) this.stopBed(this.pref === "off" || systemScreenActive() ? 0.25 : AMBIENCE.glideS * 3);
       // clicks alone: still have the click ready before the first activation needs it
       if (this.pref === "on" && this.available.click && !this.hidden && (this.ctx || this.autoplayPolicy() !== "disallowed")) {
         this.ensureContext();
@@ -475,12 +486,25 @@ export class AudioDirector {
   /* ------------------------------------------------------------ ambience */
 
   private wantsAmbience() {
-    return this.pref === "on" && this.available.background && !ambienceSilent(this.route) && !this.hidden;
+    return ambienceWanted({
+      cmsBackground: this.available.background,
+      muted: this.pref !== "on",
+      route: this.route,
+      hidden: this.hidden,
+      systemScreen: systemScreenActive(),
+    });
   }
 
   private target() {
     return effectiveAmbienceLevel(
-      { cmsBackground: this.available.background, muted: this.pref !== "on", held: this.holds.size > 0, route: this.route, presence: this.presence },
+      {
+        cmsBackground: this.available.background,
+        muted: this.pref !== "on",
+        held: this.holds.size > 0,
+        route: this.route,
+        presence: this.presence,
+        systemScreen: systemScreenActive(),
+      },
       AMBIENCE,
     );
   }

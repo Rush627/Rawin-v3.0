@@ -63,13 +63,23 @@ export function soundControlVisible(available: { background: boolean; click: boo
 }
 
 /**
+ * Whether the ambience should be playing at all: the CMS allows it, the visitor has not muted
+ * the site, the route is a public page, the page is visible, and no system screen (maintenance,
+ * offline, not found, an error; lib/system-screen.ts) is shown. Interface clicks follow their
+ * own setting and are never decided here.
+ */
+export function ambienceWanted(s: { cmsBackground: boolean; muted: boolean; route: string | null; hidden: boolean; systemScreen: boolean }): boolean {
+  return s.cmsBackground && !s.muted && !ambienceSilent(s.route) && !s.hidden && !s.systemScreen;
+}
+
+/**
  * The ambience level after every rule, in order of precedence: the CMS switch, the visitor's
- * mute, Orbit's voice (held at silence), then the route and scroll level.
+ * mute, a system screen, Orbit's voice (held at silence), then the route and scroll level.
  */
 export function effectiveAmbienceLevel(
-  s: { cmsBackground: boolean; muted: boolean; held: boolean; route: string | null; presence: number },
+  s: { cmsBackground: boolean; muted: boolean; held: boolean; route: string | null; presence: number; systemScreen?: boolean },
   levels: { heroLevel: number; ambientLevel: number },
 ): number {
-  if (!s.cmsBackground || s.muted || s.held) return 0;
+  if (!s.cmsBackground || s.muted || s.systemScreen || s.held) return 0;
   return ambienceLevel(s.route, s.presence, levels);
 }

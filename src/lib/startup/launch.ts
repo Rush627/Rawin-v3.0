@@ -143,6 +143,11 @@ export interface StartupInput {
   done: string[];
   /** Signal Awakening completed in this browser session */
   sessionDone: boolean;
+  /**
+   * The HTTP status this page was served with, where the browser reports it (Navigation Timing
+   * responseStatus); 0 or absent when unknown. An error status means a system screen.
+   */
+  status?: number;
 }
 
 export type StartupChoice = "supernova" | "awakening" | "none";
@@ -150,7 +155,9 @@ export type StartupChoice = "supernova" | "awakening" | "none";
 /**
  * The one startup decision for a page load. Self-contained (no imports, no closures): its
  * source is inlined in the pre-paint boot script.
- *   1. no startup on the Studio, the maintenance screen or Orbit's conversation page;
+ *   1. no startup on the Studio, the maintenance screen or Orbit's conversation page, nor on a
+ *      page served with an error status (not found, server error, maintenance: system screens
+ *      show at once and leave both startups owed);
  *   2. Supernova when the launch is on, valid, inside its window and not yet completed here;
  *   3. else Signal Awakening, once per browser session;
  *   4. else straight to the site. Never both.
@@ -158,6 +165,7 @@ export type StartupChoice = "supernova" | "awakening" | "none";
  */
 export function decideStartup(i: StartupInput): StartupChoice {
   if (/^\/(saint-denis|maintenance|ai)(\/|$)/.test(i.path)) return "none";
+  if (typeof i.status === "number" && i.status >= 400) return "none";
   const l = i.launch;
   if (
     l &&

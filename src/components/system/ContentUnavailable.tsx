@@ -1,4 +1,5 @@
 import RawinErrorView from "@/components/RawinErrorView";
+import SystemScreenBoot from "@/components/system/SystemScreenBoot";
 import { shortenPageLifetimeForUnavailable } from "@/lib/site-content";
 
 /**
@@ -11,11 +12,14 @@ import { shortenPageLifetimeForUnavailable } from "@/lib/site-content";
 export default async function ContentUnavailable() {
   await shortenPageLifetimeForUnavailable();
   return (
-    <RawinErrorView
-      code="503"
-      title="Site temporarily unavailable"
-      message="RAWIN cannot load its content right now. Please try again in a moment."
-      actionLabel="Refresh"
-    />
+    <>
+      <SystemScreenBoot />
+      <RawinErrorView
+        code="503"
+        title="Site temporarily unavailable"
+        message="RAWIN cannot load its content right now. Please try again in a moment."
+        actionLabel="Refresh"
+      />
+    </>
   );
 }
